@@ -99,4 +99,6 @@ Workstreams live exclusively in Discord forums, named `[area]-workstreams`. The 
 
 ## Full documentation
 
-See `active-workstreams/intern-os/docs/` for FRAMEWORK.md, PLAYBOOK.md, and SETUP.md.
+- `references/SETUP.md` — step-by-step setup guide for new instances
+- `references/PLAYBOOK.md` — how to activate and operate workstreams day-to-day
+- `references/FRAMEWORK.md` — full technical reference (architecture, lifecycle, roadmap)
