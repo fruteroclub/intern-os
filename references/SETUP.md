@@ -37,14 +37,16 @@ Update STATUS.md at the end of every working session.
 
 ---
 
-## Paso 2: Obtener `WORKSTREAMS.md`
+## Paso 2: Copiar `WORKSTREAMS.md` al workspace
+
+El skill incluye el archivo listo para usar. Copiarlo al workspace root:
 
 ```bash
-curl https://raw.githubusercontent.com/fruteroclub/kukulcan-brain/master/WORKSTREAMS.md \
-  -o ~/workspace/WORKSTREAMS.md
+# Desde el directorio del skill instalado:
+cp ~/.openclaw/skills/intern-os/assets/WORKSTREAMS.md ~/workspace/WORKSTREAMS.md
 ```
 
-> Si el repositorio es privado, obtener el archivo manualmente y colocarlo en el workspace root.
+> Si el agente ya instaló el skill vía `openclaw skills install`, el archivo está en `~/.openclaw/skills/intern-os/assets/WORKSTREAMS.md`.
 
 ---
 

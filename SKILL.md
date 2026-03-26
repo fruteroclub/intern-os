@@ -30,7 +30,14 @@ Do not load all workstreams — keep context clean.
 
 Workstream directories live in: `active-workstreams/[workstream-name]/`
 Read: BRIEF.md, STATUS.md, MEMORY.md before doing any work.
-Update STATUS.md at the end of every working session.
+
+Before ending any working session, update STATUS.md with:
+1. What was done this session
+2. Next concrete step
+3. Any blockers
+
+This is required even if nothing changed. A blank STATUS.md means
+the workstream is invisible to the next agent or session.
 ```
 
 **3. Create the workstreams directory**
@@ -66,6 +73,13 @@ WS=workstream-name
 mkdir -p ~/workspace/active-workstreams/$WS/docs
 touch ~/workspace/active-workstreams/$WS/{BRIEF.md,STATUS.md,MEMORY.md,DECISIONS.md,STAKEHOLDERS.md,RESOURCES.md}
 ```
+
+Immediately after creating the directory, add the thread ID to `BRIEF.md`:
+```
+discord_thread_id: [thread ID from Discord URL or metadata]
+```
+
+This is the canonical mapping between the Discord thread and the filesystem directory. Without it, the link is implicit and fragile.
 
 **Discord post format:**
 ```
