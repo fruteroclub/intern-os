@@ -108,10 +108,17 @@ Do not load all workstreams — keep context clean.
 
 Workstream directories live in: `active-workstreams/[workstream-name]/`
 Read: BRIEF.md, STATUS.md, MEMORY.md before doing any work.
-Update STATUS.md at the end of every working session.
+
+Before ending any working session, update STATUS.md with:
+1. What was done this session
+2. Next concrete step
+3. Any blockers
+
+This is required even if nothing changed. A blank STATUS.md means
+the workstream is invisible to the next agent or session.
 ```
 
-**Mapeo thread ↔ directorio:** Se documenta en RESOURCES.md de cada workstream.
+**Mapeo thread ↔ directorio:** El campo `discord_thread_id` en BRIEF.md es el registro canónico. El agente lo escribe al crear el directorio usando el `topic_id` de los metadatos de Discord.
 
 ---
 
@@ -182,4 +189,5 @@ Detecta cambio de estado en el sistema de gestión de tareas → mueve el direct
 
 - Guía operacional para agentes: `workspace/WORKSTREAMS.md`
 - Directorio de workstreams: `workspace/active-workstreams/`
-- Setup para nuevas instancias: `active-workstreams/intern-os/docs/SETUP.md`
+- Setup para nuevas instancias: `references/SETUP.md`
+- Instructivo operacional: `references/PLAYBOOK.md`
