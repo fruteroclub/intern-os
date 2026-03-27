@@ -1,6 +1,6 @@
 # Workstreams — internOS
 
-*v1.0 | [Project name]*
+*v1.0*
 
 ---
 
