@@ -32,6 +32,10 @@ The agent will copy `WORKSTREAMS.md` to your workspace root, add the internOS bl
 
 Restart your agent session once to activate.
 
+## License
+
+[AGPL v3](LICENSE) for open source use. Commercial license required for B2B products and SaaS — contact [hola@frutero.club](mailto:hola@frutero.club).
+
 ## Built by
 
 [Frutero](https://frutero.club) — Impact Technology for Latin America
