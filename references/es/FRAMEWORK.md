@@ -189,5 +189,5 @@ Detecta cambio de estado en el sistema de gestión de tareas → mueve el direct
 
 - Guía operacional para agentes: `workspace/WORKSTREAMS.md`
 - Directorio de workstreams: `workspace/workstreams/`
-- Setup para nuevas instancias: `references/SETUP.md`
-- Instructivo operacional: `references/PLAYBOOK.md`
+- Setup para nuevas instancias: `references/es/SETUP.md`
+- Instructivo operacional: `references/es/PLAYBOOK.md`
