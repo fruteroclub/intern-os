@@ -15,7 +15,7 @@ That's it. The skill configures your agent to operate workstreams across Discord
 Installs the **internOS Workstreams** framework — a coordination system where each active workstream exists in two places simultaneously:
 
 - **Discord forum thread** — communication surface for humans and agents
-- **Filesystem directory** — operational source of truth (`active-workstreams/[name]/`)
+- **Filesystem directory** — operational source of truth (`workstreams/[name]/`)
 
 Agents loaded with this skill know how to:
 - Activate a new workstream from any channel
@@ -28,7 +28,7 @@ Run the setup assistant:
 
 > Install internOS workstreams on this instance
 
-The agent will copy `WORKSTREAMS.md` to your workspace root, add the internOS block to `AGENTS.md`, and create the `active-workstreams/` directory.
+The agent will copy `WORKSTREAMS.md` to your workspace root, add the internOS block to `AGENTS.md`, and create the `workstreams/` directory.
 
 Restart your agent session once to activate.
 
