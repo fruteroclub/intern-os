@@ -1,6 +1,6 @@
 # Workstreams — internOS
 
-*v1.0*
+*v2.0*
 
 ---
 
@@ -10,25 +10,48 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 
 ---
 
-## The three layers
+## The four layers
 
 | Layer | Tool | Role |
 |-------|------|------|
-| Management | Team task system (tick.md, Notion, Trello, etc.) | Workstream origin |
-| Communication | Discord (forum threads) | Team surface — humans and agents |
-| Operation | `workstreams/` | Source of truth for agents |
+| Project | Filesystem (`projects/[name]/`) | Organizational container |
+| Management | tick.md (`TICK.md` at project root) | Task origin and coordination |
+| Communication | Discord forums · Slack threads | Team surface — humans and agents |
+| Operation | `projects/[name]/workstreams/` | Source of truth for agents |
 
 ---
 
-## If you are in a Discord thread
+## If you are in a communication thread
 
-1. **Check if the thread has a mirror directory** in `workstreams/`
+1. **Check if the thread has a workstream directory** in `projects/[project]/workstreams/`
 2. **If it exists, read it before doing anything:**
-   - `BRIEF.md` → what this workstream is
+   - `BRIEF.md` → what this workstream is + thread_id mapping
    - `STATUS.md` → where the work stands now
    - `MEMORY.md` → accumulated context and insights
 3. **Load only that directory.** Do not load other workstreams.
-4. **When done**, update `STATUS.md` with the current state.
+4. **Check tasks:** `tick list --tag [workstream-name]`
+5. **Claim the task before working:** `tick claim TASK-X @agent-name`
+6. **When done**, update `STATUS.md` with the current state and complete/release the task in tick.md.
+
+---
+
+## Project structure
+
+```
+projects/
+├── project-alpha/
+│   ├── TICK.md              ← tick-md: all tasks for this project
+│   ├── .tick/
+│   └── workstreams/
+│       └── [workstream-name]/
+│           ├── BRIEF.md
+│           ├── STATUS.md
+│           ├── MEMORY.md
+│           ├── DECISIONS.md
+│           ├── STAKEHOLDERS.md
+│           ├── RESOURCES.md
+│           └── docs/
+```
 
 ---
 
@@ -36,8 +59,8 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 
 ```
 workstreams/[name]/
-├── BRIEF.md         ← What, for whom, problem, appetite
-├── STATUS.md        ← Current phase, next step, blockers
+├── BRIEF.md         ← What, for whom, problem, appetite + thread_id
+├── STATUS.md        ← Workstream phase, next step, blockers
 ├── MEMORY.md        ← Accumulated context, insights, learnings
 ├── DECISIONS.md     ← Key decisions log with date + reason
 ├── STAKEHOLDERS.md  ← Relevant people and their role
@@ -61,13 +84,14 @@ workstreams/[name]/
 ## Lifecycle
 
 ```
-Task created in task system
-    → Thread opened in Discord forum
-        → Directory created in workstreams/
+Project created → tick init
+    → Task added to TICK.md
+        → Communication thread opened
+            → Workstream directory created
 
-Task marked complete/archived
+All tasks done in TICK.md
     → STATUS.md updated with final state
-        → Discord thread archived
+        → Communication thread archived
             → Directory moved to workstreams/archived/
 ```
 
@@ -75,4 +99,4 @@ Task marked complete/archived
 
 ## Full reference
 
-See `SETUP.md`, `PLAYBOOK.md`, and `FRAMEWORK.md` in the internOS workstream docs.
+See `FRAMEWORK.md`, `SETUP.md`, `PLAYBOOK.md`, `COMMUNICATION.md`, and `TICK-INTEGRATION.md` in the internOS references.

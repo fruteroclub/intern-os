@@ -1,74 +1,102 @@
-# SETUP — Configure internOS on an OpenClaw Instance
+# SETUP — Configure internOS on an Agent Instance
 
-*internOS v1.0 | 2026-03-26*
+*internOS v2.0 | 2026-03-30*
 
-Guide for the admin or human configuring a new OpenClaw instance to use the Workstreams Operating System.
-
-> **Current communication layer: Discord.** This setup assumes Discord as the communication surface. Other channels (Slack, Telegram, WhatsApp, etc.) are not yet defined for this system.
+Guide for the admin or human configuring an agent instance to use the internOS Workstreams framework.
 
 ---
 
 ## Prerequisites
 
-- OpenClaw installed and running on the instance
-- Access to the agent workspace (`~/.openclaw/workspace/` by default)
-- Discord bot configured on the project's server
-- A task management system (see options below)
+- An AI agent framework installed and running (OpenClaw, Hermes Agent, Claude Code, or other)
+- Access to the agent's workspace directory
+- A communication platform configured (Discord or Slack — see COMMUNICATION.md)
+- Node.js installed (for tick.md CLI)
 
 ---
 
-## Step 1: Add the internOS block to `AGENTS.md`
-
-Open `~/workspace/AGENTS.md` and add this section:
-
-```markdown
-## internOS — Workstreams
-
-If `WORKSTREAMS.md` exists in the workspace root, read it at the start
-of any session in a Discord thread that has a workstream context.
-
-Only load the workstream directory matching the active thread.
-Do not load all workstreams — keep context clean.
-
-Workstream directories live in: `workstreams/[workstream-name]/`
-Read: BRIEF.md, STATUS.md, MEMORY.md before doing any work.
-
-Before ending any working session, update STATUS.md with:
-1. What was done this session
-2. Next concrete step
-3. Any blockers
-
-This is required even if nothing changed. A blank STATUS.md means
-the workstream is invisible to the next agent or session.
-```
-
----
-
-## Step 2: Copy `WORKSTREAMS.md` to the workspace
-
-The skill includes the file ready to use. Copy it to the workspace root:
+## Step 1: Install tick.md
 
 ```bash
-cp ~/.openclaw/skills/intern-os/assets/WORKSTREAMS.md ~/workspace/WORKSTREAMS.md
+npm install -g tick-md
+tick --version
 ```
 
-> If the agent installed the skill via `openclaw skills install`, the file is at `~/.openclaw/skills/intern-os/assets/WORKSTREAMS.md`.
-
----
-
-## Step 3: Create the `workstreams/` directory
+Or use without global install:
 
 ```bash
-mkdir -p ~/workspace/workstreams/
+npx tick-md --version
 ```
 
 ---
 
-## Step 4: Create forums in Discord
+## Step 2: Configure your agent framework
+
+Each agent framework has its own setup mechanism. Follow the guide for your framework:
+
+| Framework | Adapter | Setup guide |
+|-----------|---------|-------------|
+| OpenClaw | `adapters/openclaw/` | `adapters/openclaw/SETUP.md` |
+| Hermes Agent | `adapters/hermes/` | `adapters/hermes/SETUP.md` |
+| Claude Code | `adapters/claude-code/` | `adapters/claude-code/SETUP.md` |
+| Other | `adapters/generic/` | `adapters/generic/SETUP.md` |
+
+This step configures the agent to read `WORKSTREAMS.md` and follow the internOS protocol.
+
+---
+
+## Step 3: Copy `WORKSTREAMS.md` to the workspace
+
+Copy the agent runtime guide to the workspace root:
+
+```bash
+cp [skill-path]/assets/WORKSTREAMS.md [workspace]/WORKSTREAMS.md
+```
+
+The exact paths depend on your agent framework — see the adapter setup guide.
+
+---
+
+## Step 4: Create the `projects/` directory
+
+```bash
+mkdir -p [workspace]/projects/
+```
+
+---
+
+## Step 5: Create your first project
+
+```bash
+PROJECT=my-project
+mkdir -p [workspace]/projects/$PROJECT
+cd [workspace]/projects/$PROJECT
+
+# Initialize tick.md
+tick init
+
+# Register the agent
+tick agent register @agent-name --type bot --role engineer
+```
+
+Or use the project template (includes pre-configured TICK.md and .tick/config.yml):
+
+```bash
+PROJECT=my-project
+cp -r [skill-path]/assets/templates/project/ [workspace]/projects/$PROJECT
+cd [workspace]/projects/$PROJECT
+tick agent register @agent-name --type bot --role engineer
+```
+
+---
+
+## Step 6: Set up communication channels
+
+Create channels or forums for your workstream areas. See COMMUNICATION.md for the full specification.
+
+### Discord
 
 Create forums in the project's Discord server. Naming convention: `[area]-workstreams`.
-
-Minimum recommended forums by team size:
 
 | Forum | When to create |
 |-------|----------------|
@@ -79,11 +107,24 @@ Minimum recommended forums by team size:
 
 **Rule:** workstreams live exclusively in forums, never in regular text channels.
 
+### Slack
+
+Create channels in the project's Slack workspace. Same naming convention: `[area]-workstreams`.
+
+| Channel | When to create |
+|---------|----------------|
+| `ops-workstreams` | Always — for internal systems and setup |
+| `ceo-workstreams` | If there is a CEO/founder operating workstreams |
+| `tech-workstreams` | If there is product development |
+| `[area]-workstreams` | Based on the project's active areas |
+
+**Rule:** workstreams use threads within these channels. The channel root is only for creating new workstream threads.
+
 ---
 
-## Step 5: Restart the agent session
+## Step 7: Restart the agent session
 
-Changes to `AGENTS.md` take effect in the next session. Restart the agent or wait for the next session.
+Agent instruction changes take effect in the next session. Restart the agent or wait for the next session.
 
 ---
 
@@ -91,26 +132,29 @@ Changes to `AGENTS.md` take effect in the next session. Restart the agent or wai
 
 Setup is complete when:
 
-- [ ] `AGENTS.md` has the internOS block
+- [ ] tick.md CLI is installed and working
+- [ ] Agent framework is configured with internOS instructions (via adapter)
 - [ ] `WORKSTREAMS.md` exists in the workspace root
-- [ ] `workstreams/` exists in the workspace
-- [ ] At least one `[area]-workstreams` forum exists in Discord
-- [ ] The agent has been restarted
+- [ ] `projects/` directory exists
+- [ ] At least one project is initialized with `tick init`
+- [ ] Agent is registered in tick.md: `tick agent list`
+- [ ] At least one `[area]-workstreams` channel/forum exists
+- [ ] Agent has been restarted
 
 ---
 
 ## Task management system
 
-Every workstream is born from a task. Choose the system that best fits the project:
+tick.md is the default and recommended task system for internOS. It is deeply integrated into the framework — the project template, agent workflow, and coordination protocol are built around it.
 
 | Option | When to use |
 |--------|-------------|
-| **tick.md** ⭐ *recommended* | Quick start, small teams, agent-first. Markdown + Git, zero infrastructure. [Docs](https://www.tick.md/docs) |
+| **tick.md** ⭐ *default* | Agent-first, markdown + Git, zero infrastructure. [Docs](https://www.tick.md/docs) |
 | **Notion** | If the team already uses Notion with a validated project and task kanban |
 | **Trello / Asana / Linear** | If the team already has an established kanban |
 | **Simple to-do list** | Todoist or similar — works for small teams with few workstreams |
 
-**Key point:** any system works as long as it allows creating a task with a name, status, and owner. A workstream cannot exist without an associated task.
+If using a system other than tick.md, the task system provides the management layer but the agent cannot use `tick` CLI commands. See TICK-INTEGRATION.md for details on what changes.
 
 ---
 

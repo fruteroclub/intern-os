@@ -1,36 +1,53 @@
 # intern-os
 
-internOS Workstreams skill for OpenClaw agents.
+internOS Workstreams framework — coordinate work across projects, tasks, communication threads, and filesystem workstreams for any AI agent framework.
+
+## What it does
+
+Installs the **internOS Workstreams** framework — a coordination system where each active workstream exists in four synchronized layers:
+
+| Layer | Tool | Role |
+|-------|------|------|
+| **Project** | Filesystem (`projects/[name]/`) | Organizational container |
+| **Management** | tick.md (`TICK.md`) | Task tracking and coordination |
+| **Communication** | Discord forums · Slack threads | Human and agent collaboration |
+| **Operation** | Filesystem (`workstreams/`) | Source of truth for agents |
+
+Agents loaded with this framework know how to:
+- Create and manage projects with tick.md task tracking
+- Activate workstreams from any communication thread
+- Load the right workstream context when entering a thread
+- Claim tasks before working and release them when done
+- Keep STATUS.md updated across sessions so context never gets lost
 
 ## Install
+
+Choose the adapter for your agent framework:
+
+| Framework | Install guide |
+|-----------|---------------|
+| **OpenClaw** | `adapters/openclaw/SETUP.md` |
+| **Hermes Agent** | `adapters/hermes/SETUP.md` |
+| **Claude Code** | `adapters/claude-code/SETUP.md` |
+| **Other** | `adapters/generic/SETUP.md` |
+
+For OpenClaw, you can also install as a skill:
 
 ```
 openclaw skills install https://github.com/fruteroclub/intern-os
 ```
 
-That's it. The skill configures your agent to operate workstreams across Discord and filesystem automatically.
+## Documentation
 
-## What it does
+| Document | What it covers |
+|----------|---------------|
+| `references/en/FRAMEWORK.md` | Architecture — four layers, lifecycle, agent bootstrap |
+| `references/en/SETUP.md` | First-time setup guide |
+| `references/en/PLAYBOOK.md` | Day-to-day operations |
+| `references/en/TICK-INTEGRATION.md` | tick.md integration spec |
+| `references/en/COMMUNICATION.md` | Discord + Slack communication spec |
 
-Installs the **internOS Workstreams** framework — a coordination system where each active workstream exists in two places simultaneously:
-
-- **Discord forum thread** — communication surface for humans and agents
-- **Filesystem directory** — operational source of truth (`workstreams/[name]/`)
-
-Agents loaded with this skill know how to:
-- Activate a new workstream from any channel
-- Load the right workstream context when entering a Discord thread
-- Keep `STATUS.md` updated across sessions so context never gets lost
-
-## After install
-
-Run the setup assistant:
-
-> Install internOS workstreams on this instance
-
-The agent will copy `WORKSTREAMS.md` to your workspace root, add the internOS block to `AGENTS.md`, and create the `workstreams/` directory.
-
-Restart your agent session once to activate.
+Spanish versions available in `references/es/`.
 
 ## License
 
