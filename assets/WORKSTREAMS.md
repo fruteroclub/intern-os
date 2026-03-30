@@ -16,13 +16,13 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 |-------|------|------|
 | Management | Team task system (tick.md, Notion, Trello, etc.) | Workstream origin |
 | Communication | Discord (forum threads) | Team surface — humans and agents |
-| Operation | `active-workstreams/` | Source of truth for agents |
+| Operation | `workstreams/` | Source of truth for agents |
 
 ---
 
 ## If you are in a Discord thread
 
-1. **Check if the thread has a mirror directory** in `active-workstreams/`
+1. **Check if the thread has a mirror directory** in `workstreams/`
 2. **If it exists, read it before doing anything:**
    - `BRIEF.md` → what this workstream is
    - `STATUS.md` → where the work stands now
@@ -35,7 +35,7 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 ## Workstream structure
 
 ```
-active-workstreams/[name]/
+workstreams/[name]/
 ├── BRIEF.md         ← What, for whom, problem, appetite
 ├── STATUS.md        ← Current phase, next step, blockers
 ├── MEMORY.md        ← Accumulated context, insights, learnings
@@ -63,12 +63,12 @@ active-workstreams/[name]/
 ```
 Task created in task system
     → Thread opened in Discord forum
-        → Directory created in active-workstreams/
+        → Directory created in workstreams/
 
 Task marked complete/archived
     → STATUS.md updated with final state
         → Discord thread archived
-            → Directory moved to archived-workstreams/
+            → Directory moved to workstreams/archived/
 ```
 
 ---

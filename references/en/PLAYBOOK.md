@@ -35,7 +35,7 @@ A workstream can be started from any of these situations:
 Nothing exists yet. The agent creates everything in order:
 1. Task in the team's task management system
 2. Post in the corresponding Discord forum
-3. Directory in `active-workstreams/`
+3. Directory in `workstreams/`
 4. Requests BRIEF to be filled with the 6 questions
 
 ### Entry B: Task already exists
@@ -43,7 +43,7 @@ Nothing exists yet. The agent creates everything in order:
 The agent:
 1. Asks for the task link or name
 2. Creates the post in the corresponding Discord forum
-3. Creates the directory in `active-workstreams/`
+3. Creates the directory in `workstreams/`
 4. Links everything in RESOURCES.md
 
 ### Entry C: Discord post already exists
@@ -51,7 +51,7 @@ The agent:
 The agent:
 1. Asks for the Discord post link or name
 2. Creates or links the task in the management system if it doesn't exist
-3. Creates the directory in `active-workstreams/`
+3. Creates the directory in `workstreams/`
 4. Links everything in RESOURCES.md
 
 ---
@@ -88,7 +88,7 @@ The agent creates the post in the corresponding forum with this format:
 What: [one line]
 Owner: [name]
 Task: [URL or reference in the task system]
-Directory: active-workstreams/[kebab-name]/
+Directory: workstreams/[kebab-name]/
 Status: [current phase — one line]
 ```
 
@@ -99,13 +99,13 @@ Status: [current phase — one line]
 ```bash
 WS=workstream-name
 
-mkdir -p ~/workspace/active-workstreams/$WS/docs
-touch ~/workspace/active-workstreams/$WS/BRIEF.md
-touch ~/workspace/active-workstreams/$WS/STATUS.md
-touch ~/workspace/active-workstreams/$WS/MEMORY.md
-touch ~/workspace/active-workstreams/$WS/DECISIONS.md
-touch ~/workspace/active-workstreams/$WS/STAKEHOLDERS.md
-touch ~/workspace/active-workstreams/$WS/RESOURCES.md
+mkdir -p ~/workspace/workstreams/$WS/docs
+touch ~/workspace/workstreams/$WS/BRIEF.md
+touch ~/workspace/workstreams/$WS/STATUS.md
+touch ~/workspace/workstreams/$WS/MEMORY.md
+touch ~/workspace/workstreams/$WS/DECISIONS.md
+touch ~/workspace/workstreams/$WS/STAKEHOLDERS.md
+touch ~/workspace/workstreams/$WS/RESOURCES.md
 ```
 
 ### 4. BRIEF.md — 6 questions
@@ -126,7 +126,7 @@ The agent asks them one by one, or the human answers them all at once:
 
 - **Task:** [URL or reference in the task system]
 - **Discord:** [post URL]
-- **Directory:** active-workstreams/[name]/
+- **Directory:** workstreams/[name]/
 ```
 
 ---
@@ -135,7 +135,7 @@ The agent asks them one by one, or the human answers them all at once:
 
 - [ ] Task created in the task system and linked
 - [ ] Post created in the correct Discord forum
-- [ ] Directory in `active-workstreams/` with the 6 files
+- [ ] Directory in `workstreams/` with the 6 files
 - [ ] BRIEF.md completed
 - [ ] RESOURCES.md with links to task and Discord
 - [ ] STATUS.md with initial state

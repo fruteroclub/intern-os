@@ -16,7 +16,7 @@ Every team workstream exists in three simultaneous layers. Coherence between lay
 |-------|------|------|
 | **Management** | Team task system (tick.md, Notion, Trello, etc.) | Workstream origin |
 | **Communication** | Discord (forum threads) | Team work surface — humans and agents |
-| **Operation** | Filesystem (`active-workstreams/`) | Source of truth for agents — context persists across sessions |
+| **Operation** | Filesystem (`workstreams/`) | Source of truth for agents — context persists across sessions |
 
 > **Current communication layer: Discord.** Other channels (Slack, Telegram, WhatsApp, etc.) are not yet defined for this system.
 
@@ -29,7 +29,7 @@ Every team workstream exists in three simultaneous layers. Coherence between lay
 Each workstream has a mirror directory in the filesystem with 6 standard files:
 
 ```
-active-workstreams/
+workstreams/
 └── [workstream-name]/
     ├── BRIEF.md         ← What, for whom, problem, appetite
     ├── STATUS.md        ← Phase, where we are, next step, blockers
@@ -67,7 +67,7 @@ active-workstreams/
 A workstream **is born** when:
 1. A task is created in the team's task management system
 2. A thread is opened in the corresponding Discord forum
-3. The directory is created in `active-workstreams/` with the 6 files
+3. The directory is created in `workstreams/` with the 6 files
 
 **No task, no thread. No thread, no directory.**
 
@@ -75,15 +75,15 @@ A workstream **dies** when:
 1. The task is marked complete or archived in the task system
 2. STATUS.md is updated with final state and learnings
 3. The Discord thread is archived
-4. The directory is moved from `active-workstreams/` to `archived-workstreams/`
+4. The directory is moved from `workstreams/` to `workstreams/archived/`
 
 **Possible states:**
 
 | State | Directory | Discord Thread | Task |
 |-------|-----------|----------------|------|
-| Active | `active-workstreams/` | Open | In progress |
-| Paused | `active-workstreams/` | Open | Blocked |
-| Archived | `archived-workstreams/` | Archived | Complete/Archived |
+| Active | `workstreams/` | Open | In progress |
+| Paused | `workstreams/` | Open | Blocked |
+| Archived | `workstreams/archived/` | Archived | Complete/Archived |
 
 ---
 
@@ -93,7 +93,7 @@ A workstream **dies** when:
 
 **Mechanism:**
 - Each Discord thread has a unique ID
-- That ID maps to a specific directory in `active-workstreams/`
+- That ID maps to a specific directory in `workstreams/`
 - When entering a workstream thread, the agent reads **only** that subdirectory
 
 **What goes in `AGENTS.md`:**
@@ -106,7 +106,7 @@ of any session in a Discord thread that has a workstream context.
 Only load the workstream directory matching the active thread.
 Do not load all workstreams — keep context clean.
 
-Workstream directories live in: `active-workstreams/[workstream-name]/`
+Workstream directories live in: `workstreams/[workstream-name]/`
 Read: BRIEF.md, STATUS.md, MEMORY.md before doing any work.
 
 Before ending any working session, update STATUS.md with:
@@ -136,7 +136,7 @@ Each project defines its own forums based on its active areas.
 
 1. Create a task in the team's task management system
 2. Open a thread in the Discord forum for the responsible area
-3. Create the directory in `active-workstreams/[name]/` with the 6 files
+3. Create the directory in `workstreams/[name]/` with the 6 files
 4. Fill BRIEF.md using the 6 questions:
    - What specific work is this? *(verb + object)*
    - What problem or situation triggers it?
@@ -164,7 +164,7 @@ Each project defines its own forums based on its active areas.
 ### v1.1 — Low-effort automations
 
 **Sync check** *(~1h)*
-Script that compares active threads in Discord `-workstreams` forums vs directories in `active-workstreams/`. Detects mismatches: thread without directory, directory without thread.
+Script that compares active threads in Discord `-workstreams` forums vs directories in `workstreams/`. Detects mismatches: thread without directory, directory without thread.
 
 **Checkpoint reminder** *(~1h)*
 Cron job that checks whether `STATUS.md` was updated during an active working session. If not, the agent receives a reminder. Prevents workstreams from going stale.
@@ -172,12 +172,12 @@ Cron job that checks whether `STATUS.md` was updated during an active working se
 ### v1.2 — Medium-effort automations
 
 **Auto-scaffold on thread creation** *(~3h)*
-Discord webhook detects a new post in a `-workstreams` forum → automatically creates the directory + 6 files in `active-workstreams/`. Eliminates the most repetitive step in activation.
+Discord webhook detects a new post in a `-workstreams` forum → automatically creates the directory + 6 files in `workstreams/`. Eliminates the most repetitive step in activation.
 
 ### v2.0 — High-effort automations
 
 **Archive workflow** *(~6-8h)*
-Detects a status change in the task management system → moves the directory to `archived-workstreams/` → archives the Discord thread. Requires coordinating three systems.
+Detects a status change in the task management system → moves the directory to `workstreams/archived/` → archives the Discord thread. Requires coordinating three systems.
 
 ---
 
@@ -188,6 +188,6 @@ Detects a status change in the task management system → moves the directory to
 ## References
 
 - Agent operational guide: `workspace/WORKSTREAMS.md`
-- Workstream directory: `workspace/active-workstreams/`
+- Workstream directory: `workspace/workstreams/`
 - New instance setup: `references/en/SETUP.md`
 - Operational playbook: `references/en/PLAYBOOK.md`

@@ -35,7 +35,7 @@ El workstream se puede iniciar desde cualquiera de estas situaciones:
 No existe nada todavía. El agente crea todo en orden:
 1. Tarea en el sistema de gestión del equipo
 2. Post en el foro de Discord correspondiente
-3. Directorio en `active-workstreams/`
+3. Directorio en `workstreams/`
 4. Solicita llenar el BRIEF con las 6 preguntas
 
 ### Entrada B: Tarea ya existe
@@ -43,7 +43,7 @@ No existe nada todavía. El agente crea todo en orden:
 El agente:
 1. Pide el link o nombre de la tarea
 2. Crea el post en el foro de Discord correspondiente
-3. Crea el directorio en `active-workstreams/`
+3. Crea el directorio en `workstreams/`
 4. Enlaza todo en RESOURCES.md
 
 ### Entrada C: Post en Discord ya existe
@@ -51,7 +51,7 @@ El agente:
 El agente:
 1. Pide el link o nombre del post de Discord
 2. Crea o vincula la tarea en el sistema de gestión si no existe
-3. Crea el directorio en `active-workstreams/`
+3. Crea el directorio en `workstreams/`
 4. Enlaza todo en RESOURCES.md
 
 ---
@@ -88,7 +88,7 @@ El agente crea el post en el foro correspondiente con este formato:
 Qué es: [una línea]
 Responsable: [nombre]
 Tarea: [URL o referencia en el sistema de gestión]
-Directorio: active-workstreams/[nombre-kebab]/
+Directorio: workstreams/[nombre-kebab]/
 Status: [fase actual — una línea]
 ```
 
@@ -99,13 +99,13 @@ Status: [fase actual — una línea]
 ```bash
 WS=nombre-workstream
 
-mkdir -p ~/workspace/active-workstreams/$WS/docs
-touch ~/workspace/active-workstreams/$WS/BRIEF.md
-touch ~/workspace/active-workstreams/$WS/STATUS.md
-touch ~/workspace/active-workstreams/$WS/MEMORY.md
-touch ~/workspace/active-workstreams/$WS/DECISIONS.md
-touch ~/workspace/active-workstreams/$WS/STAKEHOLDERS.md
-touch ~/workspace/active-workstreams/$WS/RESOURCES.md
+mkdir -p ~/workspace/workstreams/$WS/docs
+touch ~/workspace/workstreams/$WS/BRIEF.md
+touch ~/workspace/workstreams/$WS/STATUS.md
+touch ~/workspace/workstreams/$WS/MEMORY.md
+touch ~/workspace/workstreams/$WS/DECISIONS.md
+touch ~/workspace/workstreams/$WS/STAKEHOLDERS.md
+touch ~/workspace/workstreams/$WS/RESOURCES.md
 ```
 
 ### 4. BRIEF.md — 6 preguntas
@@ -126,7 +126,7 @@ El agente las hace una por una o el humano las responde en bloque:
 
 - **Tarea:** [URL o referencia en el sistema de gestión]
 - **Discord:** [URL del post]
-- **Directorio:** active-workstreams/[nombre]/
+- **Directorio:** workstreams/[nombre]/
 ```
 
 ---
@@ -135,7 +135,7 @@ El agente las hace una por una o el humano las responde en bloque:
 
 - [ ] Tarea creada en el sistema de gestión y vinculada
 - [ ] Post en el foro correcto de Discord creado
-- [ ] Directorio en `active-workstreams/` con los 6 archivos
+- [ ] Directorio en `workstreams/` con los 6 archivos
 - [ ] BRIEF.md completado
 - [ ] RESOURCES.md con links a tarea y Discord
 - [ ] STATUS.md con estado inicial

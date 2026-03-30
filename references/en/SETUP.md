@@ -30,7 +30,7 @@ of any session in a Discord thread that has a workstream context.
 Only load the workstream directory matching the active thread.
 Do not load all workstreams — keep context clean.
 
-Workstream directories live in: `active-workstreams/[workstream-name]/`
+Workstream directories live in: `workstreams/[workstream-name]/`
 Read: BRIEF.md, STATUS.md, MEMORY.md before doing any work.
 
 Before ending any working session, update STATUS.md with:
@@ -56,10 +56,10 @@ cp ~/.openclaw/skills/intern-os/assets/WORKSTREAMS.md ~/workspace/WORKSTREAMS.md
 
 ---
 
-## Step 3: Create the `active-workstreams/` directory
+## Step 3: Create the `workstreams/` directory
 
 ```bash
-mkdir -p ~/workspace/active-workstreams/
+mkdir -p ~/workspace/workstreams/
 ```
 
 ---
@@ -93,7 +93,7 @@ Setup is complete when:
 
 - [ ] `AGENTS.md` has the internOS block
 - [ ] `WORKSTREAMS.md` exists in the workspace root
-- [ ] `active-workstreams/` exists in the workspace
+- [ ] `workstreams/` exists in the workspace
 - [ ] At least one `[area]-workstreams` forum exists in Discord
 - [ ] The agent has been restarted
 

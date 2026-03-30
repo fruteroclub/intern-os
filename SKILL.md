@@ -28,7 +28,7 @@ of any session in a Discord thread that has a workstream context.
 Only load the workstream directory matching the active thread.
 Do not load all workstreams — keep context clean.
 
-Workstream directories live in: `active-workstreams/[workstream-name]/`
+Workstream directories live in: `workstreams/[workstream-name]/`
 Read: BRIEF.md, STATUS.md, MEMORY.md before doing any work.
 
 Before ending any working session, update STATUS.md with:
@@ -43,7 +43,7 @@ the workstream is invisible to the next agent or session.
 **3. Create the workstreams directory**
 
 ```bash
-mkdir -p ~/workspace/active-workstreams/
+mkdir -p ~/workspace/workstreams/
 ```
 
 Restart the agent session for AGENTS.md changes to take effect.
@@ -53,7 +53,7 @@ Restart the agent session for AGENTS.md changes to take effect.
 When in a Discord thread that has a workstream context:
 
 1. Read `WORKSTREAMS.md` for the full operating guide
-2. Find the matching directory in `active-workstreams/[name]/`
+2. Find the matching directory in `workstreams/[name]/`
 3. Read BRIEF.md → STATUS.md → MEMORY.md before doing any work
 4. Update STATUS.md at the end of the session
 
@@ -65,13 +65,13 @@ Any team member can activate a workstream from any channel:
 > Task: [task link or name] *(optional if already exists)*
 > Discord: [forum or thread] *(optional if already exists)*
 
-The agent creates what's missing: task in the management system, Discord post in the right forum, and directory scaffold in `active-workstreams/`.
+The agent creates what's missing: task in the management system, Discord post in the right forum, and directory scaffold in `workstreams/`.
 
 **Directory scaffold:**
 ```bash
 WS=workstream-name
-mkdir -p ~/workspace/active-workstreams/$WS/docs
-touch ~/workspace/active-workstreams/$WS/{BRIEF.md,STATUS.md,MEMORY.md,DECISIONS.md,STAKEHOLDERS.md,RESOURCES.md}
+mkdir -p ~/workspace/workstreams/$WS/docs
+touch ~/workspace/workstreams/$WS/{BRIEF.md,STATUS.md,MEMORY.md,DECISIONS.md,STAKEHOLDERS.md,RESOURCES.md}
 ```
 
 Immediately after creating the directory, add the thread ID to `BRIEF.md`:
@@ -88,7 +88,7 @@ This is the canonical mapping between the Discord thread and the filesystem dire
 What: [one line]
 Owner: [name]
 Task: [URL or reference]
-Directory: active-workstreams/[name]/
+Directory: workstreams/[name]/
 Status: [current phase — one line]
 ```
 
@@ -97,7 +97,7 @@ Status: [current phase — one line]
 ## Workstream file structure
 
 ```
-active-workstreams/[name]/
+workstreams/[name]/
 ├── BRIEF.md         ← What, for whom, problem, appetite
 ├── STATUS.md        ← Current phase, next step, blockers
 ├── MEMORY.md        ← Accumulated context, insights, learnings
@@ -113,12 +113,6 @@ Workstreams live exclusively in Discord forums, named `[area]-workstreams`. The 
 
 ## Full documentation
 
-English:
-- `references/en/SETUP.md` — step-by-step setup guide for new instances
-- `references/en/PLAYBOOK.md` — how to activate and operate workstreams day-to-day
-- `references/en/FRAMEWORK.md` — full technical reference (architecture, lifecycle, roadmap)
-
-Español:
-- `references/es/SETUP.md`
-- `references/es/PLAYBOOK.md`
-- `references/es/FRAMEWORK.md`
+- `references/SETUP.md` — step-by-step setup guide for new instances
+- `references/PLAYBOOK.md` — how to activate and operate workstreams day-to-day
+- `references/FRAMEWORK.md` — full technical reference (architecture, lifecycle, roadmap)
