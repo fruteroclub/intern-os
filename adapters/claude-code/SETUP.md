@@ -79,3 +79,33 @@ No skill installation, no restart needed — `CLAUDE.md` is loaded automatically
 ## Next step
 
 Follow **PLAYBOOK.md** to activate your first workstream.
+
+---
+
+## Uninstall
+
+### 1. Remove CLAUDE.md (or the internOS section)
+
+If CLAUDE.md contains only internOS instructions:
+
+```bash
+rm [your-project]/CLAUDE.md
+```
+
+If CLAUDE.md has other project instructions, edit it and remove the `## internOS — Workstreams` section.
+
+### 2. Remove WORKSTREAMS.md
+
+```bash
+rm [your-project]/WORKSTREAMS.md
+```
+
+### 3. (Optional) Remove workspace data
+
+The steps above remove the internOS framework but **preserve your project data** (projects, workstreams, TICK.md, task history). To remove everything:
+
+```bash
+rm -rf [your-project]/projects/
+```
+
+> **Warning:** This deletes all project directories, workstream files, task history, and accumulated context. This cannot be undone.

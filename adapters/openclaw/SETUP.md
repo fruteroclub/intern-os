@@ -69,3 +69,37 @@ Changes to AGENTS.md take effect in the next session. Restart the agent or wait 
 ## Next step
 
 Follow **PLAYBOOK.md** to activate your first workstream.
+
+---
+
+## Uninstall
+
+### 1. Remove the skill
+
+```bash
+openclaw skills uninstall intern-os
+```
+
+### 2. Remove the internOS block from AGENTS.md
+
+Open `~/.openclaw/workspace/AGENTS.md` and remove the `## internOS — Workstreams` section.
+
+### 3. Remove WORKSTREAMS.md from the workspace
+
+```bash
+rm ~/.openclaw/workspace/WORKSTREAMS.md
+```
+
+### 4. Restart the agent session
+
+Changes take effect in the next session.
+
+### 5. (Optional) Remove workspace data
+
+The steps above remove the internOS framework but **preserve your project data** (projects, workstreams, TICK.md, task history). To remove everything:
+
+```bash
+rm -rf ~/.openclaw/workspace/projects/
+```
+
+> **Warning:** This deletes all project directories, workstream files, task history, and accumulated context. This cannot be undone.

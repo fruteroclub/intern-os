@@ -147,3 +147,45 @@ systemctl --user restart hermes-gateway
 ## Next step
 
 Follow **PLAYBOOK.md** to activate your first workstream.
+
+---
+
+## Uninstall
+
+### 1. Remove the skill
+
+```bash
+hermes skills uninstall intern-os
+```
+
+Or manually:
+
+```bash
+rm -rf ~/.hermes/skills/intern-os/
+```
+
+### 2. Remove WORKSTREAMS.md from the workspace
+
+```bash
+rm ~/.hermes/workspace/WORKSTREAMS.md
+```
+
+### 3. Remove preload config (if configured)
+
+If you added `intern-os` to `preloaded_skills` in `~/.hermes/config.yaml`, remove that entry.
+
+### 4. Restart the gateway
+
+```bash
+systemctl --user restart hermes-gateway
+```
+
+### 5. (Optional) Remove workspace data
+
+The steps above remove the internOS framework but **preserve your project data** (projects, workstreams, TICK.md, task history). To remove everything:
+
+```bash
+rm -rf ~/.hermes/workspace/projects/
+```
+
+> **Warning:** This deletes all project directories, workstream files, task history, and accumulated context. This cannot be undone.

@@ -103,3 +103,31 @@ Apply instruction changes by restarting the agent session.
 ## Next step
 
 Follow **PLAYBOOK.md** to activate your first workstream.
+
+---
+
+## Uninstall
+
+### 1. Remove the internOS instructions from your agent
+
+Remove the `## internOS — Workstreams` section from your agent's instruction file or system prompt.
+
+### 2. Remove WORKSTREAMS.md from the workspace
+
+```bash
+rm [workspace]/WORKSTREAMS.md
+```
+
+### 3. Restart the agent
+
+Apply changes by restarting the agent session.
+
+### 4. (Optional) Remove workspace data
+
+The steps above remove the internOS framework but **preserve your project data** (projects, workstreams, TICK.md, task history). To remove everything:
+
+```bash
+rm -rf [workspace]/projects/
+```
+
+> **Warning:** This deletes all project directories, workstream files, task history, and accumulated context. This cannot be undone.
