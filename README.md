@@ -1,36 +1,54 @@
 # intern-os
 
-internOS Workstreams skill for OpenClaw agents.
-
-## Install
-
-```
-openclaw skills install https://github.com/fruteroclub/intern-os
-```
-
-That's it. The skill configures your agent to operate workstreams across Discord and filesystem automatically.
+internOS Workstreams framework — coordinate work across projects, tasks, communication threads, and filesystem workstreams for any AI agent framework.
 
 ## What it does
 
-Installs the **internOS Workstreams** framework — a coordination system where each active workstream exists in two places simultaneously:
+Installs the **internOS Workstreams** framework — a coordination system where each active workstream exists in four synchronized layers:
 
-- **Discord forum thread** — communication surface for humans and agents
-- **Filesystem directory** — operational source of truth (`workstreams/[name]/`)
+| Layer | Tool | Role |
+|-------|------|------|
+| **Project** | Filesystem (`projects/[name]/`) | Organizational container |
+| **Management** | tick.md (`TICK.md`) | Task tracking and coordination |
+| **Communication** | Discord forums · Slack threads | Human and agent collaboration |
+| **Operation** | Filesystem (`workstreams/`) | Source of truth for agents |
 
-Agents loaded with this skill know how to:
-- Activate a new workstream from any channel
-- Load the right workstream context when entering a Discord thread
-- Keep `STATUS.md` updated across sessions so context never gets lost
+Agents loaded with this framework know how to:
+- Create and manage projects with tick.md task tracking
+- Activate workstreams from any communication thread
+- Load the right workstream context when entering a thread
+- Claim tasks before working and release them when done
+- Keep STATUS.md updated across sessions so context never gets lost
 
-## After install
+## Install
 
-Run the setup assistant:
+| Framework | Command |
+|-----------|---------|
+| **Hermes Agent** | `hermes skills install fruteroclub/intern-os/intern-os` |
+| **OpenClaw** | `openclaw skills install https://github.com/fruteroclub/intern-os` |
+| **Claude Code** | Copy `adapters/claude-code/CLAUDE.md` to your project root |
+| **Other** | See `adapters/generic/SETUP.md` |
 
-> Install internOS workstreams on this instance
+After installing, follow your framework's setup guide in `adapters/[framework]/SETUP.md`.
 
-The agent will copy `WORKSTREAMS.md` to your workspace root, add the internOS block to `AGENTS.md`, and create the `workstreams/` directory.
+## Scripts
 
-Restart your agent session once to activate.
+| Script | What it does |
+|--------|-------------|
+| `intern-os/scripts/sync-check.sh` | Workspace health check — reports missing thread_ids, incomplete Slack IDs, missing files, orphan directories. Usage: `bash sync-check.sh <workspace-path>` |
+| `intern-os/scripts/checkpoint-reminder.sh` | Stale STATUS.md detector — flags active workstreams not updated within threshold. Usage: `bash checkpoint-reminder.sh <workspace-path> [days]` |
+
+## Documentation
+
+| Document | What it covers |
+|----------|---------------|
+| `intern-os/references/en/FRAMEWORK.md` | Architecture — four layers, lifecycle, agent bootstrap |
+| `intern-os/references/en/SETUP.md` | First-time setup guide |
+| `intern-os/references/en/PLAYBOOK.md` | Day-to-day operations |
+| `intern-os/references/en/TICK-INTEGRATION.md` | tick.md integration spec |
+| `intern-os/references/en/COMMUNICATION.md` | Discord + Slack communication spec |
+
+Spanish versions available in `intern-os/references/es/`.
 
 ## License
 

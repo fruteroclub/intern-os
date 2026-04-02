@@ -1,0 +1,12 @@
+git:
+  auto_commit: true
+  commit_prefix: "[tick]"
+  push_on_sync: false
+
+locking:
+  enabled: true
+  timeout: 300
+
+agents:
+  default_trust: trusted
+  require_registration: true
