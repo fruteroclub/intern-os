@@ -36,7 +36,15 @@ Do not load all workstreams — keep context clean.
 
 Projects live in: `projects/[project-name]/`
 Workstream directories live in: `projects/[project]/workstreams/[workstream-name]/`
-Read: BRIEF.md, STATUS.md, MEMORY.md before doing any work.
+
+Reading workstream files:
+- BRIEF.md: read in full
+- STATUS.md: read in full (must be ≤10 lines by design)
+- MEMORY.md: read last 80 lines only — search on demand if more needed
+
+On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s):
+Emit a brief acknowledgment BEFORE loading any context files.
+Never let file reads block the first response token.
 
 Before starting work on a task, claim it:
   tick claim TASK-X @agent-name
@@ -47,6 +55,7 @@ Before ending any working session:
    - What was done this session
    - Current workstream phase
    - Any blockers
+3. If MEMORY.md exceeds 80 lines, consolidate — summary, not log
 
 This is required even if nothing changed. A blank STATUS.md means
 the workstream is invisible to the next agent or session.

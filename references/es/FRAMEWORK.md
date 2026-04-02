@@ -100,6 +100,21 @@ Las tareas viven en `TICK.md` en la raíz del proyecto. Los workstreams viven en
 
 **Regla de oro:** Si el agente no puede responder "¿en qué está este workstream?" leyendo STATUS.md, el archivo está desactualizado.
 
+**Restricciones de tamaño de archivos:**
+
+| Archivo | Regla de lectura | Tamaño objetivo |
+|---------|-----------------|-----------------|
+| BRIEF.md | Leer completo | Sin límite (típicamente 1-3 KB) |
+| STATUS.md | Leer completo | ≤10 líneas — fase, última sesión, bloqueadores, siguiente paso |
+| MEMORY.md | **Últimas 80 líneas solamente** | Mantener bajo 80 líneas — resumen curado, no log |
+| DECISIONS.md | Leer completo | Log de append-only, crece lentamente |
+| STAKEHOLDERS.md | Leer completo | Rara vez cambia |
+| RESOURCES.md | Leer completo | Índice de append-only |
+
+**Higiene de MEMORY.md:** Cuando MEMORY.md excede 80 líneas, el agente debe consolidarlo — promover insights clave al inicio, archivar o eliminar entradas obsoletas. Los logs detallados de sesión van en `docs/`, no en MEMORY.md. Esto previene crecimiento ilimitado de contexto que degrada el tiempo de startup del agente en plataformas con timeout de respuesta.
+
+**Protocolo de timeout de plataforma:** En plataformas con timeout de respuesta corto (Discord ~2min, Slack ACK ~3s), el agente debe emitir un acknowledgment breve antes de cargar archivos de contexto. La lectura de archivos nunca debe bloquear el primer token de respuesta.
+
 **Claiming de tareas:** Antes de empezar a trabajar en una tarea, el agente la reclama en tick.md:
 
 ```bash

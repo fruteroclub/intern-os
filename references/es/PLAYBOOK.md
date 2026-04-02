@@ -150,13 +150,20 @@ thread_id: [plataforma]:[id]
 
 Cuando un agente entra a un thread de workstream, sigue este protocolo:
 
+### Protocolo de timeout de plataforma
+
+En plataformas con timeout de respuesta corto (Discord ~2min, Slack ACK ~3s), el agente **debe emitir un acknowledgment breve ANTES de cargar archivos de contexto**. Una línea basta — "Cargando contexto..." o equivalente. Luego carga archivos y responde completo. La lectura de archivos nunca debe bloquear el primer token de respuesta.
+
 ### Inicio del trabajo
 
 <!-- NOTE: These protocol steps are kept in English as they are consumed by LLMs. -->
 
 1. Read `WORKSTREAMS.md` (agent runtime guide)
 2. Identify the workstream from the thread context
-3. Read the workstream files: BRIEF.md → STATUS.md → MEMORY.md
+3. Read the workstream files:
+   - `BRIEF.md` — read in full
+   - `STATUS.md` — read in full (must be ≤10 lines by design)
+   - `MEMORY.md` — **last 80 lines only** (search on demand if more context needed)
 4. Check current tasks: `tick list --tag [workstream-name]`
 5. Claim the task to work on: `tick claim TASK-X @agent-name`
 
@@ -174,6 +181,7 @@ Cuando un agente entra a un thread de workstream, sigue este protocolo:
    - Fase actual del workstream
    - Cualquier bloqueador
 4. **Actualizar MEMORY.md** si hay nuevos insights o contexto que valga la pena preservar
+5. **Si MEMORY.md excede 80 líneas**, consolidarlo — promover insights clave, archivar entradas obsoletas. MEMORY.md es un resumen curado, no un log de sesión. Los logs detallados van en `docs/`.
 
 > Esto es obligatorio incluso si nada cambió. Un STATUS.md en blanco significa que el workstream es invisible para el siguiente agente o sesión.
 

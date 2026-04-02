@@ -25,13 +25,19 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 
 1. **Check if the thread has a workstream directory** in `projects/[project]/workstreams/`
 2. **If it exists, read it before doing anything:**
-   - `BRIEF.md` → what this workstream is + thread_id mapping
-   - `STATUS.md` → where the work stands now
-   - `MEMORY.md` → accumulated context and insights
+   - `BRIEF.md` → what this workstream is + thread_id mapping (read in full)
+   - `STATUS.md` → where the work stands now (read in full — must be short by design)
+   - `MEMORY.md` → accumulated context and insights (**last 80 lines only** — if you need more, search on demand)
 3. **Load only that directory.** Do not load other workstreams.
 4. **Check tasks:** `tick list --tag [workstream-name]`
 5. **Claim the task before working:** `tick claim TASK-X @agent-name`
 6. **When done**, update `STATUS.md` with the current state and complete/release the task in tick.md.
+
+### Platform timeout protocol
+
+On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s):
+
+**Emit a brief acknowledgment BEFORE loading any context files.** One line is enough — "Loading context..." or equivalent. Then load files and respond fully. Never let file reads block the first response token.
 
 ---
 
@@ -106,6 +112,10 @@ workstreams/[name]/
 | **Human** | Strategic decision, change of direction, new information |
 
 **Golden rule:** If you cannot read `STATUS.md` and know where the workstream stands, it is outdated — update it.
+
+**MEMORY.md hygiene:** MEMORY.md is a curated summary, not a log. Keep it under 80 lines. When it grows past that, consolidate: promote key insights to the top, archive or remove stale entries. Detailed session logs belong in `docs/`, not MEMORY.md.
+
+**STATUS.md size:** STATUS.md must answer "where does this workstream stand?" in ≤10 lines. Phase, last session summary, blockers, next step. Nothing else.
 
 ---
 

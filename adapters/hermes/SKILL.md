@@ -86,12 +86,21 @@ When in a communication thread (Slack thread or Discord forum post) that has a w
 
 1. Read `WORKSTREAMS.md` for the operating guide
 2. Find the matching directory in `projects/[project]/workstreams/[name]/`
-3. Read BRIEF.md → STATUS.md → MEMORY.md before doing any work
+3. Read workstream files before doing any work:
+   - `BRIEF.md` — read in full
+   - `STATUS.md` — read in full (must be ≤10 lines by design)
+   - `MEMORY.md` — **last 80 lines only** (search on demand if more context needed)
 4. Check tasks: `tick list --tag [workstream-name]`
 5. Claim the task: `tick claim TASK-X @hermes-agent`
 6. Do the work
 7. Update STATUS.md at the end of the session
-8. Complete or release the task: `tick done TASK-X @hermes-agent`
+8. If MEMORY.md exceeds 80 lines, consolidate — summary, not log
+9. Complete or release the task: `tick done TASK-X @hermes-agent`
+
+### Platform timeout protocol
+
+On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s):
+Emit a brief acknowledgment BEFORE loading any context files. Never let file reads block the first response token.
 
 ## Activating a new workstream
 
