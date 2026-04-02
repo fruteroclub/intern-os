@@ -290,6 +290,97 @@ O manualmente:
 
 ---
 
+## 8. Modelo de datos del workspace
+
+El workspace de internOS contiene dos tipos de datos: **archivos del framework** (reemplazables, incluidos con el skill) y **datos del usuario** (irreemplazables, creados por humanos y agentes durante la operación).
+
+### Archivos del framework (propiedad de internOS)
+
+| Archivo | Ubicación | Descripción |
+|---------|-----------|-------------|
+| `WORKSTREAMS.md` | Raíz del workspace | Guía operacional para agentes — copiada de `assets/WORKSTREAMS.md` durante la instalación. Se reemplaza al actualizar. |
+
+Estos archivos se pueden eliminar y recrear desde el repositorio de intern-os en cualquier momento.
+
+### Datos del usuario (propiedad tuya)
+
+| Archivo/Directorio | Ubicación | Descripción |
+|---------------------|-----------|-------------|
+| `projects/` | Raíz del workspace | Todos los directorios de proyectos |
+| `PROJECT.md` | `projects/[nombre]/` | Identidad del proyecto — dominio, propietario, límites |
+| `TICK.md` + `.tick/` | `projects/[nombre]/` | Historial de tareas, asignaciones, registros de agentes |
+| `workstreams/` | `projects/[nombre]/workstreams/` | Todos los directorios de workstreams |
+| Archivos de workstream | `workstreams/[nombre]/` | BRIEF.md, STATUS.md, MEMORY.md, DECISIONS.md, STAKEHOLDERS.md, RESOURCES.md, docs/ |
+
+**Estos datos son irreemplazables.** Contienen el contexto de tus proyectos, decisiones acumuladas, historial de tareas y memoria de workstreams. NO se almacenan en el repositorio o skill de intern-os — viven solo en tu workspace.
+
+### Qué sobrevive una desinstalación
+
+| Acción | ¿Sobrevive? |
+|--------|-------------|
+| Eliminar el skill de intern-os | Sí — todos los datos de proyectos permanecen |
+| Eliminar WORKSTREAMS.md | Sí — se recrea desde el skill al reinstalar |
+| Eliminar `projects/` | **No** — todos los datos de proyectos se pierden permanentemente |
+
+### Respaldo
+
+Para respaldar todos los datos de usuario de internOS:
+
+```bash
+tar -czf internos-backup-$(date +%Y%m%d).tar.gz -C [workspace] projects/
+```
+
+Para restaurar:
+
+```bash
+tar -xzf internos-backup-YYYYMMDD.tar.gz -C [workspace]
+```
+
+---
+
+## 9. Desinstalar internOS
+
+Desinstalar remueve las instrucciones del framework de tu agente pero **preserva todos los datos de proyectos** por defecto.
+
+### Paso 1: Eliminar el skill
+
+Consulta el SETUP.md de tu adaptador para el comando específico:
+
+| Framework | Comando |
+|-----------|---------|
+| Hermes Agent | `hermes skills uninstall intern-os` o `rm -rf ~/.hermes/skills/intern-os/` |
+| OpenClaw | `openclaw skills uninstall intern-os` + eliminar bloque internOS de AGENTS.md |
+| Claude Code | Eliminar la sección internOS de CLAUDE.md |
+| Otro | Eliminar las instrucciones internOS del system prompt del agente |
+
+### Paso 2: Eliminar la guía operacional
+
+```bash
+rm [workspace]/WORKSTREAMS.md
+```
+
+### Paso 3: Reiniciar el agente
+
+Aplica los cambios reiniciando tu agente o gateway.
+
+### Paso 4: (Opcional) Eliminar datos de proyectos
+
+Solo haz esto si quieres eliminar permanentemente todos los datos de proyectos:
+
+```bash
+rm -rf [workspace]/projects/
+```
+
+> **Advertencia:** Esto elimina todos los directorios de proyectos, archivos de workstreams, historial de tareas y contexto acumulado. No se puede deshacer. Respalda primero si no estás seguro.
+
+### Después de desinstalar
+
+- El agente ya no seguirá los protocolos de internOS (carga de workstreams, actualizaciones de STATUS.md, claiming de tareas)
+- Los threads de comunicación existentes (Slack, Discord) permanecen pero pierden su contexto de workstream
+- Los archivos de tareas tick.md siguen siendo legibles con `tick status` / `tick list` incluso sin internOS
+
+---
+
 ## Lo que este framework no es
 
 - No reemplaza a tick.md ni ningún sistema de gestión de tareas — los complementa

@@ -287,6 +287,97 @@ Or manually:
 
 ---
 
+## 8. Workspace data model
+
+The internOS workspace contains two kinds of data: **framework files** (replaceable, shipped with the skill) and **user data** (irreplaceable, created by humans and agents during operation).
+
+### Framework files (owned by internOS)
+
+| File | Location | Description |
+|------|----------|-------------|
+| `WORKSTREAMS.md` | Workspace root | Agent runtime guide — copied from `assets/WORKSTREAMS.md` during install. Replaced on upgrade. |
+
+These files can be safely deleted and recreated from the intern-os repository at any time.
+
+### User data (owned by you)
+
+| File/Directory | Location | Description |
+|----------------|----------|-------------|
+| `projects/` | Workspace root | All project directories |
+| `PROJECT.md` | `projects/[name]/` | Project identity — domain, owner, boundaries |
+| `TICK.md` + `.tick/` | `projects/[name]/` | Task history, assignments, agent registrations |
+| `workstreams/` | `projects/[name]/workstreams/` | All workstream directories |
+| Workstream files | `workstreams/[name]/` | BRIEF.md, STATUS.md, MEMORY.md, DECISIONS.md, STAKEHOLDERS.md, RESOURCES.md, docs/ |
+
+**This data is irreplaceable.** It contains your project context, accumulated decisions, task history, and workstream memory. It is NOT stored in the intern-os repository or skill — it lives only in your workspace.
+
+### What survives an uninstall
+
+| Action | Survives? |
+|--------|-----------|
+| Remove the intern-os skill | Yes — all project data stays |
+| Remove WORKSTREAMS.md | Yes — recreate from skill on reinstall |
+| Remove `projects/` | **No** — all project data is lost permanently |
+
+### Backup
+
+To back up all intern-os user data:
+
+```bash
+tar -czf internos-backup-$(date +%Y%m%d).tar.gz -C [workspace] projects/
+```
+
+To restore:
+
+```bash
+tar -xzf internos-backup-YYYYMMDD.tar.gz -C [workspace]
+```
+
+---
+
+## 9. Uninstalling internOS
+
+Uninstalling removes the framework instructions from your agent but **preserves all project data** by default.
+
+### Step 1: Remove the skill
+
+See your adapter's SETUP.md for the specific uninstall command:
+
+| Framework | Command |
+|-----------|---------|
+| Hermes Agent | `hermes skills uninstall intern-os` or `rm -rf ~/.hermes/skills/intern-os/` |
+| OpenClaw | `openclaw skills uninstall intern-os` + remove internOS block from AGENTS.md |
+| Claude Code | Remove the internOS section from CLAUDE.md |
+| Other | Remove the internOS instructions from your agent's system prompt |
+
+### Step 2: Remove the runtime guide
+
+```bash
+rm [workspace]/WORKSTREAMS.md
+```
+
+### Step 3: Restart the agent
+
+Apply changes by restarting your agent or gateway.
+
+### Step 4: (Optional) Remove project data
+
+Only do this if you want to permanently delete all project data:
+
+```bash
+rm -rf [workspace]/projects/
+```
+
+> **Warning:** This deletes all project directories, workstream files, task history, and accumulated context. This cannot be undone. Back up first if unsure.
+
+### After uninstall
+
+- The agent will no longer follow internOS protocols (workstream loading, STATUS.md updates, task claiming)
+- Existing communication threads (Slack, Discord) remain but lose their workstream context
+- tick.md task files remain readable with `tick status` / `tick list` even without internOS
+
+---
+
 ## What this framework is not
 
 - Does not replace tick.md or any task management system — it complements them
