@@ -20,6 +20,15 @@
 - **MEMORY.md read limits:** Agents now read only the last 80 lines of MEMORY.md on startup. MEMORY.md must be maintained as a curated summary (≤80 lines), not a session log. Enforced across all adapters (Hermes, OpenClaw, Claude Code, generic).
 - **STATUS.md size constraint:** STATUS.md must answer "where does this workstream stand?" in ≤10 lines.
 - **Platform timeout protocol:** On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s), agents must emit an acknowledgment before loading context files. Documented in WORKSTREAMS.md, PLAYBOOK.md, FRAMEWORK.md, and all adapters.
+- **Repo restructure:** Skill content (SKILL.md, assets, references, scripts) moved into `intern-os/` subdirectory for out-of-the-box installation on both Hermes and OpenClaw. Unified SKILL.md replaces per-adapter SKILL.md files. Adapter SETUP.md files remain at `adapters/[framework]/`.
+- **Uninstall guide:** All adapters + FRAMEWORK.md (en/es) now document uninstallation steps and workspace data model.
+
+### Install commands (v2.1.0)
+
+| Framework | Command |
+|-----------|---------|
+| Hermes Agent | `hermes skills install fruteroclub/intern-os/intern-os` |
+| OpenClaw | `openclaw skills install https://github.com/fruteroclub/intern-os` |
 
 ## v2.0.0 — 2026-03-30
 

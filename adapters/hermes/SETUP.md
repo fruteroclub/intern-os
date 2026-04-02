@@ -1,6 +1,6 @@
 # SETUP — Hermes Agent Adapter
 
-*internOS v2.0 | 2026-03-30*
+*internOS v2.1 | 2026-04-02*
 
 Hermes Agent-specific setup for the internOS Workstreams framework.
 
@@ -16,18 +16,14 @@ Hermes Agent-specific setup for the internOS Workstreams framework.
 
 ## Install the skill
 
-Copy the intern-os skill to Hermes skills directory:
-
 ```bash
-cp -r [intern-os-repo]/adapters/hermes/ ~/.hermes/skills/intern-os/
-cp -r [intern-os-repo]/assets/ ~/.hermes/skills/intern-os/assets/
-cp -r [intern-os-repo]/references/ ~/.hermes/skills/intern-os/references/
+hermes skills install fruteroclub/intern-os/intern-os
 ```
 
-Or symlink for development:
+For development, symlink instead:
 
 ```bash
-ln -s [intern-os-repo] ~/.hermes/skills/intern-os
+ln -s [intern-os-repo]/intern-os ~/.hermes/skills/intern-os
 ```
 
 ---

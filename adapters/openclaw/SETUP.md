@@ -1,6 +1,6 @@
 # SETUP — OpenClaw Adapter
 
-*internOS v2.0 | 2026-03-30*
+*internOS v2.1 | 2026-04-02*
 
 OpenClaw-specific setup for the internOS Workstreams framework.
 
@@ -25,7 +25,44 @@ openclaw skills install https://github.com/fruteroclub/intern-os
 
 ### 1. Add the internOS block to AGENTS.md
 
-Open `~/.openclaw/workspace/AGENTS.md` and add the internOS section. The full block is in `adapters/openclaw/SKILL.md` under "Add the internOS block to AGENTS.md".
+Open `~/.openclaw/workspace/AGENTS.md` and add the following section after the "Every Session" block:
+
+```markdown
+## internOS — Workstreams
+
+If `WORKSTREAMS.md` exists in the workspace root, read it at the start
+of any session in a communication thread that has a workstream context.
+
+Only load the workstream directory matching the active thread.
+Do not load all workstreams — keep context clean.
+
+Projects live in: `projects/[project-name]/`
+Workstream directories live in: `projects/[project]/workstreams/[workstream-name]/`
+
+### Reading workstream files (in the workstream directory, not your agent memory)
+- BRIEF.md: read in full
+- STATUS.md: read in full (must be ≤10 lines by design)
+- MEMORY.md: read last 80 lines only — search on demand if more context needed
+
+### Platform timeout protocol
+On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s):
+Emit a brief acknowledgment BEFORE loading any context files.
+Never let file reads block the first response token.
+
+### Before starting work on a task
+  tick claim TASK-X @agent-name
+
+### Before ending any working session
+1. Complete or release the task in tick.md
+2. Update STATUS.md with:
+   - What was done this session
+   - Current workstream phase
+   - Any blockers
+3. If the workstream's MEMORY.md exceeds 80 lines, consolidate it — summary, not log
+
+This is required even if nothing changed. A blank STATUS.md means
+the workstream is invisible to the next agent or session.
+```
 
 ### 2. Copy WORKSTREAMS.md
 

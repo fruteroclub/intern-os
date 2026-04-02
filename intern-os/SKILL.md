@@ -1,6 +1,6 @@
 ---
 name: intern-os
-description: internOS Workstreams framework for Hermes Agent. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
+description: internOS Workstreams framework. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
 version: 2.1.0
 metadata:
   hermes:
@@ -8,39 +8,20 @@ metadata:
     related_skills: []
 ---
 
-# internOS — Workstreams Module (Hermes Adapter)
+# internOS — Workstreams
 
 internOS is a framework for humans and agents to collaborate on workstreams without losing context between sessions. Each workstream exists in three places simultaneously: a tick.md task (management), a communication thread (collaboration), and a filesystem directory (source of truth).
 
-## Installing internOS (first time setup)
+## Install
 
-**1. Install tick.md CLI**
+| Framework | Command |
+|-----------|---------|
+| **Hermes Agent** | `hermes skills install fruteroclub/intern-os/intern-os` |
+| **OpenClaw** | `openclaw skills install https://github.com/fruteroclub/intern-os` |
+| **Claude Code** | Copy `adapters/claude-code/CLAUDE.md` to your project root |
+| **Other** | See `adapters/generic/SETUP.md` |
 
-```bash
-npm install -g tick-md
-```
-
-**2. Copy WORKSTREAMS.md to the Hermes workspace**
-
-```bash
-cp ~/.hermes/skills/intern-os/assets/WORKSTREAMS.md ~/.hermes/workspace/WORKSTREAMS.md
-```
-
-**3. Create the projects directory**
-
-```bash
-mkdir -p ~/.hermes/workspace/projects/
-```
-
-**4. Create your first project**
-
-```bash
-PROJECT=my-project
-mkdir -p ~/.hermes/workspace/projects/$PROJECT
-cd ~/.hermes/workspace/projects/$PROJECT
-tick init
-tick agent register @hermes-agent --type bot --role engineer
-```
+After installing, follow your adapter's SETUP.md for framework-specific configuration.
 
 ## Project vs. workstream — when to use which
 
@@ -61,7 +42,7 @@ The agent:
 
 1. Creates `projects/[name]/PROJECT.md` using the project template
 2. Runs `tick init` and registers the agent
-3. Opens a communication thread in Slack (or Discord) for the project
+3. Opens a communication thread (Slack or Discord) for the project
 4. Asks the discovery questions:
    - **What domain or area does this project group?** *(one line)*
    - **What does NOT belong in this project?** *(explicit boundary)*
@@ -82,7 +63,7 @@ Discover project → PROJECT.md + tick init + thread
 
 ## Operating a workstream
 
-When in a communication thread (Slack thread or Discord forum post) that has a workstream context:
+When in a communication thread that has a workstream context:
 
 1. Read `WORKSTREAMS.md` for the operating guide
 2. Find the matching directory in `projects/[project]/workstreams/[name]/`
@@ -91,11 +72,11 @@ When in a communication thread (Slack thread or Discord forum post) that has a w
    - `STATUS.md` — read in full (must be ≤10 lines by design)
    - `MEMORY.md` — **last 80 lines only** (search on demand if more context needed)
 4. Check tasks: `tick list --tag [workstream-name]`
-5. Claim the task: `tick claim TASK-X @hermes-agent`
+5. Claim the task: `tick claim TASK-X @agent-name`
 6. Do the work
 7. Update STATUS.md at the end of the session
 8. If the workstream's MEMORY.md exceeds 80 lines, consolidate — summary, not log
-9. Complete or release the task: `tick done TASK-X @hermes-agent`
+9. Complete or release the task: `tick done TASK-X @agent-name`
 
 ### Platform timeout protocol
 
@@ -114,8 +95,8 @@ The agent creates what's missing: task in tick.md, communication thread, and wor
 ```bash
 PROJECT=project-name
 WS=workstream-name
-mkdir -p ~/.hermes/workspace/projects/$PROJECT/workstreams/$WS/docs
-touch ~/.hermes/workspace/projects/$PROJECT/workstreams/$WS/{BRIEF.md,STATUS.md,MEMORY.md,DECISIONS.md,STAKEHOLDERS.md,RESOURCES.md}
+mkdir -p [workspace]/projects/$PROJECT/workstreams/$WS/docs
+touch [workspace]/projects/$PROJECT/workstreams/$WS/{BRIEF.md,STATUS.md,MEMORY.md,DECISIONS.md,STAKEHOLDERS.md,RESOURCES.md}
 ```
 
 Add the thread ID to BRIEF.md:
@@ -134,15 +115,6 @@ Directory: projects/[project]/workstreams/[name]/
 Status: [current phase — one line]
 ```
 
-## Slack thread-only mode
-
-When operating in Slack, the Hermes agent:
-- Responds **only inside threads**, never in channel root
-- Reads the thread root message for workstream context on entry
-- Maps the thread to a workstream via `thread_id: slack:[channel_id]/[thread_ts]` in BRIEF.md
-
-Configure thread-only mode in the Hermes gateway config (see `adapters/hermes/SETUP.md`).
-
 ## Workstream file structure
 
 ```
@@ -159,7 +131,7 @@ projects/[project]/workstreams/[name]/
 ## Full documentation
 
 - Framework: `references/en/FRAMEWORK.md`
-- Setup: `adapters/hermes/SETUP.md`
 - Playbook: `references/en/PLAYBOOK.md`
 - Communication: `references/en/COMMUNICATION.md`
 - tick.md integration: `references/en/TICK-INTEGRATION.md`
+- Framework-specific setup: `adapters/[framework]/SETUP.md`

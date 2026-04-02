@@ -22,39 +22,33 @@ Agents loaded with this framework know how to:
 
 ## Install
 
-Choose the adapter for your agent framework:
+| Framework | Command |
+|-----------|---------|
+| **Hermes Agent** | `hermes skills install fruteroclub/intern-os/intern-os` |
+| **OpenClaw** | `openclaw skills install https://github.com/fruteroclub/intern-os` |
+| **Claude Code** | Copy `adapters/claude-code/CLAUDE.md` to your project root |
+| **Other** | See `adapters/generic/SETUP.md` |
 
-| Framework | Install guide |
-|-----------|---------------|
-| **OpenClaw** | `adapters/openclaw/SETUP.md` |
-| **Hermes Agent** | `adapters/hermes/SETUP.md` |
-| **Claude Code** | `adapters/claude-code/SETUP.md` |
-| **Other** | `adapters/generic/SETUP.md` |
-
-For OpenClaw, you can also install as a skill:
-
-```
-openclaw skills install https://github.com/fruteroclub/intern-os
-```
+After installing, follow your framework's setup guide in `adapters/[framework]/SETUP.md`.
 
 ## Scripts
 
 | Script | What it does |
 |--------|-------------|
-| `scripts/sync-check.sh` | Workspace health check — reports missing thread_ids, incomplete Slack IDs, missing files, orphan directories. Usage: `bash sync-check.sh <workspace-path>` |
-| `scripts/checkpoint-reminder.sh` | Stale STATUS.md detector — flags active workstreams not updated within threshold. Usage: `bash checkpoint-reminder.sh <workspace-path> [days]` |
+| `intern-os/scripts/sync-check.sh` | Workspace health check — reports missing thread_ids, incomplete Slack IDs, missing files, orphan directories. Usage: `bash sync-check.sh <workspace-path>` |
+| `intern-os/scripts/checkpoint-reminder.sh` | Stale STATUS.md detector — flags active workstreams not updated within threshold. Usage: `bash checkpoint-reminder.sh <workspace-path> [days]` |
 
 ## Documentation
 
 | Document | What it covers |
 |----------|---------------|
-| `references/en/FRAMEWORK.md` | Architecture — four layers, lifecycle, agent bootstrap |
-| `references/en/SETUP.md` | First-time setup guide |
-| `references/en/PLAYBOOK.md` | Day-to-day operations |
-| `references/en/TICK-INTEGRATION.md` | tick.md integration spec |
-| `references/en/COMMUNICATION.md` | Discord + Slack communication spec |
+| `intern-os/references/en/FRAMEWORK.md` | Architecture — four layers, lifecycle, agent bootstrap |
+| `intern-os/references/en/SETUP.md` | First-time setup guide |
+| `intern-os/references/en/PLAYBOOK.md` | Day-to-day operations |
+| `intern-os/references/en/TICK-INTEGRATION.md` | tick.md integration spec |
+| `intern-os/references/en/COMMUNICATION.md` | Discord + Slack communication spec |
 
-Spanish versions available in `references/es/`.
+Spanish versions available in `intern-os/references/es/`.
 
 ## License
 
