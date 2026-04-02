@@ -170,17 +170,17 @@ rm -rf ~/.hermes/skills/intern-os/
 rm ~/.hermes/workspace/WORKSTREAMS.md
 ```
 
-### 3. Remove preload config (if configured)
+### 3. Remove preload config and restart (only if preloaded)
 
-If you added `intern-os` to `preloaded_skills` in `~/.hermes/config.yaml`, remove that entry.
-
-### 4. Restart the gateway
+If you added `intern-os` to `preloaded_skills` in `~/.hermes/config.yaml`, remove that entry and restart the gateway:
 
 ```bash
 systemctl --user restart hermes-gateway
 ```
 
-### 5. (Optional) Remove workspace data
+If intern-os was not preloaded (the default), no restart is needed — Hermes reads skills from disk per session.
+
+### 4. (Optional) Remove workspace data
 
 The steps above remove the internOS framework but **preserve your project data** (projects, workstreams, TICK.md, task history). To remove everything:
 

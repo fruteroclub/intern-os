@@ -356,9 +356,9 @@ See your adapter's SETUP.md for the specific uninstall command:
 rm [workspace]/WORKSTREAMS.md
 ```
 
-### Step 3: Restart the agent
+### Step 3: Restart the agent (if needed)
 
-Apply changes by restarting your agent or gateway.
+Most agents read skills from disk per session — no restart needed. Only restart if your agent framework caches skills in memory or you configured intern-os as a preloaded skill.
 
 ### Step 4: (Optional) Remove project data
 

@@ -359,9 +359,9 @@ Consulta el SETUP.md de tu adaptador para el comando específico:
 rm [workspace]/WORKSTREAMS.md
 ```
 
-### Paso 3: Reiniciar el agente
+### Paso 3: Reiniciar el agente (si es necesario)
 
-Aplica los cambios reiniciando tu agente o gateway.
+La mayoría de los agentes leen skills desde disco por sesión — no necesitan reinicio. Solo reinicia si tu framework de agentes cachea skills en memoria o configuraste intern-os como skill precargado.
 
 ### Paso 4: (Opcional) Eliminar datos de proyectos
 
