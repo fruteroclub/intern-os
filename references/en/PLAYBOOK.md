@@ -1,6 +1,6 @@
 # PLAYBOOK — Operating Workstreams Day to Day
 
-*internOS v2.0 | 2026-03-30*
+*internOS v2.1 | 2026-03-31*
 
 This guide explains how to use the internOS Workstreams system: how to create projects, activate workstreams, work sessions, and manage the lifecycle.
 
@@ -59,6 +59,19 @@ The agent:
 2. Creates the communication thread
 3. Scaffolds the workstream directory
 4. Links everything
+
+### Entry E: New project (no project exists yet)
+
+The agent:
+1. Creates `projects/[name]/PROJECT.md` using the project template
+2. Runs `tick init` and registers the agent
+3. Opens a communication thread for the project
+4. Asks the 4 discovery questions (domain, exclusions, owner, archive condition)
+5. Once PROJECT.md is filled, the project is ready for workstreams
+
+**Activation format:**
+
+> Discover project: [name]
 
 ---
 

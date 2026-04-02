@@ -1,6 +1,6 @@
 # internOS — Framework del Sistema Operativo de Workstreams
 
-*Versión: 2.0 | Fecha: 2026-03-30 | Estado: v2 — proyectos, tick-md, multi-plataforma*
+*Versión: 2.1 | Fecha: 2026-03-31 | Estado: v2.1 — descubrimiento de proyectos, tick-md, multi-plataforma*
 
 ---
 
@@ -14,7 +14,7 @@ Cada proyecto organiza el trabajo en cuatro capas sincronizadas. La coherencia e
 
 | Capa | Herramienta | Rol |
 |------|-------------|-----|
-| **Proyecto** | Filesystem (`projects/[nombre]/`) | Contenedor organizacional — agrupa workstreams y tareas |
+| **Proyecto** | Filesystem (`projects/[nombre]/`) + `PROJECT.md` | Contenedor organizacional — dominio, propietario, límites, workstreams |
 | **Gestión** | tick.md (`TICK.md` en la raíz del proyecto) | Origen de tareas — qué hay que hacer, quién lo hace |
 | **Comunicación** | Foros Discord · Threads Slack | Superficie de trabajo del equipo — humanos y agentes |
 | **Operación** | Filesystem (`projects/[nombre]/workstreams/`) | Fuente de verdad para agentes — contexto persistente entre sesiones |
@@ -27,11 +27,12 @@ Cada proyecto organiza el trabajo en cuatro capas sincronizadas. La coherencia e
 
 ## 1. Estructura de proyecto
 
-Cada proyecto es un directorio auto-contenido con un archivo de tareas tick.md y un directorio `workstreams/`:
+Cada proyecto es un directorio auto-contenido con un `PROJECT.md` (brief del proyecto), un archivo de tareas tick.md y un directorio `workstreams/`:
 
 ```
 projects/
 ├── project-alpha/
+│   ├── PROJECT.md           ← Brief del proyecto: dominio, propietario, límites
 │   ├── TICK.md              ← tick-md: todas las tareas del proyecto
 │   ├── .tick/
 │   │   └── config.yml       ← configuración de tick-md
@@ -121,12 +122,18 @@ Ver TICK-INTEGRATION.md para el protocolo completo de coordinación.
 
 ### Ciclo de vida del proyecto
 
-Un proyecto se crea cuando:
-1. Se crea un nuevo directorio bajo `projects/`
-2. Se ejecuta `tick init` dentro del directorio del proyecto
-3. Se registra el agente: `tick agent register @agent-name`
+Un proyecto se **descubre** cuando un miembro del equipo ejecuta:
 
-Un proyecto se archiva cuando todos sus workstreams están archivados.
+> Discover project: [nombre]
+
+El agente:
+1. Crea `projects/[nombre]/PROJECT.md` usando el template de proyecto
+2. Ejecuta `tick init` dentro del directorio del proyecto
+3. Registra al agente: `tick agent register @agent-name`
+4. Abre un thread de comunicación para el proyecto
+5. Hace las 4 preguntas de descubrimiento (dominio, exclusiones, propietario, condición de archivo)
+
+Un proyecto se **archiva** cuando todos sus workstreams están archivados y se cumple la condición de archivo definida en PROJECT.md. El directorio se mueve a `projects/archived/`.
 
 ### Ciclo de vida del workstream
 
@@ -230,10 +237,18 @@ tick.md es la capa de gestión de tareas por defecto. TICK.md vive en la raíz d
 
 ## Cómo crear un nuevo proyecto
 
+Usando el comando de descubrimiento:
+
+> Discover project: [nombre]
+
+O manualmente:
+
 1. Crear el directorio del proyecto: `mkdir -p projects/[nombre-proyecto]`
-2. Inicializar tick.md: `cd projects/[nombre-proyecto] && tick init`
-3. Registrar el agente: `tick agent register @agent-name`
-4. El proyecto está listo para workstreams
+2. Copiar el template de PROJECT.md: `cp [ruta-skill]/assets/templates/project/PROJECT.md projects/[nombre-proyecto]/`
+3. Inicializar tick.md: `cd projects/[nombre-proyecto] && tick init`
+4. Registrar el agente: `tick agent register @agent-name`
+5. Llenar PROJECT.md con dominio, propietario, límites y condición de archivo
+6. El proyecto está listo para workstreams
 
 ## Cómo crear un nuevo workstream
 
@@ -272,11 +287,11 @@ tick.md es la capa de gestión de tareas por defecto. TICK.md vive en la raíz d
 
 ### v2.1 — Automatizaciones de bajo esfuerzo
 
-**Sync check** *(~1h)*
-Script que compara threads activos de comunicación vs directorios en `workstreams/`. Detecta desincronías: thread sin directorio, directorio sin thread. Agnóstico de plataforma.
+**Sync check** *(hecho — v2.1.0)*
+`scripts/sync-check.sh` — escanea un workspace y reporta thread_ids faltantes, IDs de Slack incompletos, archivos faltantes y directorios huérfanos sin tareas en tick.md. Uso: `bash sync-check.sh <ruta-workspace>`
 
-**Checkpoint reminder** *(~1h)*
-Cron job que verifica si STATUS.md fue actualizado durante una sesión de trabajo activa. Si no, el agente recibe un recordatorio.
+**Checkpoint reminder** *(hecho — v2.1.0)*
+`scripts/checkpoint-reminder.sh` — detecta workstreams activos con STATUS.md desactualizado. Umbral configurable (por defecto 3 días). Uso: `bash checkpoint-reminder.sh <ruta-workspace> [días]`
 
 ### v2.2 — Automatizaciones de esfuerzo medio
 

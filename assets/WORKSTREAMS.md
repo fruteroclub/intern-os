@@ -1,6 +1,6 @@
 # Workstreams — internOS
 
-*v2.0*
+*v2.1*
 
 ---
 
@@ -35,11 +35,39 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 
 ---
 
+## Project vs. workstream
+
+> A **project** groups work of the same domain over time — it can contain multiple workstreams.
+> A **workstream** is a concrete sprint of work with a start and end within that domain.
+
+If the work needs multiple independent workstreams, or covers an area with its own identity (infra, product, ops, content) → **project**.
+If it's scoped work inside an existing area → **workstream** in that project.
+
+---
+
+## Project discovery
+
+To create a new project, any team member says:
+
+> Discover project: [name]
+
+The agent creates `projects/[name]/` with `PROJECT.md`, runs `tick init`, registers the agent, and opens a communication thread. It then asks:
+
+1. What domain does this project group?
+2. What does NOT belong in this project?
+3. Who is the human owner?
+4. When will this project be done or ready to archive?
+
+Unanswered questions are marked `TBD` — the project proceeds.
+
+---
+
 ## Project structure
 
 ```
 projects/
 ├── project-alpha/
+│   ├── PROJECT.md           ← Project brief: domain, owner, boundaries
 │   ├── TICK.md              ← tick-md: all tasks for this project
 │   ├── .tick/
 │   └── workstreams/
@@ -83,16 +111,25 @@ workstreams/[name]/
 
 ## Lifecycle
 
-```
-Project created → tick init
-    → Task added to TICK.md
-        → Communication thread opened
-            → Workstream directory created
+### Project lifecycle
 
-All tasks done in TICK.md
-    → STATUS.md updated with final state
-        → Communication thread archived
-            → Directory moved to workstreams/archived/
+```
+Discover project → PROJECT.md + tick init + thread
+    → Workstreams activated within the project
+        → All workstreams archived
+            → PROJECT.md updated with final state
+                → Project directory moved to projects/archived/
+```
+
+### Workstream lifecycle
+
+```
+Activate workstream → Task in TICK.md + thread + directory
+    → Work sessions in thread
+        → All tasks done in TICK.md
+            → STATUS.md updated with final state
+                → Thread archived
+                    → Directory moved to workstreams/archived/
 ```
 
 ---

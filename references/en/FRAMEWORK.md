@@ -1,6 +1,6 @@
 # internOS — Workstreams Framework
 
-*Version: 2.0 | Date: 2026-03-30 | Status: v2 — projects, tick-md, multi-platform*
+*Version: 2.1 | Date: 2026-03-31 | Status: v2.1 — project discovery, tick-md, multi-platform*
 
 ---
 
@@ -14,7 +14,7 @@ Every project organizes work across four synchronized layers. Coherence between 
 
 | Layer | Tool | Role |
 |-------|------|------|
-| **Project** | Filesystem (`projects/[name]/`) | Organizational container — groups workstreams and tasks |
+| **Project** | Filesystem (`projects/[name]/`) + `PROJECT.md` | Organizational container — domain, owner, boundaries, workstreams |
 | **Management** | tick.md (`TICK.md` at project root) | Task origin — what needs to be done, who's doing it |
 | **Communication** | Discord forums · Slack threads | Team work surface — humans and agents collaborate |
 | **Operation** | Filesystem (`projects/[name]/workstreams/`) | Source of truth for agents — context persists across sessions |
@@ -27,11 +27,12 @@ Every project organizes work across four synchronized layers. Coherence between 
 
 ## 1. Project structure
 
-Each project is a self-contained directory with a tick.md task file and a `workstreams/` directory:
+Each project is a self-contained directory with a `PROJECT.md` brief, a tick.md task file, and a `workstreams/` directory:
 
 ```
 projects/
 ├── project-alpha/
+│   ├── PROJECT.md           ← Project brief: domain, owner, boundaries
 │   ├── TICK.md              ← tick-md: all tasks for this project
 │   ├── .tick/
 │   │   └── config.yml       ← tick-md configuration
@@ -121,12 +122,18 @@ See TICK-INTEGRATION.md for the full coordination protocol.
 
 ### Project lifecycle
 
-A project is created when:
-1. A new directory is created under `projects/`
-2. `tick init` is run inside the project directory
-3. The agent is registered: `tick agent register @agent-name`
+A project is **discovered** when a team member triggers:
 
-A project is archived when all its workstreams are archived.
+> Discover project: [name]
+
+The agent:
+1. Creates `projects/[name]/PROJECT.md` using the project template
+2. Runs `tick init` inside the project directory
+3. Registers the agent: `tick agent register @agent-name`
+4. Opens a communication thread for the project
+5. Asks the 4 discovery questions (domain, exclusions, owner, archive condition)
+
+A project is **archived** when all its workstreams are archived and the archive condition in PROJECT.md is met. The directory moves to `projects/archived/`.
 
 ### Workstream lifecycle
 
@@ -227,10 +234,18 @@ tick.md is the default task management layer. TICK.md lives at the project root 
 
 ## How to create a new project
 
+Use the discovery command:
+
+> Discover project: [name]
+
+Or manually:
+
 1. Create the project directory: `mkdir -p projects/[project-name]`
-2. Initialize tick.md: `cd projects/[project-name] && tick init`
-3. Register the agent: `tick agent register @agent-name`
-4. The project is ready for workstreams
+2. Copy the PROJECT.md template: `cp [skill-path]/assets/templates/project/PROJECT.md projects/[project-name]/`
+3. Initialize tick.md: `cd projects/[project-name] && tick init`
+4. Register the agent: `tick agent register @agent-name`
+5. Fill in PROJECT.md with domain, owner, boundaries, and archive condition
+6. The project is ready for workstreams
 
 ## How to create a new workstream
 
@@ -269,11 +284,11 @@ tick.md is the default task management layer. TICK.md lives at the project root 
 
 ### v2.1 — Low-effort automations
 
-**Sync check** *(~1h)*
-Script that compares active communication threads vs directories in `workstreams/`. Detects mismatches: thread without directory, directory without thread. Platform-agnostic.
+**Sync check** *(done — v2.1.0)*
+`scripts/sync-check.sh` — scans a workspace and reports missing thread_ids, incomplete Slack IDs, missing workstream files, and orphan directories without tick.md tasks. Usage: `bash sync-check.sh <workspace-path>`
 
-**Checkpoint reminder** *(~1h)*
-Cron job that checks whether STATUS.md was updated during an active working session. If not, the agent receives a reminder.
+**Checkpoint reminder** *(done — v2.1.0)*
+`scripts/checkpoint-reminder.sh` — detects active workstreams with stale STATUS.md files. Configurable threshold (default 3 days). Usage: `bash checkpoint-reminder.sh <workspace-path> [days]`
 
 ### v2.2 — Medium-effort automations
 

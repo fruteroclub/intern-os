@@ -1,7 +1,7 @@
 ---
 name: intern-os
 description: internOS Workstreams framework for Hermes Agent. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
-version: 2.0.0
+version: 2.1.0
 metadata:
   hermes:
     tags: [Workstreams, Project Management, Coordination]
@@ -40,6 +40,44 @@ mkdir -p ~/.hermes/workspace/projects/$PROJECT
 cd ~/.hermes/workspace/projects/$PROJECT
 tick init
 tick agent register @hermes-agent --type bot --role engineer
+```
+
+## Project vs. workstream — when to use which
+
+> A **project** groups work of the same domain over time — it can contain multiple workstreams.
+> A **workstream** is a concrete sprint of work with a start and end within that domain.
+
+**Rule of thumb:**
+- If the work requires more than one independent workstream, or involves an operational area with its own identity (infra, product, ops, content, etc.) → it's a **project**.
+- If it's a scoped piece of work inside an existing area → it's a **workstream** within that project.
+
+## Discovering a new project
+
+Any team member can create a new project:
+
+> Discover project: [name]
+
+The agent:
+
+1. Creates `projects/[name]/PROJECT.md` using the project template
+2. Runs `tick init` and registers the agent
+3. Opens a communication thread in Slack (or Discord) for the project
+4. Asks the discovery questions:
+   - **What domain or area does this project group?** *(one line)*
+   - **What does NOT belong in this project?** *(explicit boundary)*
+   - **Who is the human owner?**
+   - **When will we know this project is done or ready to archive?**
+
+If the human doesn't have an answer for any question, it's marked as `TBD` in `PROJECT.md` — the project can still be created.
+
+## Project lifecycle
+
+```
+Discover project → PROJECT.md + tick init + thread
+    → Workstreams activated within the project
+        → All workstreams archived
+            → PROJECT.md updated with final state
+                → Project directory moved to projects/archived/
 ```
 
 ## Operating a workstream

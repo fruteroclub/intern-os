@@ -37,6 +37,13 @@ For OpenClaw, you can also install as a skill:
 openclaw skills install https://github.com/fruteroclub/intern-os
 ```
 
+## Scripts
+
+| Script | What it does |
+|--------|-------------|
+| `scripts/sync-check.sh` | Workspace health check — reports missing thread_ids, incomplete Slack IDs, missing files, orphan directories. Usage: `bash sync-check.sh <workspace-path>` |
+| `scripts/checkpoint-reminder.sh` | Stale STATUS.md detector — flags active workstreams not updated within threshold. Usage: `bash checkpoint-reminder.sh <workspace-path> [days]` |
+
 ## Documentation
 
 | Document | What it covers |
