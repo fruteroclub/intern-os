@@ -100,10 +100,12 @@ Tasks live in `TICK.md` at the project root. Workstreams live in `workstreams/`.
 
 **Golden rule:** If the agent cannot answer "where does this workstream stand?" by reading STATUS.md, the file is outdated.
 
-**File size constraints:**
+**Workstream file size constraints:**
 
-| File | Read rule | Size target |
-|------|-----------|-------------|
+These limits apply to files inside `projects/[project]/workstreams/[name]/` — the intern-os workstream files. They do NOT apply to the agent framework's own memory or configuration files.
+
+| Workstream file | Read rule | Size target |
+|-----------------|-----------|-------------|
 | BRIEF.md | Read in full | No limit (typically 1-3 KB) |
 | STATUS.md | Read in full | ≤10 lines — phase, last session, blockers, next step |
 | MEMORY.md | **Last 80 lines only** | Keep under 80 lines total — curated summary, not a log |
@@ -111,7 +113,7 @@ Tasks live in `TICK.md` at the project root. Workstreams live in `workstreams/`.
 | STAKEHOLDERS.md | Read in full | Rarely changes |
 | RESOURCES.md | Read in full | Append-only index |
 
-**MEMORY.md hygiene:** When MEMORY.md exceeds 80 lines, the agent must consolidate it — promote key insights to the top, archive or remove stale entries. Detailed session logs belong in `docs/`, not MEMORY.md. This prevents unbounded context growth that degrades agent startup time on platforms with response timeouts.
+**Workstream MEMORY.md hygiene:** When a workstream's MEMORY.md exceeds 80 lines, the agent must consolidate it — promote key insights to the top, archive or remove stale entries. Detailed session logs belong in the workstream's `docs/` directory, not MEMORY.md. This prevents unbounded context growth that degrades agent startup time on platforms with response timeouts.
 
 **Platform timeout protocol:** On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s), the agent must emit a brief acknowledgment before loading context files. File reads must never block the first response token.
 

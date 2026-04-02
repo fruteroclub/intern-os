@@ -27,7 +27,7 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 2. **If it exists, read it before doing anything:**
    - `BRIEF.md` → what this workstream is + thread_id mapping (read in full)
    - `STATUS.md` → where the work stands now (read in full — must be short by design)
-   - `MEMORY.md` → accumulated context and insights (**last 80 lines only** — if you need more, search on demand)
+   - `MEMORY.md` → accumulated context and insights (**last 80 lines only** — if you need more, search on demand). This limit applies to the workstream's MEMORY.md, not your agent framework's own memory files.
 3. **Load only that directory.** Do not load other workstreams.
 4. **Check tasks:** `tick list --tag [workstream-name]`
 5. **Claim the task before working:** `tick claim TASK-X @agent-name`
@@ -113,9 +113,9 @@ workstreams/[name]/
 
 **Golden rule:** If you cannot read `STATUS.md` and know where the workstream stands, it is outdated — update it.
 
-**MEMORY.md hygiene:** MEMORY.md is a curated summary, not a log. Keep it under 80 lines. When it grows past that, consolidate: promote key insights to the top, archive or remove stale entries. Detailed session logs belong in `docs/`, not MEMORY.md.
+**Workstream MEMORY.md hygiene:** The workstream's MEMORY.md is a curated summary, not a log. Keep it under 80 lines. When it grows past that, consolidate: promote key insights to the top, archive or remove stale entries. Detailed session logs belong in the workstream's `docs/`, not MEMORY.md. These limits apply only to intern-os workstream files — not to your agent framework's own memory system.
 
-**STATUS.md size:** STATUS.md must answer "where does this workstream stand?" in ≤10 lines. Phase, last session summary, blockers, next step. Nothing else.
+**Workstream STATUS.md size:** STATUS.md must answer "where does this workstream stand?" in ≤10 lines. Phase, last session summary, blockers, next step. Nothing else.
 
 ---
 

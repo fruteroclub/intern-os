@@ -14,7 +14,7 @@ Workstream directories live in: `projects/[project]/workstreams/[workstream-name
 
 ## Before starting work
 
-1. Read workstream files for the active workstream:
+1. Read the workstream's files (in the workstream directory, not your agent memory):
    - `BRIEF.md` — read in full
    - `STATUS.md` — read in full (must be ≤10 lines by design)
    - `MEMORY.md` — **last 80 lines only** (search on demand if more context needed)
@@ -30,7 +30,7 @@ Workstream directories live in: `projects/[project]/workstreams/[workstream-name
    - What was done this session
    - Current workstream phase
    - Any blockers
-3. If MEMORY.md exceeds 80 lines, consolidate — summary, not log
+3. If the workstream's MEMORY.md exceeds 80 lines, consolidate — summary, not log
 
 This is required even if nothing changed. A blank STATUS.md means
 the workstream is invisible to the next agent or session.

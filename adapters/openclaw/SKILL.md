@@ -37,7 +37,7 @@ Do not load all workstreams — keep context clean.
 Projects live in: `projects/[project-name]/`
 Workstream directories live in: `projects/[project]/workstreams/[workstream-name]/`
 
-### Reading workstream files
+### Reading workstream files (in the workstream directory, not your agent memory)
 - BRIEF.md: read in full
 - STATUS.md: read in full (must be ≤10 lines by design)
 - MEMORY.md: read last 80 lines only — search on demand if more context needed
@@ -56,7 +56,7 @@ Never let file reads block the first response token.
    - What was done this session
    - Current workstream phase
    - Any blockers
-3. If MEMORY.md exceeds 80 lines, consolidate it — summary, not log
+3. If the workstream's MEMORY.md exceeds 80 lines, consolidate it — summary, not log
 
 This is required even if nothing changed. A blank STATUS.md means
 the workstream is invisible to the next agent or session.

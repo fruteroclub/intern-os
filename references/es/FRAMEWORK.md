@@ -100,10 +100,12 @@ Las tareas viven en `TICK.md` en la raíz del proyecto. Los workstreams viven en
 
 **Regla de oro:** Si el agente no puede responder "¿en qué está este workstream?" leyendo STATUS.md, el archivo está desactualizado.
 
-**Restricciones de tamaño de archivos:**
+**Restricciones de tamaño de archivos de workstream:**
 
-| Archivo | Regla de lectura | Tamaño objetivo |
-|---------|-----------------|-----------------|
+Estos límites aplican a archivos dentro de `projects/[proyecto]/workstreams/[nombre]/` — los archivos de workstream de intern-os. NO aplican a los archivos de memoria o configuración propios del framework del agente.
+
+| Archivo de workstream | Regla de lectura | Tamaño objetivo |
+|-----------------------|-----------------|-----------------|
 | BRIEF.md | Leer completo | Sin límite (típicamente 1-3 KB) |
 | STATUS.md | Leer completo | ≤10 líneas — fase, última sesión, bloqueadores, siguiente paso |
 | MEMORY.md | **Últimas 80 líneas solamente** | Mantener bajo 80 líneas — resumen curado, no log |
@@ -111,7 +113,7 @@ Las tareas viven en `TICK.md` en la raíz del proyecto. Los workstreams viven en
 | STAKEHOLDERS.md | Leer completo | Rara vez cambia |
 | RESOURCES.md | Leer completo | Índice de append-only |
 
-**Higiene de MEMORY.md:** Cuando MEMORY.md excede 80 líneas, el agente debe consolidarlo — promover insights clave al inicio, archivar o eliminar entradas obsoletas. Los logs detallados de sesión van en `docs/`, no en MEMORY.md. Esto previene crecimiento ilimitado de contexto que degrada el tiempo de startup del agente en plataformas con timeout de respuesta.
+**Higiene de MEMORY.md de workstream:** Cuando el MEMORY.md de un workstream excede 80 líneas, el agente debe consolidarlo — promover insights clave al inicio, archivar o eliminar entradas obsoletas. Los logs detallados de sesión van en el directorio `docs/` del workstream, no en MEMORY.md. Esto previene crecimiento ilimitado de contexto que degrada el tiempo de startup del agente en plataformas con timeout de respuesta.
 
 **Protocolo de timeout de plataforma:** En plataformas con timeout de respuesta corto (Discord ~2min, Slack ACK ~3s), el agente debe emitir un acknowledgment breve antes de cargar archivos de contexto. La lectura de archivos nunca debe bloquear el primer token de respuesta.
 
