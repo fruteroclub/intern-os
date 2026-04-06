@@ -1,7 +1,7 @@
 ---
 name: intern-os
 description: internOS Workstreams framework. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
-version: 2.1.0
+version: 0.2.2
 metadata:
   hermes:
     tags: [Workstreams, Project Management, Coordination]
@@ -75,13 +75,31 @@ When in a communication thread that has a workstream context:
 5. Claim the task: `tick claim TASK-X @agent-name`
 6. Do the work
 7. Update STATUS.md at the end of the session
-8. If the workstream's MEMORY.md exceeds 80 lines, consolidate — summary, not log
+8. If the workstream's MEMORY.md exceeds 80 lines, consolidate — summary, not log. Target ≤50 lines; never let it become a session log.
 9. Complete or release the task: `tick done TASK-X @agent-name`
 
-### Platform timeout protocol
+### Platform startup protocol
 
-On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s):
-Emit a brief acknowledgment BEFORE loading any context files. Never let file reads block the first response token.
+**Rule: always emit acknowledgment before any file reads.** Never let file reads block the first response token.
+
+| Platform | Startup mode | Rule |
+|----------|-------------|------|
+| Discord | **LIGHT** | ACK immediately → load BRIEF + STATUS → load MEMORY only if needed |
+| Slack | **LIGHT** | ACK immediately → load BRIEF + STATUS → load MEMORY only if needed |
+| Telegram / CLI | **FULL** | Load BRIEF + STATUS + MEMORY before first response |
+
+**LIGHT mode startup contract:**
+1. Emit ACK first (e.g. "on it, loading context…")
+2. Load `BRIEF.md` (in full)
+3. Load `STATUS.md` (in full, ≤10 lines)
+4. Load `MEMORY.md` only if the request requires prior context
+5. If `MEMORY.md` exceeds threshold, load last 80 lines and note it was truncated
+
+**MEMORY.md hygiene (enforced):**
+- Must stay ≤80 lines hard limit; target ≤50 lines
+- Must be a curated summary — never a raw session log
+- Detailed chronology goes in `docs/` notes, not MEMORY.md
+- If size grows beyond threshold: consolidate before ending the session, not after
 
 ## Activating a new workstream
 

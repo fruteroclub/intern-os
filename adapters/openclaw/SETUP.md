@@ -1,6 +1,6 @@
 # SETUP — OpenClaw Adapter
 
-*internOS v2.1 | 2026-04-02*
+*internOS v0.2.2 | 2026-04-06*
 
 OpenClaw-specific setup for the internOS Workstreams framework.
 
@@ -44,10 +44,17 @@ Workstream directories live in: `projects/[project]/workstreams/[workstream-name
 - STATUS.md: read in full (must be ≤10 lines by design)
 - MEMORY.md: read last 80 lines only — search on demand if more context needed
 
-### Platform timeout protocol
-On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s):
-Emit a brief acknowledgment BEFORE loading any context files.
-Never let file reads block the first response token.
+### Platform startup protocol
+
+**Always emit acknowledgment before any file reads.** Never let file reads block the first response token.
+
+| Platform | Mode | Rule |
+|----------|------|------|
+| Discord | LIGHT | ACK → BRIEF + STATUS → MEMORY only if needed |
+| Slack | LIGHT | ACK → BRIEF + STATUS → MEMORY only if needed |
+| Telegram / CLI | FULL | BRIEF + STATUS + MEMORY before first response |
+
+**MEMORY.md hygiene:** must stay ≤80 lines (target ≤50). Curated summary only — move detailed notes to `docs/`. Consolidate before ending the session if over threshold.
 
 ### Before starting work on a task
   tick claim TASK-X @agent-name
@@ -58,7 +65,7 @@ Never let file reads block the first response token.
    - What was done this session
    - Current workstream phase
    - Any blockers
-3. If the workstream's MEMORY.md exceeds 80 lines, consolidate it — summary, not log
+3. If the workstream's MEMORY.md exceeds 80 lines (target ≤50), consolidate — summary, not log
 
 This is required even if nothing changed. A blank STATUS.md means
 the workstream is invisible to the next agent or session.

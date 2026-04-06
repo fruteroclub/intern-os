@@ -1,5 +1,26 @@
 # Changelog
 
+> **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
+
+## v0.2.2 — 2026-04-06
+
+Addresses [#2](https://github.com/fruteroclub/intern-os/issues/2): Discord timeout-safe startup while preserving per-workstream context.
+
+### Changes
+
+- **Platform startup protocol (SKILL.md, all adapters):** ACK-first rule is now mandatory, not advisory. Replaces the loose "platform timeout protocol" note with an explicit startup mode table: Discord/Slack = LIGHT (ACK → BRIEF + STATUS → MEMORY on demand), Telegram/CLI = FULL.
+- **MEMORY.md hygiene hardened:** Hard limit remains 80 lines; target ≤50 lines now documented. Rule clarified: curated summary only — detailed chronology must go in `docs/` notes, not MEMORY.md. Consolidation must happen before ending the session.
+- **Version bump:** `2.1.0` → `0.2.2` across SKILL.md and all adapter SETUP.md files.
+
+### Updated files
+
+- `intern-os/SKILL.md` — v0.2.2: platform startup table, LIGHT mode contract, MEMORY.md hygiene rules
+- `adapters/openclaw/SETUP.md` — v0.2.2: same platform startup table in AGENTS.md block
+- `adapters/hermes/SETUP.md` — v0.2.2: Discord startup note added to Discord config section
+- `adapters/generic/SETUP.md` — v0.2.2: platform modes in generic instructions block
+
+---
+
 ## v2.1.0 — 2026-03-31
 
 ### New features
