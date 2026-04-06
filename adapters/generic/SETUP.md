@@ -1,6 +1,6 @@
 # SETUP — Generic Adapter (Any Agent Framework)
 
-*internOS v2.0 | 2026-03-30*
+*internOS v0.2.2 | 2026-04-06*
 
 Manual setup for agent frameworks without a dedicated adapter.
 
@@ -42,9 +42,11 @@ Reading workstream files (in the workstream directory, not your agent memory):
 - STATUS.md: read in full (must be ≤10 lines by design)
 - MEMORY.md: read last 80 lines only — search on demand if more needed
 
-On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s):
-Emit a brief acknowledgment BEFORE loading any context files.
-Never let file reads block the first response token.
+Always emit acknowledgment BEFORE loading any context files. Never let file reads block the first response token.
+
+Platform startup modes:
+- Discord / Slack (LIGHT): ACK → BRIEF + STATUS → MEMORY only if needed
+- Telegram / CLI (FULL): BRIEF + STATUS + MEMORY before first response
 
 Before starting work on a task, claim it:
   tick claim TASK-X @agent-name
@@ -55,7 +57,7 @@ Before ending any working session:
    - What was done this session
    - Current workstream phase
    - Any blockers
-3. If the workstream's MEMORY.md exceeds 80 lines, consolidate — summary, not log
+3. If the workstream's MEMORY.md exceeds 80 lines (target ≤50), consolidate — summary, not log
 
 This is required even if nothing changed. A blank STATUS.md means
 the workstream is invisible to the next agent or session.

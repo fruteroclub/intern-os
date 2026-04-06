@@ -1,6 +1,6 @@
 # SETUP — Hermes Agent Adapter
 
-*internOS v2.1 | 2026-04-02*
+*internOS v0.2.2 | 2026-04-06*
 
 Hermes Agent-specific setup for the internOS Workstreams framework.
 
@@ -98,6 +98,8 @@ platforms:
 ```
 
 No special forum configuration needed — Hermes handles Discord threads natively.
+
+**Platform startup protocol for Discord:** internOS requires the agent to emit an acknowledgment before loading any workstream files. In Discord workstream threads, the agent must always ACK first (LIGHT mode: BRIEF + STATUS only, MEMORY on demand). See SKILL.md for full platform startup table.
 
 ---
 
