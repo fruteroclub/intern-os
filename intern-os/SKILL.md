@@ -1,7 +1,7 @@
 ---
 name: intern-os
 description: internOS Workstreams framework. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
-version: 0.2.2
+version: 0.2.3
 metadata:
   hermes:
     tags: [Workstreams, Project Management, Coordination]
@@ -23,14 +23,26 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 
 After installing, follow your adapter's SETUP.md for framework-specific configuration.
 
-## Project vs. workstream — when to use which
+## Project vs. Pod vs. workstream — when to use which
 
-> A **project** groups work of the same domain over time — it can contain multiple workstreams.
-> A **workstream** is a concrete sprint of work with a start and end within that domain.
+> A **project** is the top-level operating container in internOS.
+> A **workstream** is a concrete sprint of work with a start and end inside a project.
+> A **Pod** is a specific kind of project: a revenue-bearing delivery unit with its own accountability.
 
 **Rule of thumb:**
 - If the work requires more than one independent workstream, or involves an operational area with its own identity (infra, product, ops, content, etc.) → it's a **project**.
 - If it's a scoped piece of work inside an existing area → it's a **workstream** within that project.
+- If the project comes from a closed proposal, has revenue, a Delivery Manager, an Architect, its own goals, its own metrics, and a degree of operating autonomy → it is a **Pod**.
+
+**Important distinction:**
+- Every Pod is a project.
+- Not every project is a Pod.
+
+Projects should declare an `entity_type` in `PROJECT.md`:
+- `pod` — commercial delivery unit derived from a closed proposal
+- `internal-project` — internal project without direct revenue yet
+- `foundation` — shared Firm capability (for example: startup-team, infrastructure, CRM, playbooks)
+- `lab` — exploration, incubation, or early experiment
 
 ## Discovering a new project
 
@@ -43,22 +55,60 @@ The agent:
 1. Creates `projects/[name]/PROJECT.md` using the project template
 2. Runs `tick init` and registers the agent
 3. Opens a communication thread (Slack or Discord) for the project
-4. Asks the discovery questions:
-   - **What domain or area does this project group?** *(one line)*
-   - **What does NOT belong in this project?** *(explicit boundary)*
-   - **Who is the human owner?**
-   - **When will we know this project is done or ready to archive?**
+4. Classifies the project with an `entity_type`
+5. Asks the minimum discovery questions for that type
 
-If the human doesn't have an answer for any question, it's marked as `TBD` in `PROJECT.md` — the project can still be created.
+**Base discovery questions for all projects:**
+- **Who is the human owner?**
+- **What is the main objective?**
+- **Which Firm does this belong to?**
+
+**Additional discovery for `pod`:**
+- **Who is the client?**
+- **Has the proposal already closed?** *(must be `closed` for a Pod)*
+- **Who is the Delivery Manager?**
+- **Who is the Architect?**
+- **What type of Pod is it?** *(implementation, training, consulting, internal-product, experiment)*
+- **What KPIs and cadence will govern it?**
+
+**Additional discovery for `internal-project`:**
+- **What cadence will govern it?**
+
+**Additional discovery for `foundation`:**
+- **What shared Firm capability does this project represent?**
+
+**Additional discovery for `lab`:**
+- **What are we trying to learn or validate?**
+
+If the human does not have an answer for a non-critical field, mark it as `TBD` in `PROJECT.md`. If a required `pod` field is missing, do not classify it as a Pod yet.
 
 ## Project lifecycle
 
 ```
-Discover project → PROJECT.md + tick init + thread
+Discover project → classify entity_type → PROJECT.md + tick init + thread
     → Workstreams activated within the project
         → All workstreams archived
             → PROJECT.md updated with final state
                 → Project directory moved to projects/archived/
+```
+
+## Pod lifecycle
+
+Pods are commercial projects and usually originate outside internOS in the Firm's CRM / pipeline.
+
+```
+Lead won → Proposal closed → Delivery Manager assigned → Architect assigned
+    → Pod project created in internOS
+        → Commercial handoff to delivery
+            → Scope refined
+                → KPIs + cadence + Firm dependencies defined
+                    → Setup / access / tooling
+                        → Kickoff
+                            → Pod operation
+                                → Delivery close
+                                    → Retro + learnings captured
+                                        → Administrative close
+                                            → Archive
 ```
 
 ## Operating a workstream
