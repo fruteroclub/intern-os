@@ -489,6 +489,66 @@ rm -rf [workspace]/projects/
 
 ---
 
+## What is validated by tooling vs. what is doctrine
+
+internOS distinguishes between rules that are **validated by shipped tooling** and rules that are **doctrine for agents to follow**. Both matter, but they have different enforcement mechanisms.
+
+### Validated by `sync-check.sh`
+
+These are checked by the workspace health script and will produce warnings:
+
+| Check | Severity |
+|-------|----------|
+| `PROJECT.md` exists per project | WARN |
+| `TICK.md` exists per project | WARN |
+| All 6 workstream files present | WARN |
+| `thread_id` exists in BRIEF.md | WARN |
+| `thread_id` format is valid (`platform:id`) | WARN |
+| Slack `thread_id` includes channel + thread_ts | WARN |
+| No duplicate `thread_id` across workstreams | WARN |
+| Workstream has a matching task tag in TICK.md | WARN |
+| `STATUS.md` size within target (≤10 content lines) | WARN |
+| `MEMORY.md` size within limit (≤80 lines) | WARN |
+
+These are reported as informational (INFO), not failures:
+
+| Check | Severity |
+|-------|----------|
+| `AGENTS.md` exists per project | INFO |
+| BRIEF.md has `project`, `workstream`, `owner`, `created` fields | INFO |
+| `MEMORY.md` approaching limit (>50 lines) | INFO |
+
+### Validated by `checkpoint-reminder.sh`
+
+| Check | Severity |
+|-------|----------|
+| `STATUS.md` modified within threshold (default 3 days) | STALE |
+
+### Validated by `tick.md`
+
+| Check | Mechanism |
+|-------|-----------|
+| Task claim/release coordination | tick.md data model — `claimed_by` field |
+| Agent registration | tick.md agent registry |
+| Task state transitions | tick.md workflow rules |
+
+### Doctrine (agent behavioral expectations)
+
+These rules are documented for agents to follow but are **not mechanically enforced** by tooling. They depend on agents reading and respecting the framework instructions:
+
+- **Exact `thread_id` resolution** — agents must resolve by exact match, never by fuzzy matching or inference
+- **Tiered loading** — agents should load BRIEF.md + STATUS.md by default and escalate on demand
+- **Platform ACK-first** — agents must emit acknowledgment before file reads on Discord/Slack
+- **MEMORY.md curation** — agents must consolidate when over threshold, keeping it as summary not log
+- **STATUS.md update at session end** — agents must update STATUS.md after every working session
+- **Recovery from files** — agents must reconstruct from workstream files when sessions degrade
+- **Workstream isolation** — agents must not read other workstreams' files unless explicitly requested
+- **AGENTS.md loading** — agents should load project-level AGENTS.md before workstream files
+
+These behavioral expectations are the right approach for v0.3.0. Future versions may add hooks, MCP tools, or runtime wrappers to enforce some of these programmatically — see Roadmap.
+
+---
+
 ## Roadmap
 
 > v0.3.0 ships the simplified Project + Workstream model with three-layer architecture. Future work focuses on runtime enforcement.

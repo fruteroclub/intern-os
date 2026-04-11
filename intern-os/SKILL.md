@@ -158,11 +158,12 @@ When in a communication thread that has a workstream context:
 4. Load `MEMORY.md` only if the request requires prior context
 5. If `MEMORY.md` exceeds threshold, load last 80 lines and note it was truncated
 
-**MEMORY.md hygiene (enforced):**
-- Must stay ≤80 lines hard limit; target ≤50 lines
-- Must be a curated summary — never a raw session log
+**MEMORY.md hygiene:**
+- Hard limit: 80 lines; target: ≤50 lines
+- Must be a curated summary — not a raw session log
 - Detailed chronology goes in `docs/` notes, not MEMORY.md
 - If size grows beyond threshold: consolidate before ending the session, not after
+- `sync-check.sh` validates line count; agents are expected to self-enforce during sessions
 
 ### Recovery doctrine
 
@@ -236,6 +237,17 @@ projects/[project]/
 │   └── config.yml   ← tick.md configuration
 └── workstreams/
 ```
+
+## Tooling vs. doctrine
+
+The resolution, runtime, recovery, and isolation rules above are **doctrine for agents to follow** — they depend on agents reading and respecting these instructions. They are not mechanically enforced by tooling in v0.3.0.
+
+What **is** validated by shipped tooling:
+- `sync-check.sh` — validates file presence, `thread_id` format and uniqueness, BRIEF.md identity fields, STATUS.md / MEMORY.md size limits
+- `checkpoint-reminder.sh` — detects stale STATUS.md files
+- `tick.md` — enforces task claim/release coordination
+
+See FRAMEWORK.md for the full breakdown of what is validated vs. what is doctrine.
 
 ## Full documentation
 

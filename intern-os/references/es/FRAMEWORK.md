@@ -492,6 +492,66 @@ rm -rf [workspace]/projects/
 
 ---
 
+## Qué es validado por herramientas vs. qué es doctrina
+
+internOS distingue entre reglas que son **validadas por herramientas incluidas** y reglas que son **doctrina para que los agentes sigan**. Ambas importan, pero tienen mecanismos de enforcement diferentes.
+
+### Validado por `sync-check.sh`
+
+Estos checks son ejecutados por el script de salud del workspace y producen advertencias:
+
+| Check | Severidad |
+|-------|-----------|
+| `PROJECT.md` existe por proyecto | WARN |
+| `TICK.md` existe por proyecto | WARN |
+| Los 6 archivos de workstream están presentes | WARN |
+| `thread_id` existe en BRIEF.md | WARN |
+| Formato de `thread_id` es válido (`plataforma:id`) | WARN |
+| `thread_id` de Slack incluye canal + thread_ts | WARN |
+| No hay `thread_id` duplicados entre workstreams | WARN |
+| Workstream tiene tag de tarea correspondiente en TICK.md | WARN |
+| Tamaño de `STATUS.md` dentro del objetivo (≤10 líneas de contenido) | WARN |
+| Tamaño de `MEMORY.md` dentro del límite (≤80 líneas) | WARN |
+
+Estos se reportan como informativos (INFO), no como errores:
+
+| Check | Severidad |
+|-------|-----------|
+| `AGENTS.md` existe por proyecto | INFO |
+| BRIEF.md tiene campos `project`, `workstream`, `owner`, `created` | INFO |
+| `MEMORY.md` acercándose al límite (>50 líneas) | INFO |
+
+### Validado por `checkpoint-reminder.sh`
+
+| Check | Severidad |
+|-------|-----------|
+| `STATUS.md` modificado dentro del umbral (por defecto 3 días) | STALE |
+
+### Validado por `tick.md`
+
+| Check | Mecanismo |
+|-------|-----------|
+| Coordinación de claim/release de tareas | Modelo de datos de tick.md — campo `claimed_by` |
+| Registro de agentes | Registro de agentes de tick.md |
+| Transiciones de estado de tareas | Reglas de workflow de tick.md |
+
+### Doctrina (expectativas de comportamiento del agente)
+
+Estas reglas están documentadas para que los agentes las sigan pero **no son mecánicamente impuestas** por herramientas. Dependen de que los agentes lean y respeten las instrucciones del framework:
+
+- **Resolución exacta por `thread_id`** — los agentes deben resolver por match exacto, nunca por matching difuso o inferencia
+- **Carga por tiers** — los agentes deben cargar BRIEF.md + STATUS.md por defecto y escalar bajo demanda
+- **ACK-first en plataformas** — los agentes deben emitir acknowledgment antes de leer archivos en Discord/Slack
+- **Curación de MEMORY.md** — los agentes deben consolidar cuando excede el umbral, manteniendo como resumen no log
+- **Actualización de STATUS.md al fin de sesión** — los agentes deben actualizar STATUS.md después de cada sesión
+- **Recuperación desde archivos** — los agentes deben reconstruir desde archivos de workstream cuando las sesiones se degradan
+- **Aislamiento de workstreams** — los agentes no deben leer archivos de otros workstreams a menos que se solicite explícitamente
+- **Carga de AGENTS.md** — los agentes deben cargar AGENTS.md a nivel proyecto antes de los archivos de workstream
+
+Estas expectativas de comportamiento son el enfoque correcto para v0.3.0. Versiones futuras pueden agregar hooks, herramientas MCP o wrappers de runtime para imponer algunas de estas programáticamente — ver Roadmap.
+
+---
+
 ## Roadmap
 
 > v0.3.0 incluye el modelo simplificado de Proyecto + Workstream con arquitectura de tres capas. El trabajo futuro se enfoca en enforcement de runtime.
