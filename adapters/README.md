@@ -18,12 +18,15 @@ Each adapter contains:
 Regardless of framework, the adapter must configure the agent to:
 
 1. **Read `WORKSTREAMS.md`** at the start of any session in a workstream thread
-2. **Follow the project → workstream → task hierarchy** (`projects/[name]/workstreams/[name]/`)
-3. **Load only the active workstream** — not all workstreams
-4. **Read workstream context** before working: BRIEF.md → STATUS.md → MEMORY.md
-5. **Claim tasks in tick.md** before starting work: `tick claim TASK-X @agent-name`
-6. **Update STATUS.md** at the end of every working session
-7. **Release or complete tasks** in tick.md when done
+2. **Resolve the workstream by exact `thread_id`** — never by fuzzy matching or inference
+3. **Load project-level `AGENTS.md`** (if it exists) for project context
+4. **Read BRIEF.md → STATUS.md** before doing any work (Tier 1 default)
+5. **Escalate to other files** (MEMORY.md, DECISIONS.md, etc.) only when the task requires it
+6. **Claim tasks in tick.md** before starting work: `tick claim TASK-X @agent-name`
+7. **Update STATUS.md** at the end of every working session
+8. **Release or complete tasks** in tick.md when done
+9. **Reconstruct from files** when sessions degrade — never trust transcript continuity
+10. **Do not read other workstream files** by default — isolation is the default
 
 ---
 

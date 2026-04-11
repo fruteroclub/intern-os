@@ -1,25 +1,38 @@
-# Brief
+# BRIEF — [Workstream Name]
 
 thread_id:
+project:
+workstream:
+owner:
+created:
+last_updated:
 
-## What specific work is this?
+## Objective
 
-<!-- verb + object -->
+<!-- What specific work is this? (verb + object) -->
 
-## What problem or situation triggers it?
+## Problem
 
-## Who needs it and for what purpose?
+<!-- What problem or situation triggers it? -->
 
-## What does it deliver when done?
+## Scope
 
-<!-- outcome, not output -->
+### Includes
 
-## What is in scope? What is out of scope?
+### Excludes
 
-**In scope:**
+## Success criteria
 
-**Out of scope:**
+<!-- What does it deliver when done? (outcome, not output) -->
 
-## What is the appetite?
+## Appetite
 
-<!-- maximum time or effort -->
+<!-- Maximum time or effort -->
+
+## Related stakeholders
+
+<!-- Key people for this workstream — details in STAKEHOLDERS.md -->
+
+## Related resources
+
+<!-- Key resources for this workstream — full index in RESOURCES.md -->

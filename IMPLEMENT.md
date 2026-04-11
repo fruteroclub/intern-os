@@ -1,6 +1,6 @@
 # Implement internOS on This Agent
 
-You are setting up the internOS Workstreams framework on this Hermes Agent instance. internOS coordinates work across four layers: projects (filesystem), tasks (tick.md), communication (Slack/Discord threads), and operation (workstream directories).
+You are setting up the internOS Workstreams framework on this Hermes Agent instance. internOS coordinates work across three layers: storage (workstream files as source of truth), resolution (exact thread_id binding), and runtime (minimal context loading).
 
 The full framework spec is at: `~/duki-admin/research/projects/intern-os/`
 
@@ -63,6 +63,8 @@ Use the project template to scaffold:
 cp -r ~/duki-admin/research/projects/intern-os/assets/templates/project/ ~/.hermes/workspace/projects/duki-ops/
 ```
 
+This creates `PROJECT.md`, `AGENTS.md`, `TICK.md`, `.tick/config.yml`, and `workstreams/`.
+
 Then initialize tick.md and register yourself:
 
 ```bash
@@ -91,6 +93,8 @@ Run `ls -R ~/.hermes/workspace/` and confirm it looks like this:
 ├── WORKSTREAMS.md
 └── projects/
     └── duki-ops/
+        ├── PROJECT.md
+        ├── AGENTS.md
         ├── TICK.md
         ├── .tick/
         │   └── config.yml

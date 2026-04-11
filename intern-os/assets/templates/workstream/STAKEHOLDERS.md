@@ -1,6 +1,13 @@
-# Stakeholders
+# STAKEHOLDERS — [Workstream Name]
 
-People and agents relevant to this workstream.
+## Internal
 
-| Name | Role | Notes |
-|------|------|-------|
+| Name | Role | Responsibility | Channel |
+|------|------|----------------|---------|
+
+## External
+
+| Name | Organization | Relationship | Channel |
+|------|--------------|--------------|---------|
+
+## Notes

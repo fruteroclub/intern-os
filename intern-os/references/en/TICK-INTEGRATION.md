@@ -1,6 +1,6 @@
 # TICK-INTEGRATION — tick.md as the Task Management Layer
 
-*internOS v2.0 | 2026-03-30*
+*internOS v0.3.0 | 2026-04-11*
 
 tick.md is the default task management layer for internOS. This document specifies how tick.md integrates with the project–workstream–task hierarchy.
 

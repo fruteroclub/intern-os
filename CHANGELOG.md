@@ -2,6 +2,67 @@
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
 
+## v0.3.0 — 2026-04-11
+
+Simplification and hardening release. Removes Pod as a concept. Re-centers internOS around Project + Workstream with a three-layer architecture (storage, resolution, runtime).
+
+Addresses [#4](https://github.com/fruteroclub/intern-os/issues/4): project-level `AGENTS.md` for agent context on messaging platforms.
+
+### Breaking changes
+
+- **Pod removed from internOS core.** All Pod-related concepts, templates, discovery questions, lifecycle, and entity_type classification have been removed. Projects are now the only top-level container.
+- **PROJECT.md simplified.** Removed `entity_type`, `client`, `proposal_status`, `pod_type`, `delivery_manager`, `architect`, `expected_revenue`, `firm_dependencies`, `firm`, and pod-specific lifecycle checklist. Existing PROJECT.md files should be simplified to the new schema.
+- **BRIEF.md schema updated.** Now includes mandatory `thread_id`, `project`, `workstream`, `owner`, `created`, `last_updated` fields. Existing BRIEF.md files should add the new identity fields.
+- **STATUS.md schema updated.** Now uses structured fields: Phase, Next, Owner, Blockers, Updated.
+- **MEMORY.md template updated.** Now uses structured sections: Durable context, Key learnings, Open threads.
+- **RESOURCES.md template updated.** Now uses a structured table format.
+- **STAKEHOLDERS.md template updated.** Now separates Internal and External stakeholders.
+- **DECISIONS.md template updated.** Now uses date-prefixed entries with decision/rationale/impact/status.
+
+### New features
+
+- **Three-layer architecture** (storage, resolution, runtime) is now explicitly documented across SKILL.md, FRAMEWORK.md, and WORKSTREAMS.md.
+- **Project-level AGENTS.md** ([#4](https://github.com/fruteroclub/intern-os/issues/4)): New template at `assets/templates/project/AGENTS.md`. Contains project-level context (stack, conventions, key people, integrations, architectural constraints). Loaded before workstream files. Works on all platforms (no cwd dependency).
+- **Resolution doctrine:** Exact `thread_id` matching is now the canonical and only resolution method. Fuzzy matching, keyword similarity, and path proximity are explicitly forbidden.
+- **Recovery doctrine:** Agents must reconstruct from workstream files when sessions degrade. BRIEF.md + STATUS.md must be sufficient to restart any workstream.
+- **Isolation doctrine:** Cross-workstream reads are forbidden by default. Cross-workstream synthesis must be explicitly requested.
+- **Tiered runtime loading:** Default loads only BRIEF.md + STATUS.md (Tier 1). DECISIONS.md + STAKEHOLDERS.md on demand (Tier 2). MEMORY.md + RESOURCES.md + docs/ on demand (Tier 3).
+- **Loading order updated:** Resolution → AGENTS.md → BRIEF.md → STATUS.md → escalate on demand.
+
+### Updated files
+
+- `intern-os/SKILL.md` — v0.3.0: Pod removed, three-layer architecture, AGENTS.md support, resolution/recovery/isolation doctrines, tooling vs. doctrine section
+- `intern-os/assets/WORKSTREAMS.md` — v0.3.0: three-layer table, resolution/recovery/isolation doctrines, AGENTS.md loading
+- `intern-os/scripts/sync-check.sh` — v0.3.0: updated for three-layer model — validates AGENTS.md presence, BRIEF.md identity fields, thread_id uniqueness, STATUS.md/MEMORY.md size limits
+- `intern-os/assets/templates/project/PROJECT.md` — simplified: removed all Pod/entity_type fields
+- `intern-os/assets/templates/project/AGENTS.md` — **new**: project-level agent context
+- `intern-os/assets/templates/workstream/BRIEF.md` — strengthened: mandatory identity fields
+- `intern-os/assets/templates/workstream/STATUS.md` — structured: Phase/Next/Owner/Blockers/Updated
+- `intern-os/assets/templates/workstream/MEMORY.md` — structured sections
+- `intern-os/assets/templates/workstream/DECISIONS.md` — structured format
+- `intern-os/assets/templates/workstream/STAKEHOLDERS.md` — Internal/External sections
+- `intern-os/assets/templates/workstream/RESOURCES.md` — table format
+- `intern-os/references/en/FRAMEWORK.md` — v0.3.0: complete rewrite with three-layer architecture, "validated vs. doctrine" section
+- `intern-os/references/es/FRAMEWORK.md` — v0.3.0: Spanish translation updated to match, including "validated vs. doctrine" section
+- `intern-os/references/en/PLAYBOOK.md` — v0.3.0: updated loading order, AGENTS.md, resolution
+- `intern-os/references/es/PLAYBOOK.md` — v0.3.0: same updates in Spanish
+- `adapters/openclaw/SETUP.md` — v0.3.0: updated AGENTS.md block with resolution/recovery/isolation
+- `adapters/hermes/SETUP.md` — v0.3.0: updated platform startup note
+- `adapters/generic/SETUP.md` — v0.3.0: updated instruction block with resolution/recovery/isolation
+- `adapters/claude-code/CLAUDE.md` — v0.3.0: updated with resolution, AGENTS.md, tiered loading
+- `README.md` — updated to reflect three-layer architecture
+- `examples/workspace-layout.md` — updated with AGENTS.md and new template formats
+
+### Migration from v0.2.x
+
+1. **Remove Pod fields from PROJECT.md:** Delete `entity_type`, `client`, `proposal_status`, `pod_type`, `delivery_manager`, `architect`, `expected_revenue`, `firm_dependencies`, `firm`, and the "Rules by entity_type" section. Use the new simplified template.
+2. **Add AGENTS.md to projects:** Create `projects/[name]/AGENTS.md` with project-level context (optional but recommended).
+3. **Update BRIEF.md files:** Add `project`, `workstream`, `owner`, `created`, `last_updated` fields. Ensure `thread_id` is present.
+4. **Update WORKSTREAMS.md:** Replace workspace root `WORKSTREAMS.md` with v0.3.0 version from `assets/WORKSTREAMS.md`.
+5. **Update adapter configuration:** Follow the v0.3.0 adapter SETUP.md for your framework.
+
+---
+
 ## v0.2.2 — 2026-04-06
 
 Addresses [#2](https://github.com/fruteroclub/intern-os/issues/2): Discord timeout-safe startup while preserving per-workstream context.
@@ -38,7 +99,7 @@ Addresses [#2](https://github.com/fruteroclub/intern-os/issues/2): Discord timeo
 - `references/en/FRAMEWORK.md` — v2.1: updated project layer to include PROJECT.md, expanded project lifecycle with discovery flow
 - **Sync check script:** `scripts/sync-check.sh` — diagnostic tool that scans a workspace and reports mismatches: missing thread_ids, incomplete Slack IDs, missing workstream files, orphan directories without tick.md tasks. Platform-agnostic, report-only.
 - **Checkpoint reminder script:** `scripts/checkpoint-reminder.sh` — detects active workstreams with stale STATUS.md files. Configurable threshold (default 3 days). Cron-compatible exit codes.
-- **MEMORY.md read limits:** Agents now read only the last 80 lines of MEMORY.md on startup. MEMORY.md must be maintained as a curated summary (≤80 lines), not a session log. Enforced across all adapters (Hermes, OpenClaw, Claude Code, generic).
+- **MEMORY.md read limits:** Agents now read only the last 80 lines of MEMORY.md on startup. MEMORY.md must be maintained as a curated summary (≤80 lines), not a session log. Documented across all adapters (Hermes, OpenClaw, Claude Code, generic); `sync-check.sh` validates line count.
 - **STATUS.md size constraint:** STATUS.md must answer "where does this workstream stand?" in ≤10 lines.
 - **Platform timeout protocol:** On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s), agents must emit an acknowledgment before loading context files. Documented in WORKSTREAMS.md, PLAYBOOK.md, FRAMEWORK.md, and all adapters.
 - **Repo restructure:** Skill content (SKILL.md, assets, references, scripts) moved into `intern-os/` subdirectory for out-of-the-box installation on both Hermes and OpenClaw. Unified SKILL.md replaces per-adapter SKILL.md files. Adapter SETUP.md files remain at `adapters/[framework]/`.

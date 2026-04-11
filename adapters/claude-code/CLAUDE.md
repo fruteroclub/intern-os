@@ -9,17 +9,29 @@ Only load the workstream directory matching the active context.
 Do not load all workstreams — keep context clean.
 
 Projects live in: `projects/[project-name]/`
-Each project has a TICK.md (task management) and workstreams/ directory.
+Each project has a TICK.md (task management), an optional AGENTS.md (project context), and workstreams/ directory.
 Workstream directories live in: `projects/[project]/workstreams/[workstream-name]/`
+
+## Resolution
+
+Resolve the workstream by exact `thread_id` in BRIEF.md.
+If no exact match exists, stop and ask — never guess.
+Never resolve by fuzzy matching, keyword similarity, or path proximity.
 
 ## Before starting work
 
-1. Read the workstream's files (in the workstream directory, not your agent memory):
-   - `BRIEF.md` — read in full
+1. Resolve workstream by exact `thread_id`
+2. Read project-level context: `projects/[project]/AGENTS.md` (if it exists)
+3. Read the workstream's files (in the workstream directory, not your agent memory):
+   - `BRIEF.md` — read in full (workstream identity + thread_id)
    - `STATUS.md` — read in full (must be ≤10 lines by design)
+4. Escalate to other files only when the task requires it:
    - `MEMORY.md` — **last 80 lines only** (search on demand if more context needed)
-2. Check tasks: `tick list --tag [workstream-name]`
-3. Claim the task: `tick claim TASK-X @claude-code`
+   - `DECISIONS.md` — when task involves prior decisions
+   - `STAKEHOLDERS.md` — when task involves people or relationships
+   - `RESOURCES.md` — when task involves artifacts or deployments
+5. Check tasks: `tick list --tag [workstream-name]`
+6. Claim the task: `tick claim TASK-X @claude-code`
 
 ## Before ending any working session
 
@@ -35,6 +47,16 @@ Workstream directories live in: `projects/[project]/workstreams/[workstream-name
 This is required even if nothing changed. A blank STATUS.md means
 the workstream is invisible to the next agent or session.
 
+## Recovery doctrine
+
+If session is degraded, bloated, or reset: reconstruct from workstream files.
+Do not trust transcript continuity. BRIEF.md + STATUS.md must be sufficient to restart.
+
+## Isolation doctrine
+
+Do not read another workstream's files by default.
+Cross-workstream synthesis must be explicit and requested.
+
 ## Activating a new workstream
 
 1. Add task: `tick add "Description" --tag workstream-name --priority high`
@@ -42,20 +64,19 @@ the workstream is invisible to the next agent or session.
    ```
    mkdir -p projects/[project]/workstreams/[name]/docs
    ```
-3. Fill BRIEF.md with the 6 questions
-4. Add thread_id to BRIEF.md if a communication thread exists
-5. Link everything in RESOURCES.md
+3. Fill BRIEF.md with workstream identity (thread_id is mandatory)
+4. Link everything in RESOURCES.md
 
 ## Workstream file structure
 
 ```
 projects/[project]/workstreams/[name]/
-├── BRIEF.md         ← What, for whom, problem, appetite + thread_id
-├── STATUS.md        ← Workstream phase, next step, blockers
-├── MEMORY.md        ← Accumulated context, insights, learnings
-├── DECISIONS.md     ← Key decisions log with date + reason
+├── BRIEF.md         ← Workstream identity + thread_id binding (mandatory)
+├── STATUS.md        ← Operational heartbeat: phase, next, blockers
+├── MEMORY.md        ← Durable context across sessions (≤80 lines)
+├── DECISIONS.md     ← Key decisions log with date + rationale
 ├── STAKEHOLDERS.md  ← Relevant people and their role
-├── RESOURCES.md     ← Artifacts index and where they live
+├── RESOURCES.md     ← Artifact registry and where they live
 └── docs/            ← Working artifacts
 ```
 

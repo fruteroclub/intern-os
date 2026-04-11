@@ -1,4 +1,4 @@
-# Example: Fully Populated v2 Workspace
+# Example: Fully Populated Workspace
 
 This shows what a workspace looks like with two projects, multiple workstreams, and tick.md initialized.
 
@@ -12,7 +12,9 @@ workspace/
 │
 ├── projects/
 │   ├── bulldog-capital-website/
-│   │   ├── TICK.md                         ← 5 tasks across 2 workstreams
+│   │   ├── PROJECT.md                     ← project identity: purpose, scope, direction
+│   │   ├── AGENTS.md                      ← project-level agent context
+│   │   ├── TICK.md                        ← 5 tasks across 2 workstreams
 │   │   ├── .tick/
 │   │   │   └── config.yml
 │   │   ├── workstreams/
@@ -33,6 +35,8 @@ workspace/
 │   │       └── brand-guidelines.pdf
 │   │
 │   └── intern-os-integration/
+│       ├── PROJECT.md
+│       ├── AGENTS.md
 │       ├── TICK.md                         ← 3 tasks across 2 workstreams
 │       ├── .tick/
 │       │   └── config.yml
@@ -46,6 +50,95 @@ workspace/
 │       │       ├── STATUS.md
 │       │       └── ...
 │       └── docs/
+```
+
+---
+
+## Example PROJECT.md (bulldog-capital-website)
+
+```markdown
+# Project: bulldog-capital-website
+
+## Identity
+
+name: bulldog-capital-website
+owner: Mel
+created: 2026-03-15
+
+## Purpose
+
+objective: Redesign and optimize the Bulldog Capital investor-facing website
+problem: Current site has high bounce rate and outdated branding
+for_whom: Marketing team and potential investors
+
+## Scope
+
+includes: Landing page, SEO, CMS integration
+excludes: Authentication, backend API, pricing page
+
+## Direction
+
+cadence: weekly
+success_criteria: Bounce rate below 45%, mobile-first responsive design
+archive_condition: All pages redesigned and SEO audit passing
+
+## Current state
+
+status: active
+current_phase: Implementation
+next_milestone: Landing page CMS integration complete
+blockers:
+
+## Operational links
+
+tick_file: TICK.md
+workstreams_dir: workstreams/
+primary_thread: slack:C07ABC123/1711792700.000001
+
+## Active workstreams
+
+- landing-page-redesign (Implementation — 2/3 tasks done)
+- seo-optimization (Backlog)
+
+## Notes
+```
+
+---
+
+## Example AGENTS.md (bulldog-capital-website)
+
+```markdown
+# AGENTS — bulldog-capital-website
+
+## Stack and conventions
+
+- Next.js 14 with App Router
+- Tailwind CSS for styling
+- Sanity CMS for content management
+- Deploy target: Vercel
+
+## Key people
+
+| Name | Role | Responsibility | Contact |
+|------|------|----------------|---------|
+| Mel | Owner | Final approval on design decisions | Slack DM |
+| Ana | Designer | Brand assets and mockups | Figma comments |
+
+## Communication rules
+
+- Design feedback via Figma comments, not Slack
+- Deploy previews shared in the workstream thread
+
+## Active integrations
+
+- Sanity CMS (content API)
+- Vercel (hosting + preview deploys)
+- Google Analytics (tracking)
+
+## Architectural constraints
+
+- All pages must score 90+ on Lighthouse performance
+- CMS content must be fully typed with Sanity schemas
 ```
 
 ---
@@ -116,35 +209,48 @@ claimed_by: null
 ## Example BRIEF.md (landing-page-redesign)
 
 ```markdown
-# Brief
+# BRIEF — landing-page-redesign
 
 thread_id: slack:C07ABC123/1711792800.123456
+project: bulldog-capital-website
+workstream: landing-page-redesign
+owner: Mel
+created: 2026-03-15
+last_updated: 2026-03-30
 
-## What specific work is this?
+## Objective
 
 Redesign the landing page for Bulldog Capital's investor-facing website.
 
-## What problem or situation triggers it?
+## Problem
 
 Current landing page has a 68% bounce rate and doesn't reflect the updated brand.
 
-## Who needs it and for what purpose?
+## Scope
 
-Marketing team needs it to improve conversion from organic traffic.
+### Includes
 
-## What does it deliver when done?
+Hero section, value props, testimonials, CTA, CMS integration, mobile responsive.
+
+### Excludes
+
+Blog, pricing page, authentication, backend API changes.
+
+## Success criteria
 
 A responsive landing page with updated brand, CMS integration, and <45% bounce rate.
 
-## What is in scope? What is out of scope?
-
-**In scope:** Hero section, value props, testimonials, CTA, CMS integration, mobile responsive.
-
-**Out of scope:** Blog, pricing page, authentication, backend API changes.
-
-## What is the appetite?
+## Appetite
 
 2 weeks maximum.
+
+## Related stakeholders
+
+Mel (owner), Ana (designer)
+
+## Related resources
+
+See RESOURCES.md for full artifact index.
 ```
 
 ---
@@ -152,22 +258,11 @@ A responsive landing page with updated brand, CMS integration, and <45% bounce r
 ## Example STATUS.md (landing-page-redesign)
 
 ```markdown
-# Status
+# STATUS — landing-page-redesign
 
-## Current phase
-
-Implementation — 2 of 3 tasks complete
-
-## Last session
-
-2026-03-30 — Connected CMS API, hero section now pulls dynamic content.
-Testimonials section still using static data.
-
-## Blockers
-
-None.
-
-## Next
-
-Wire up testimonials to CMS. Then TASK-003 is done and workstream moves to review.
+Phase: Implementation — 2 of 3 tasks complete
+Next: Wire up testimonials to CMS, then workstream moves to review
+Owner: @duki
+Blockers: None
+Updated: 2026-03-30
 ```

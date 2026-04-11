@@ -1,6 +1,6 @@
 # COMMUNICATION — Multi-Platform Specification
 
-*internOS v2.0 | 2026-03-30*
+*internOS v0.3.0 | 2026-04-11*
 
 Every workstream has a communication thread. The thread is the collaboration surface where humans and agents discuss, decide, and coordinate work. The framework is platform-agnostic — this spec defines the protocol and its implementations for Discord and Slack.
 

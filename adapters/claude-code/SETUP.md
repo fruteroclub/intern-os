@@ -1,6 +1,6 @@
 # SETUP — Claude Code Adapter
 
-*internOS v2.0 | 2026-03-30*
+*internOS v0.3.0 | 2026-04-11*
 
 Claude Code-specific setup for the internOS Workstreams framework.
 

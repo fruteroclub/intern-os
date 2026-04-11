@@ -1,6 +1,6 @@
 # SETUP — Generic Adapter (Any Agent Framework)
 
-*internOS v0.2.2 | 2026-04-06*
+*internOS v0.3.0 | 2026-04-11*
 
 Manual setup for agent frameworks without a dedicated adapter.
 
@@ -31,22 +31,34 @@ Add the following to your agent's instruction file, system prompt, or configurat
 If `WORKSTREAMS.md` exists in the workspace root, read it at the start
 of any session in a communication thread that has a workstream context.
 
+### Resolution
+
+Resolve the workstream by exact `thread_id` in BRIEF.md.
+If no exact match exists, stop and ask — never guess.
+
+### Loading order
+
+1. Resolve workstream by exact `thread_id`
+2. Read `projects/[project]/AGENTS.md` (project-level context, if exists)
+3. Read `BRIEF.md` in full (workstream identity + thread_id)
+4. Read `STATUS.md` in full (must be ≤10 lines by design)
+5. Escalate to MEMORY.md, DECISIONS.md, STAKEHOLDERS.md, RESOURCES.md only when needed
+6. MEMORY.md: read last 80 lines only — search on demand if more needed
+
 Only load the workstream directory matching the active thread.
 Do not load all workstreams — keep context clean.
 
 Projects live in: `projects/[project-name]/`
 Workstream directories live in: `projects/[project]/workstreams/[workstream-name]/`
 
-Reading workstream files (in the workstream directory, not your agent memory):
-- BRIEF.md: read in full
-- STATUS.md: read in full (must be ≤10 lines by design)
-- MEMORY.md: read last 80 lines only — search on demand if more needed
-
 Always emit acknowledgment BEFORE loading any context files. Never let file reads block the first response token.
 
 Platform startup modes:
-- Discord / Slack (LIGHT): ACK → BRIEF + STATUS → MEMORY only if needed
+- Discord / Slack (LIGHT): ACK → BRIEF + STATUS → escalate only if needed
 - Telegram / CLI (FULL): BRIEF + STATUS + MEMORY before first response
+
+Recovery: if session is degraded, reconstruct from workstream files — not transcript.
+Isolation: do not read other workstream files by default.
 
 Before starting work on a task, claim it:
   tick claim TASK-X @agent-name

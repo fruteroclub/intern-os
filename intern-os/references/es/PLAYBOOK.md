@@ -1,6 +1,6 @@
 # PLAYBOOK — Operar Workstreams Día a Día
 
-*internOS v2.1 | 2026-03-31*
+*internOS v0.3.0 | 2026-04-11*
 
 Este instructivo explica cómo usar el sistema de Workstreams de internOS: cómo crear proyectos, activar workstreams, trabajar sesiones y gestionar el ciclo de vida.
 
@@ -64,10 +64,11 @@ El agente:
 
 El agente:
 1. Crea `projects/[nombre]/PROJECT.md` usando el template de proyecto
-2. Ejecuta `tick init` y registra al agente
-3. Abre un thread de comunicación para el proyecto
-4. Hace las 4 preguntas de descubrimiento (dominio, exclusiones, propietario, condición de archivo)
-5. Una vez lleno el PROJECT.md, el proyecto está listo para workstreams
+2. Crea `projects/[nombre]/AGENTS.md` usando el template de contexto de proyecto
+3. Ejecuta `tick init` y registra al agente
+4. Abre un thread de comunicación para el proyecto
+5. Hace las preguntas de descubrimiento (propietario, objetivo, criterio de éxito, condición de archivo)
+6. Una vez lleno el PROJECT.md, el proyecto está listo para workstreams
 
 **Formato de activación:**
 
@@ -159,13 +160,14 @@ En plataformas con timeout de respuesta corto (Discord ~2min, Slack ACK ~3s), el
 <!-- NOTE: These protocol steps are kept in English as they are consumed by LLMs. -->
 
 1. Read `WORKSTREAMS.md` (agent runtime guide)
-2. Identify the workstream from the thread context
-3. Read the workstream files:
-   - `BRIEF.md` — read in full
+2. Resolve the workstream by exact `thread_id` match
+3. Read project-level context: `projects/[project]/AGENTS.md` (if it exists)
+4. Read the workstream files:
+   - `BRIEF.md` — read in full (includes thread_id, project, workstream identity)
    - `STATUS.md` — read in full (must be ≤10 lines by design)
-   - `MEMORY.md` — **last 80 lines only** (search on demand if more context needed)
-4. Check current tasks: `tick list --tag [workstream-name]`
-5. Claim the task to work on: `tick claim TASK-X @agent-name`
+5. Escalate to `MEMORY.md` (last 80 lines only), `DECISIONS.md`, `STAKEHOLDERS.md`, or `RESOURCES.md` only when the task requires it
+6. Check current tasks: `tick list --tag [workstream-name]`
+7. Claim the task to work on: `tick claim TASK-X @agent-name`
 
 ### Durante el trabajo
 
