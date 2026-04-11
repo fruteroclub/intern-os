@@ -1,6 +1,6 @@
 # SETUP — Configurar internOS en una Instancia de Agente
 
-*internOS v2.0 | 2026-03-30*
+*internOS v0.3.0 | 2026-04-11*
 
 Guía para el administrador o humano que configura una instancia de agente para usar el framework internOS Workstreams.
 

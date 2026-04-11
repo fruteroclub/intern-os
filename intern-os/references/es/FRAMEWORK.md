@@ -1,38 +1,82 @@
-# internOS — Framework del Sistema Operativo de Workstreams
+# internOS — Framework de Workstreams
 
-*Versión: 2.1 | Fecha: 2026-03-31 | Estado: v2.1 — descubrimiento de proyectos, tick-md, multi-plataforma*
+*Versión: 0.3.0 | Fecha: 2026-04-11 | Estado: v0.3.0 — modelo Proyecto + Workstream, arquitectura de tres capas*
 
 ---
 
 ## El sistema en una línea
 
-Cada proyecto organiza el trabajo en cuatro capas sincronizadas. La coherencia entre capas elimina la fricción de coordinación.
+Cada workstream es una unidad acotada de ejecución que mapea a exactamente un thread de comunicación, mantiene estado activo en archivos estructurados, y puede reconstruirse independientemente a partir de esos archivos.
 
 ---
 
-## Las cuatro capas
+## Las tres capas
 
-| Capa | Herramienta | Rol |
-|------|-------------|-----|
-| **Proyecto** | Filesystem (`projects/[nombre]/`) + `PROJECT.md` | Contenedor organizacional — dominio, propietario, límites, workstreams |
-| **Gestión** | tick.md (`TICK.md` en la raíz del proyecto) | Origen de tareas — qué hay que hacer, quién lo hace |
-| **Comunicación** | Foros Discord · Threads Slack | Superficie de trabajo del equipo — humanos y agentes |
-| **Operación** | Filesystem (`projects/[nombre]/workstreams/`) | Fuente de verdad para agentes — contexto persistente entre sesiones |
+internOS opera a través de tres capas explícitas.
 
-> tick.md es la capa de gestión de tareas por defecto. Otros sistemas (Notion, Linear, Trello, etc.) pueden usarse en su lugar — ver la sección de gestión de tareas en SETUP.md.
+### 1. Capa de almacenamiento
 
-**Sobre artefactos:** no existe un repositorio único. `docs/` dentro de cada workstream es uno de N posibles repositorios (Notion, Google Drive, S3, R2, etc.). `RESOURCES.md` es el índice que lleva la relación de todos los recursos y dónde viven.
+Los archivos de workstream son el estado operacional autoritativo. No el transcript, no la memoria del agente.
+
+| Componente | Qué almacena |
+|------------|-------------|
+| `PROJECT.md` | Identidad del proyecto: propósito, alcance, dirección |
+| `AGENTS.md` | Contexto de agente a nivel proyecto: stack, convenciones, personas |
+| `TICK.md` | Gestión de tareas: qué hay que hacer, quién lo hace |
+| Archivos de workstream | Estado operacional: identidad, estado, memoria, decisiones, personas, recursos |
+
+### 2. Capa de resolución
+
+La resolución debe ser exacta, determinista y no heurística.
+
+**Regla canónica:** Cada workstream declara su thread de comunicación vinculado en `BRIEF.md`:
+
+```
+thread_id: discord:1491150845675438110
+```
+
+**Reglas de resolución:**
+1. Resolver por `thread_id` exacto
+2. Si existe coincidencia exacta, cargar ese workstream
+3. Si no existe coincidencia exacta, detenerse y preguntar — o vincular
+4. Nunca resolver por coincidencia difusa, similitud de palabras clave, o proximidad de ruta
+
+**Fuente de verdad:** `BRIEF.md` es la fuente de verdad para la vinculación thread-workstream. Puede existir un registro o índice derivado para rendimiento de búsqueda, pero `BRIEF.md` es canónico.
+
+### 3. Capa de runtime
+
+Cargar solo lo necesario para el turno actual.
+
+**Política de carga por defecto (Tier 1):**
+- `BRIEF.md`
+- `STATUS.md`
+
+**Bajo demanda (Tier 2) — cuando la tarea requiere contexto de relaciones o decisiones:**
+- `DECISIONS.md`
+- `STAKEHOLDERS.md`
+
+**Bajo demanda (Tier 3) — cuando la tarea requiere contexto acumulado o detallado:**
+- `MEMORY.md`
+- `RESOURCES.md`
+- `docs/*`
+
+**Reglas de runtime:**
+- No leer archivos de otros workstreams por defecto
+- No escanear ampliamente `projects/`
+- No hacer fallback heurístico si falta la vinculación
+- Si la sesión se degrada, reconstruir desde archivos en lugar de depender de la continuidad del transcript
 
 ---
 
-## 1. Estructura de proyecto
+## Estructura de proyecto
 
-Cada proyecto es un directorio auto-contenido con un `PROJECT.md` (brief del proyecto), un archivo de tareas tick.md y un directorio `workstreams/`:
+Cada proyecto es un directorio auto-contenido:
 
 ```
 projects/
 ├── project-alpha/
-│   ├── PROJECT.md           ← Brief del proyecto: dominio, propietario, límites
+│   ├── PROJECT.md           ← Identidad del proyecto: propósito, alcance, dirección
+│   ├── AGENTS.md            ← Contexto de agente a nivel proyecto (opcional)
 │   ├── TICK.md              ← tick-md: todas las tareas del proyecto
 │   ├── .tick/
 │   │   └── config.yml       ← configuración de tick-md
@@ -49,10 +93,34 @@ projects/
 │   │       └── ...
 │   └── docs/                ← artefactos del proyecto
 └── project-beta/
+    ├── PROJECT.md
+    ├── AGENTS.md
     ├── TICK.md
     ├── .tick/
     └── workstreams/
 ```
+
+Los proyectos no están vinculados a threads. Los workstreams están vinculados a threads.
+
+### AGENTS.md — Contexto de agente a nivel proyecto
+
+`AGENTS.md` en la raíz del proyecto proporciona contexto que aplica a todos los workstreams del proyecto:
+
+- Stack tecnológico y convenciones de código
+- Personas clave y sus roles
+- Reglas de comunicación específicas del proyecto
+- Integraciones activas (APIs, plataformas)
+- Restricciones o invariantes arquitectónicas
+
+**Comportamiento de carga:** Cuando un agente entra en un thread de workstream, carga `AGENTS.md` del directorio padre del proyecto antes de cargar los archivos del workstream. Si el archivo no existe, el agente continúa normalmente.
+
+**Orden de carga:**
+1. `projects/[proyecto]/AGENTS.md` — contexto a nivel proyecto
+2. `projects/[proyecto]/workstreams/[nombre]/BRIEF.md` — identidad del workstream
+3. `projects/[proyecto]/workstreams/[nombre]/STATUS.md` — estado actual
+4. Escalar a otros archivos solo cuando sea necesario
+
+Esto separa el contexto del proyecto del contexto del workstream, evita repetir información del proyecto en cada BRIEF.md, y funciona en todas las plataformas (sin dependencia de `cwd`).
 
 ### Estructura de archivos por workstream
 
@@ -60,9 +128,9 @@ Cada workstream tiene un directorio con 6 archivos estándar:
 
 ```
 workstreams/[nombre]/
-├── BRIEF.md         ← Qué es, para quién, problema, apetito
-├── STATUS.md        ← Fase del workstream, dónde estamos, bloqueadores
-├── MEMORY.md        ← Contexto acumulado, insights, learnings
+├── BRIEF.md         ← Identidad del workstream + vinculación thread_id (obligatorio)
+├── STATUS.md        ← Pulso operacional: fase, siguiente, bloqueadores
+├── MEMORY.md        ← Contexto durable entre sesiones (≤80 líneas)
 ├── DECISIONS.md     ← Log de decisiones clave con fecha + razón
 ├── STAKEHOLDERS.md  ← Personas relevantes y su rol
 ├── RESOURCES.md     ← Inventario de artefactos y dónde viven
@@ -73,12 +141,12 @@ workstreams/[nombre]/
 
 ---
 
-## 2. Relación tarea–workstream
+## Relación tarea–workstream
 
 Las tareas viven en `TICK.md` en la raíz del proyecto. Los workstreams viven en `workstreams/`. Se conectan mediante tags:
 
 - Cada tarea en TICK.md se etiqueta con el nombre del workstream (ej. `tags: [feature-x]`)
-- Un workstream puede tener **1 o N tareas** — algunos son una sola tarea, otros tienen muchas
+- Un workstream puede tener **1 o N tareas** — algunos workstreams son una sola tarea, otros tienen muchas
 - `tick list --tag feature-x` muestra todas las tareas de ese workstream
 - `tick status` muestra todas las tareas del proyecto
 
@@ -86,9 +154,13 @@ Las tareas viven en `TICK.md` en la raíz del proyecto. Los workstreams viven en
 
 **TICK.md es la fuente de verdad a nivel tarea** — estado, prioridad, asignación, claim/release, historial. No describe el propósito o contexto del workstream. Los archivos de workstream de intern-os son dueños de eso.
 
+> tick.md es la capa de gestión de tareas por defecto. Otros sistemas (Notion, Linear, Trello, etc.) pueden usarse en su lugar — ver la sección de gestión de tareas en SETUP.md.
+
+**Sobre artefactos:** no existe un repositorio único. `docs/` dentro de cada workstream es uno de N posibles repositorios (Notion, Google Drive, S3, R2, etc.). `RESOURCES.md` es el índice que lleva la relación de todos los recursos y dónde viven.
+
 ---
 
-## 3. Protocolo de escritura
+## Protocolo de escritura
 
 **Quién escribe qué:**
 
@@ -107,7 +179,7 @@ Estos límites aplican a archivos dentro de `projects/[proyecto]/workstreams/[no
 | Archivo de workstream | Regla de lectura | Tamaño objetivo |
 |-----------------------|-----------------|-----------------|
 | BRIEF.md | Leer completo | Sin límite (típicamente 1-3 KB) |
-| STATUS.md | Leer completo | ≤10 líneas — fase, última sesión, bloqueadores, siguiente paso |
+| STATUS.md | Leer completo | ≤10 líneas — fase, siguiente, propietario, bloqueadores, actualizado |
 | MEMORY.md | **Últimas 80 líneas solamente** | Mantener bajo 80 líneas — resumen curado, no log |
 | DECISIONS.md | Leer completo | Log de append-only, crece lentamente |
 | STAKEHOLDERS.md | Leer completo | Rara vez cambia |
@@ -135,7 +207,7 @@ Ver TICK-INTEGRATION.md para el protocolo completo de coordinación.
 
 ---
 
-## 4. Ciclo de vida
+## Ciclo de vida
 
 ### Ciclo de vida del proyecto
 
@@ -145,10 +217,11 @@ Un proyecto se **descubre** cuando un miembro del equipo ejecuta:
 
 El agente:
 1. Crea `projects/[nombre]/PROJECT.md` usando el template de proyecto
-2. Ejecuta `tick init` dentro del directorio del proyecto
-3. Registra al agente: `tick agent register @agent-name`
-4. Abre un thread de comunicación para el proyecto
-5. Hace las 4 preguntas de descubrimiento (dominio, exclusiones, propietario, condición de archivo)
+2. Crea `projects/[nombre]/AGENTS.md` usando el template de agentes del proyecto
+3. Ejecuta `tick init` dentro del directorio del proyecto
+4. Registra al agente: `tick agent register @agent-name`
+5. Abre un thread de comunicación para el proyecto
+6. Hace las preguntas de descubrimiento (propietario, objetivo, criterios de éxito, condición de archivo)
 
 Un proyecto se **archiva** cuando todos sus workstreams están archivados y se cumple la condición de archivo definida en PROJECT.md. El directorio se mueve a `projects/archived/`.
 
@@ -178,14 +251,22 @@ Un workstream **muere** cuando:
 
 ---
 
-## 5. Bootstrap de agentes
+## Bootstrap de agentes
 
 **Principio:** El agente carga solo el workstream del thread donde está operando — no todos.
 
-**Mecanismo:**
-- Cada thread de comunicación (Discord o Slack) mapea a un directorio de workstream
-- El campo `thread_id` en BRIEF.md es el mapeo canónico
-- Al entrar a un thread de workstream, el agente lee **solo** el directorio de ese workstream
+**Mecanismo de resolución:**
+- Cada thread de comunicación (Discord o Slack) mapea a exactamente un directorio de workstream
+- El campo `thread_id` en BRIEF.md es la vinculación canónica
+- La resolución es por coincidencia exacta únicamente — nunca por inferencia, similitud o heurística
+
+**Orden de carga:**
+
+1. Resolver workstream por `thread_id` exacto
+2. Leer `projects/[proyecto]/AGENTS.md` (contexto a nivel proyecto, si existe)
+3. Leer `BRIEF.md` (identidad del workstream)
+4. Leer `STATUS.md` (estado actual)
+5. Escalar a otros archivos solo cuando la tarea lo requiera
 
 **Mapeo thread ↔ directorio:** El campo `thread_id` en BRIEF.md usa el formato `[plataforma]:[id]`:
 
@@ -196,7 +277,7 @@ thread_id: discord:123456789
 thread_id: slack:C07ABC123/1234567890.123456
 ```
 
-El agente escribe este campo al crear el directorio del workstream, usando el ID del thread de los metadatos de la plataforma.
+El agente escribe este campo al crear el directorio del workstream, usando el ID del thread de los metadatos de la plataforma. `thread_id` es obligatorio en cada BRIEF.md.
 
 **Instrucciones del agente:** Cada framework de agente tiene su propio mecanismo para cargar instrucciones. Ver `adapters/` para la configuración específica de cada framework:
 
@@ -210,14 +291,37 @@ El contrato de instrucciones es el mismo sin importar el framework:
 <!-- NOTE: This instruction block is kept in English because it is consumed by LLMs trained primarily on English text. -->
 
 1. Read `WORKSTREAMS.md` at the start of any session in a workstream thread
-2. Load only the workstream directory matching the active thread
-3. Read BRIEF.md → STATUS.md → MEMORY.md before doing any work
-4. Claim the task in tick.md before starting work
-5. Update STATUS.md at the end of every working session
+2. Resolve the workstream by exact `thread_id`
+3. Load project-level `AGENTS.md` (if it exists)
+4. Read BRIEF.md → STATUS.md before doing any work
+5. Escalate to other files only when the task requires it
+6. Claim the task in tick.md before starting work
+7. Update STATUS.md at the end of every working session
 
 ---
 
-## 6. Plataformas de comunicación
+## Doctrina de recuperación
+
+Si una sesión está degradada, inflada, reseteada o en mal estado:
+- Reconstruir desde los archivos de workstream
+- No confiar en la continuidad del transcript como fuente de verdad
+- `BRIEF.md` y `STATUS.md` deben ser suficientes para reiniciar el workstream de manera segura
+- Si se necesita más contexto, escalar a `MEMORY.md` y `DECISIONS.md`
+
+---
+
+## Doctrina de aislamiento
+
+Por defecto:
+- No leer archivos de otro workstream
+- No buscar ampliamente entre proyectos
+- No inferir a partir de nombres similares
+
+La síntesis entre workstreams debe ser explícita y solicitada por el humano.
+
+---
+
+## Plataformas de comunicación
 
 Los workstreams usan threads de comunicación como superficie de colaboración. El framework soporta múltiples plataformas — ver COMMUNICATION.md para la especificación completa.
 
@@ -234,7 +338,7 @@ Los workstreams usan threads de comunicación como superficie de colaboración. 
 
 ---
 
-## 7. Integración con tick.md
+## Integración con tick.md
 
 tick.md es la capa de gestión de tareas por defecto. TICK.md vive en la raíz del proyecto y contiene todas las tareas de ese proyecto. Ver TICK-INTEGRATION.md para la especificación completa.
 
@@ -262,10 +366,12 @@ O manualmente:
 
 1. Crear el directorio del proyecto: `mkdir -p projects/[nombre-proyecto]`
 2. Copiar el template de PROJECT.md: `cp [ruta-skill]/assets/templates/project/PROJECT.md projects/[nombre-proyecto]/`
-3. Inicializar tick.md: `cd projects/[nombre-proyecto] && tick init`
-4. Registrar el agente: `tick agent register @agent-name`
-5. Llenar PROJECT.md con dominio, propietario, límites y condición de archivo
-6. El proyecto está listo para workstreams
+3. Copiar el template de AGENTS.md: `cp [ruta-skill]/assets/templates/project/AGENTS.md projects/[nombre-proyecto]/`
+4. Inicializar tick.md: `cd projects/[nombre-proyecto] && tick init`
+5. Registrar el agente: `tick agent register @agent-name`
+6. Llenar PROJECT.md con propietario, objetivo, alcance y condición de archivo
+7. Llenar AGENTS.md con contexto a nivel proyecto (opcional — puede completarse incrementalmente)
+8. El proyecto está listo para workstreams
 
 ## Cómo crear un nuevo workstream
 
@@ -278,19 +384,15 @@ O manualmente:
    cp -r assets/templates/workstream/ projects/$PROJECT/workstreams/$WS/
    mkdir -p projects/$PROJECT/workstreams/$WS/docs
    ```
-4. Llenar BRIEF.md usando las 6 preguntas:
-   - ¿Qué trabajo específico es este? *(verbo + objeto)*
-   - ¿Qué problema o situación lo gatilla?
-   - ¿Quién lo necesita y para qué?
-   - ¿Qué entrega al terminar? *(outcome, no output)*
-   - ¿Qué está dentro del scope? ¿Qué está fuera?
-   - ¿Cuál es el apetito? *(tiempo o esfuerzo máximo)*
-5. Agregar thread_id a BRIEF.md: `thread_id: [plataforma]:[id]`
-6. Enlazar el thread de comunicación y la tarea en RESOURCES.md
+4. Llenar BRIEF.md con la identidad del workstream:
+   - `thread_id` (obligatorio)
+   - Nombres de `project` y `workstream`
+   - Objetivo, problema, alcance, criterios de éxito, apetito
+5. Enlazar el thread de comunicación y la tarea en RESOURCES.md
 
 ---
 
-## 8. Modelo de datos del workspace
+## Modelo de datos del workspace
 
 El workspace de internOS contiene dos tipos de datos: **archivos del framework** (reemplazables, incluidos con el skill) y **datos del usuario** (irreemplazables, creados por humanos y agentes durante la operación).
 
@@ -298,7 +400,7 @@ El workspace de internOS contiene dos tipos de datos: **archivos del framework**
 
 | Archivo | Ubicación | Descripción |
 |---------|-----------|-------------|
-| `WORKSTREAMS.md` | Raíz del workspace | Guía operacional para agentes — copiada de `assets/WORKSTREAMS.md` durante la instalación. Se reemplaza al actualizar. |
+| `WORKSTREAMS.md` | Raíz del workspace | Guía de runtime para agentes — copiada de `assets/WORKSTREAMS.md` durante la instalación. Se reemplaza al actualizar. |
 
 Estos archivos se pueden eliminar y recrear desde el repositorio de intern-os en cualquier momento.
 
@@ -307,7 +409,8 @@ Estos archivos se pueden eliminar y recrear desde el repositorio de intern-os en
 | Archivo/Directorio | Ubicación | Descripción |
 |---------------------|-----------|-------------|
 | `projects/` | Raíz del workspace | Todos los directorios de proyectos |
-| `PROJECT.md` | `projects/[nombre]/` | Identidad del proyecto — dominio, propietario, límites |
+| `PROJECT.md` | `projects/[nombre]/` | Identidad del proyecto — propósito, alcance, dirección |
+| `AGENTS.md` | `projects/[nombre]/` | Contexto de agente a nivel proyecto |
 | `TICK.md` + `.tick/` | `projects/[nombre]/` | Historial de tareas, asignaciones, registros de agentes |
 | `workstreams/` | `projects/[nombre]/workstreams/` | Todos los directorios de workstreams |
 | Archivos de workstream | `workstreams/[nombre]/` | BRIEF.md, STATUS.md, MEMORY.md, DECISIONS.md, STAKEHOLDERS.md, RESOURCES.md, docs/ |
@@ -338,7 +441,7 @@ tar -xzf internos-backup-YYYYMMDD.tar.gz -C [workspace]
 
 ---
 
-## 9. Desinstalar internOS
+## Desinstalar internOS
 
 Desinstalar remueve las instrucciones del framework de tu agente pero **preserva todos los datos de proyectos** por defecto.
 
@@ -353,7 +456,7 @@ Consulta el SETUP.md de tu adaptador para el comando específico:
 | Claude Code | Eliminar la sección internOS de CLAUDE.md |
 | Otro | Eliminar las instrucciones internOS del system prompt del agente |
 
-### Paso 2: Eliminar la guía operacional
+### Paso 2: Eliminar la guía de runtime
 
 ```bash
 rm [workspace]/WORKSTREAMS.md
@@ -391,27 +494,23 @@ rm -rf [workspace]/projects/
 
 ## Roadmap
 
-> v2 incluye proyectos, integración con tick.md y comunicación multi-plataforma. Las automatizaciones se implementarán a medida que el sistema esté probado en uso real.
+> v0.3.0 incluye el modelo simplificado de Proyecto + Workstream con arquitectura de tres capas. El trabajo futuro se enfoca en enforcement de runtime.
 
-### v2.1 — Automatizaciones de bajo esfuerzo
+### v0.3.x — Enforcement de runtime
 
-**Sync check** *(hecho — v2.1.0)*
-`scripts/sync-check.sh` — escanea un workspace y reporta thread_ids faltantes, IDs de Slack incompletos, archivos faltantes y directorios huérfanos sin tareas en tick.md. Uso: `bash sync-check.sh <ruta-workspace>`
+**Registro derivado de thread_id** — para búsqueda rápida sin escanear todos los archivos BRIEF.md.
 
-**Checkpoint reminder** *(hecho — v2.1.0)*
-`scripts/checkpoint-reminder.sh` — detecta workstreams activos con STATUS.md desactualizado. Umbral configurable (por defecto 3 días). Uso: `bash checkpoint-reminder.sh <ruta-workspace> [días]`
+**Hooks de mutación en bootstrap** — hooks compatibles con OpenClaw para carga automática de workstreams al entrar a un thread.
 
-### v2.2 — Automatizaciones de esfuerzo medio
+### v0.4.0 — Automatizaciones
 
-**Scaffold automático al crear thread** *(~3h)*
-Webhook de plataforma detecta nuevo thread en un canal `-workstreams` → crea automáticamente el directorio + 6 archivos y agrega la tarea en tick.md.
+**Scaffold automático al crear thread**
+Webhook de plataforma detecta nuevo thread en un canal/foro `-workstreams` → crea automáticamente el directorio + 6 archivos y agrega la tarea en tick.md.
 
-### v3.0 — Automatizaciones de alto esfuerzo
-
-**Archive workflow** *(~6-8h)*
+**Workflow de archivo**
 Detecta todas las tareas de un workstream marcadas como done en tick.md → mueve el directorio a `workstreams/archived/` → archiva el thread de comunicación.
 
-**Dashboard cross-project** *(~4h)*
+**Dashboard cross-project**
 Agregador que lee todos los archivos `projects/*/TICK.md` y produce una vista unificada entre proyectos.
 
 ---
@@ -422,11 +521,11 @@ Agregador que lee todos los archivos `projects/*/TICK.md` y produce una vista un
 
 ## Referencias
 
-- Guía operacional para agentes: `WORKSTREAMS.md` (se copia a la raíz del workspace)
+- Guía de runtime para agentes: `WORKSTREAMS.md` (se copia a la raíz del workspace)
 - Templates de workstream: `assets/templates/workstream/`
-- Template de proyecto: `assets/templates/project/`
+- Templates de proyecto: `assets/templates/project/` (incluye PROJECT.md y AGENTS.md)
 - Adaptadores de agentes: `adapters/`
 - Spec de comunicación: `references/en/COMMUNICATION.md`
 - Integración tick.md: `references/en/TICK-INTEGRATION.md`
-- Setup para nuevas instancias: `references/es/SETUP.md`
-- Instructivo operacional: `references/es/PLAYBOOK.md`
+- Setup para nuevas instancias: `references/en/SETUP.md`
+- Instructivo operacional: `references/en/PLAYBOOK.md`

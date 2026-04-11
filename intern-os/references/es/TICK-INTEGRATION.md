@@ -1,6 +1,6 @@
 # TICK-INTEGRATION — tick.md como Capa de Gestión de Tareas
 
-*internOS v2.0 | 2026-03-30*
+*internOS v0.3.0 | 2026-04-11*
 
 tick.md es la capa de gestión de tareas por defecto para internOS. Este documento especifica cómo tick.md se integra con la jerarquía proyecto–workstream–tarea.
 

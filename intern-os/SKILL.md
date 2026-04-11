@@ -1,7 +1,7 @@
 ---
 name: intern-os
 description: internOS Workstreams framework. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
-version: 0.2.3
+version: 0.3.0
 metadata:
   hermes:
     tags: [Workstreams, Project Management, Coordination]
@@ -23,26 +23,16 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 
 After installing, follow your adapter's SETUP.md for framework-specific configuration.
 
-## Project vs. Pod vs. workstream — when to use which
+## Project vs. workstream — when to use which
 
 > A **project** is the top-level operating container in internOS.
-> A **workstream** is a concrete sprint of work with a start and end inside a project.
-> A **Pod** is a specific kind of project: a revenue-bearing delivery unit with its own accountability.
+> A **workstream** is a bounded unit of execution inside a project.
 
 **Rule of thumb:**
 - If the work requires more than one independent workstream, or involves an operational area with its own identity (infra, product, ops, content, etc.) → it's a **project**.
 - If it's a scoped piece of work inside an existing area → it's a **workstream** within that project.
-- If the project comes from a closed proposal, has revenue, a Delivery Manager, an Architect, its own goals, its own metrics, and a degree of operating autonomy → it is a **Pod**.
 
-**Important distinction:**
-- Every Pod is a project.
-- Not every project is a Pod.
-
-Projects should declare an `entity_type` in `PROJECT.md`:
-- `pod` — commercial delivery unit derived from a closed proposal
-- `internal-project` — internal project without direct revenue yet
-- `foundation` — shared Firm capability (for example: startup-team, infrastructure, CRM, playbooks)
-- `lab` — exploration, incubation, or early experiment
+Projects are not thread-bound. Workstreams are thread-bound.
 
 ## Discovering a new project
 
@@ -53,80 +43,103 @@ Any team member can create a new project:
 The agent:
 
 1. Creates `projects/[name]/PROJECT.md` using the project template
-2. Runs `tick init` and registers the agent
-3. Opens a communication thread (Slack or Discord) for the project
-4. Classifies the project with an `entity_type`
-5. Asks the minimum discovery questions for that type
+2. Creates `projects/[name]/AGENTS.md` using the project agents template
+3. Runs `tick init` and registers the agent
+4. Opens a communication thread for the project
 
-**Base discovery questions for all projects:**
+**Discovery questions:**
 - **Who is the human owner?**
 - **What is the main objective?**
-- **Which Firm does this belong to?**
+- **What is the success criteria?**
+- **When should this project be archived?**
 
-**Additional discovery for `pod`:**
-- **Who is the client?**
-- **Has the proposal already closed?** *(must be `closed` for a Pod)*
-- **Who is the Delivery Manager?**
-- **Who is the Architect?**
-- **What type of Pod is it?** *(implementation, training, consulting, internal-product, experiment)*
-- **What KPIs and cadence will govern it?**
-
-**Additional discovery for `internal-project`:**
-- **What cadence will govern it?**
-
-**Additional discovery for `foundation`:**
-- **What shared Firm capability does this project represent?**
-
-**Additional discovery for `lab`:**
-- **What are we trying to learn or validate?**
-
-If the human does not have an answer for a non-critical field, mark it as `TBD` in `PROJECT.md`. If a required `pod` field is missing, do not classify it as a Pod yet.
+If the human does not have an answer for a non-critical field, mark it as `TBD` in `PROJECT.md`.
 
 ## Project lifecycle
 
 ```
-Discover project → classify entity_type → PROJECT.md + tick init + thread
+Discover project → PROJECT.md + AGENTS.md + tick init + thread
     → Workstreams activated within the project
         → All workstreams archived
             → PROJECT.md updated with final state
                 → Project directory moved to projects/archived/
 ```
 
-## Pod lifecycle
+## The three layers
 
-Pods are commercial projects and usually originate outside internOS in the Firm's CRM / pipeline.
+internOS operates across three explicit layers.
 
+### Storage layer
+
+The workstream files are the authoritative operational state. Not the transcript, not agent memory.
+
+```text
+projects/
+  [project-name]/
+    PROJECT.md
+    AGENTS.md
+    TICK.md
+    workstreams/
+      [workstream-name]/
+        BRIEF.md
+        STATUS.md
+        MEMORY.md
+        DECISIONS.md
+        STAKEHOLDERS.md
+        RESOURCES.md
+        docs/
 ```
-Lead won → Proposal closed → Delivery Manager assigned → Architect assigned
-    → Pod project created in internOS
-        → Commercial handoff to delivery
-            → Scope refined
-                → KPIs + cadence + Firm dependencies defined
-                    → Setup / access / tooling
-                        → Kickoff
-                            → Pod operation
-                                → Delivery close
-                                    → Retro + learnings captured
-                                        → Administrative close
-                                            → Archive
-```
+
+### Resolution layer
+
+Resolution must be exact, deterministic, and non-heuristic.
+
+1. Resolve by exact `thread_id` in `BRIEF.md`
+2. If exact match exists, load that workstream
+3. If no exact match exists, stop and ask — never guess
+4. Never resolve by fuzzy matching, keyword similarity, or path proximity
+
+`BRIEF.md` is the source of truth for thread-to-workstream binding.
+
+### Runtime layer
+
+Load only what is needed for the current turn.
+
+**Default loading policy (Tier 1):**
+- `BRIEF.md`
+- `STATUS.md`
+
+**On-demand (Tier 2) — when task requires relationship or decision context:**
+- `DECISIONS.md`
+- `STAKEHOLDERS.md`
+
+**On-demand (Tier 3) — when task requires accumulated or detailed context:**
+- `MEMORY.md`
+- `RESOURCES.md`
+- `docs/*`
+
+**Runtime rules:**
+- No cross-workstream reads by default
+- No broad scanning across `projects/`
+- No heuristic fallback if binding is missing
+- If session degrades, reconstruct from files — not from transcript continuity
 
 ## Operating a workstream
 
 When in a communication thread that has a workstream context:
 
-1. Read `WORKSTREAMS.md` for the operating guide
-2. Find the matching directory in `projects/[project]/workstreams/[name]/`
-3. Read the workstream's files before doing any work (these are in the workstream directory, not your agent memory):
-   - `BRIEF.md` — read in full
+1. Resolve the workstream by exact `thread_id` match
+2. Load `AGENTS.md` from the project directory (if it exists)
+3. Read the workstream's files:
+   - `BRIEF.md` — read in full (includes thread_id, project, identity)
    - `STATUS.md` — read in full (must be ≤10 lines by design)
-   - `MEMORY.md` — **last 80 lines only** (search on demand if more context needed)
-4. Check tasks: `tick list --tag [workstream-name]`
-5. Claim the task: `tick claim TASK-X @agent-name`
-6. Do the work
-7. Update STATUS.md at the end of the session
-8. If the workstream's MEMORY.md exceeds 80 lines, consolidate — summary, not log. Target ≤50 lines; never let it become a session log.
-9. Complete or release the task: `tick done TASK-X @agent-name`
+4. Escalate to `MEMORY.md` (last 80 lines only), `DECISIONS.md`, `STAKEHOLDERS.md`, or `RESOURCES.md` only when the task requires it
+5. Check tasks: `tick list --tag [workstream-name]`
+6. Claim the task: `tick claim TASK-X @agent-name`
+7. Do the work
+8. Update STATUS.md at the end of the session
+9. If MEMORY.md exceeds 80 lines, consolidate — summary, not log. Target ≤50 lines.
+10. Complete or release the task: `tick done TASK-X @agent-name`
 
 ### Platform startup protocol
 
@@ -134,13 +147,13 @@ When in a communication thread that has a workstream context:
 
 | Platform | Startup mode | Rule |
 |----------|-------------|------|
-| Discord | **LIGHT** | ACK immediately → load BRIEF + STATUS → load MEMORY only if needed |
-| Slack | **LIGHT** | ACK immediately → load BRIEF + STATUS → load MEMORY only if needed |
+| Discord | **LIGHT** | ACK immediately → load BRIEF + STATUS → escalate only if needed |
+| Slack | **LIGHT** | ACK immediately → load BRIEF + STATUS → escalate only if needed |
 | Telegram / CLI | **FULL** | Load BRIEF + STATUS + MEMORY before first response |
 
 **LIGHT mode startup contract:**
-1. Emit ACK first (e.g. "on it, loading context…")
-2. Load `BRIEF.md` (in full)
+1. Emit ACK first (e.g. "on it, loading context...")
+2. Load `BRIEF.md` (in full — includes thread_id and workstream identity)
 3. Load `STATUS.md` (in full, ≤10 lines)
 4. Load `MEMORY.md` only if the request requires prior context
 5. If `MEMORY.md` exceeds threshold, load last 80 lines and note it was truncated
@@ -150,6 +163,22 @@ When in a communication thread that has a workstream context:
 - Must be a curated summary — never a raw session log
 - Detailed chronology goes in `docs/` notes, not MEMORY.md
 - If size grows beyond threshold: consolidate before ending the session, not after
+
+### Recovery doctrine
+
+If a session is degraded, bloated, reset, or unhealthy:
+- Reconstruct from workstream files
+- Do not trust transcript continuity as source of truth
+- `BRIEF.md` and `STATUS.md` must be sufficient to restart the workstream safely
+
+### Isolation doctrine
+
+By default:
+- Do not read another workstream's files
+- Do not search broadly across projects
+- Do not infer from similar names
+
+Cross-workstream synthesis must be explicit and requested by the human.
 
 ## Activating a new workstream
 
@@ -167,7 +196,7 @@ mkdir -p [workspace]/projects/$PROJECT/workstreams/$WS/docs
 touch [workspace]/projects/$PROJECT/workstreams/$WS/{BRIEF.md,STATUS.md,MEMORY.md,DECISIONS.md,STAKEHOLDERS.md,RESOURCES.md}
 ```
 
-Add the thread ID to BRIEF.md:
+Add the thread ID to BRIEF.md (mandatory):
 ```
 thread_id: [platform]:[thread ID]
 ```
@@ -187,13 +216,25 @@ Status: [current phase — one line]
 
 ```
 projects/[project]/workstreams/[name]/
-├── BRIEF.md         ← What, for whom, problem, appetite + thread_id
-├── STATUS.md        ← Workstream phase, next step, blockers
-├── MEMORY.md        ← Accumulated context, insights, learnings
-├── DECISIONS.md     ← Key decisions log with date + reason
+├── BRIEF.md         ← Workstream identity + thread_id binding (mandatory)
+├── STATUS.md        ← Operational heartbeat: phase, next, blockers
+├── MEMORY.md        ← Durable context across sessions (≤80 lines)
+├── DECISIONS.md     ← Key decisions log with date + rationale
 ├── STAKEHOLDERS.md  ← Relevant people and their role
-├── RESOURCES.md     ← Artifacts index and where they live
+├── RESOURCES.md     ← Artifact registry and where they live
 └── docs/            ← Working artifacts
+```
+
+## Project file structure
+
+```
+projects/[project]/
+├── PROJECT.md       ← Project identity: purpose, scope, direction
+├── AGENTS.md        ← Project-level agent context (optional)
+├── TICK.md          ← Task management (tick.md)
+├── .tick/
+│   └── config.yml   ← tick.md configuration
+└── workstreams/
 ```
 
 ## Full documentation

@@ -1,6 +1,6 @@
 # PLAYBOOK — Operating Workstreams Day to Day
 
-*internOS v2.1 | 2026-03-31*
+*internOS v0.3.0 | 2026-04-11*
 
 This guide explains how to use the internOS Workstreams system: how to create projects, activate workstreams, work sessions, and manage the lifecycle.
 
@@ -64,10 +64,11 @@ The agent:
 
 The agent:
 1. Creates `projects/[name]/PROJECT.md` using the project template
-2. Runs `tick init` and registers the agent
-3. Opens a communication thread for the project
-4. Asks the 4 discovery questions (domain, exclusions, owner, archive condition)
-5. Once PROJECT.md is filled, the project is ready for workstreams
+2. Creates `projects/[name]/AGENTS.md` using the project agents template
+3. Runs `tick init` and registers the agent
+4. Opens a communication thread for the project
+5. Asks the discovery questions (owner, objective, success criteria, archive condition)
+6. Once PROJECT.md is filled, the project is ready for workstreams
 
 **Activation format:**
 
@@ -155,13 +156,14 @@ On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s), the ag
 ### Starting work
 
 1. Read `WORKSTREAMS.md` (agent runtime guide)
-2. Identify the workstream from the thread context
-3. Read the workstream files:
-   - `BRIEF.md` — read in full
+2. Resolve the workstream by exact `thread_id` match
+3. Read project-level context: `projects/[project]/AGENTS.md` (if it exists)
+4. Read the workstream files:
+   - `BRIEF.md` — read in full (includes thread_id, project, workstream identity)
    - `STATUS.md` — read in full (must be ≤10 lines by design)
-   - `MEMORY.md` — **last 80 lines only** (if you need more context, search on demand)
-4. Check current tasks: `tick list --tag [workstream-name]`
-5. Claim the task to work on: `tick claim TASK-X @agent-name`
+5. Escalate to `MEMORY.md` (last 80 lines only), `DECISIONS.md`, `STAKEHOLDERS.md`, or `RESOURCES.md` only when the task requires it
+6. Check current tasks: `tick list --tag [workstream-name]`
+7. Claim the task to work on: `tick claim TASK-X @agent-name`
 
 ### During work
 

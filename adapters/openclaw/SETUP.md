@@ -1,6 +1,6 @@
 # SETUP — OpenClaw Adapter
 
-*internOS v0.2.2 | 2026-04-06*
+*internOS v0.3.0 | 2026-04-11*
 
 OpenClaw-specific setup for the internOS Workstreams framework.
 
@@ -33,16 +33,26 @@ Open `~/.openclaw/workspace/AGENTS.md` and add the following section after the "
 If `WORKSTREAMS.md` exists in the workspace root, read it at the start
 of any session in a communication thread that has a workstream context.
 
+### Resolution
+
+Resolve the workstream by exact `thread_id` in BRIEF.md.
+If no exact match exists, stop and ask — never guess.
+Never resolve by fuzzy matching, keyword similarity, or path proximity.
+
+### Loading order
+
+1. Resolve workstream by exact `thread_id`
+2. Read `projects/[project]/AGENTS.md` (project-level context, if exists)
+3. Read `BRIEF.md` in full (workstream identity + thread_id)
+4. Read `STATUS.md` in full (must be ≤10 lines by design)
+5. Escalate to MEMORY.md, DECISIONS.md, STAKEHOLDERS.md, RESOURCES.md only when the task requires it
+6. MEMORY.md: read last 80 lines only — search on demand if more context needed
+
 Only load the workstream directory matching the active thread.
 Do not load all workstreams — keep context clean.
 
 Projects live in: `projects/[project-name]/`
 Workstream directories live in: `projects/[project]/workstreams/[workstream-name]/`
-
-### Reading workstream files (in the workstream directory, not your agent memory)
-- BRIEF.md: read in full
-- STATUS.md: read in full (must be ≤10 lines by design)
-- MEMORY.md: read last 80 lines only — search on demand if more context needed
 
 ### Platform startup protocol
 
@@ -50,11 +60,21 @@ Workstream directories live in: `projects/[project]/workstreams/[workstream-name
 
 | Platform | Mode | Rule |
 |----------|------|------|
-| Discord | LIGHT | ACK → BRIEF + STATUS → MEMORY only if needed |
-| Slack | LIGHT | ACK → BRIEF + STATUS → MEMORY only if needed |
+| Discord | LIGHT | ACK → BRIEF + STATUS → escalate only if needed |
+| Slack | LIGHT | ACK → BRIEF + STATUS → escalate only if needed |
 | Telegram / CLI | FULL | BRIEF + STATUS + MEMORY before first response |
 
 **MEMORY.md hygiene:** must stay ≤80 lines (target ≤50). Curated summary only — move detailed notes to `docs/`. Consolidate before ending the session if over threshold.
+
+### Recovery doctrine
+
+If session is degraded, bloated, or reset: reconstruct from workstream files.
+Do not trust transcript continuity. BRIEF.md + STATUS.md must be sufficient to restart.
+
+### Isolation doctrine
+
+Do not read another workstream's files by default.
+Cross-workstream synthesis must be explicit.
 
 ### Before starting work on a task
   tick claim TASK-X @agent-name

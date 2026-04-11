@@ -1,6 +1,13 @@
-# Memory
+# MEMORY — [Workstream Name]
 
-Accumulated context, insights, and learnings for this workstream.
+## Durable context
 
-<!-- Add entries as the workstream progresses. Each entry should capture
-     something that would be valuable for a future agent or session to know. -->
+<!-- Facts, constraints, or decisions that any future session must know -->
+
+## Key learnings
+
+<!-- Insights discovered during work that affect approach or strategy -->
+
+## Open threads worth remembering
+
+<!-- Unfinished lines of thought, pending investigations, things to revisit -->

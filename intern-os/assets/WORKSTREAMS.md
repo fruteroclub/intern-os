@@ -1,6 +1,6 @@
 # Workstreams — internOS
 
-*v2.1*
+*v0.3.0*
 
 ---
 
@@ -10,28 +10,33 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 
 ---
 
-## The four layers
+## The three layers
 
-| Layer | Tool | Role |
-|-------|------|------|
-| Project | Filesystem (`projects/[name]/`) | Organizational container |
-| Management | tick.md (`TICK.md` at project root) | Task origin and coordination |
-| Communication | Discord forums · Slack threads | Team surface — humans and agents |
-| Operation | `projects/[name]/workstreams/` | Source of truth for agents |
+| Layer | What it does |
+|-------|-------------|
+| **Storage** | Workstream files are the authoritative state. Not the transcript. |
+| **Resolution** | `thread_id` in BRIEF.md is the exact, deterministic binding between thread and workstream. |
+| **Runtime** | Load only what is needed. Default: BRIEF.md + STATUS.md. Escalate on demand. |
 
 ---
 
 ## If you are in a communication thread
 
-1. **Check if the thread has a workstream directory** in `projects/[project]/workstreams/`
-2. **If it exists, read it before doing anything:**
-   - `BRIEF.md` → what this workstream is + thread_id mapping (read in full)
+1. **Resolve the workstream by exact `thread_id`** — match the thread to a BRIEF.md in `projects/[project]/workstreams/`
+2. **If no exact match exists, stop and ask.** Never guess, never fuzzy match.
+3. **Load project-level context** — read `projects/[project]/AGENTS.md` if it exists
+4. **Read workstream files before doing anything:**
+   - `BRIEF.md` → workstream identity + thread_id binding (read in full)
    - `STATUS.md` → where the work stands now (read in full — must be short by design)
-   - `MEMORY.md` → accumulated context and insights (**last 80 lines only** — if you need more, search on demand). This limit applies to the workstream's MEMORY.md, not your agent framework's own memory files.
-3. **Load only that directory.** Do not load other workstreams.
-4. **Check tasks:** `tick list --tag [workstream-name]`
-5. **Claim the task before working:** `tick claim TASK-X @agent-name`
-6. **When done**, update `STATUS.md` with the current state and complete/release the task in tick.md.
+5. **Escalate reads only when needed:**
+   - `MEMORY.md` → accumulated context (**last 80 lines only** — search on demand if more needed)
+   - `DECISIONS.md` → when the task involves prior decisions
+   - `STAKEHOLDERS.md` → when the task involves people or relationships
+   - `RESOURCES.md` → when the task involves artifacts or deployments
+6. **Load only that workstream's directory.** Do not load other workstreams.
+7. **Check tasks:** `tick list --tag [workstream-name]`
+8. **Claim the task before working:** `tick claim TASK-X @agent-name`
+9. **When done**, update `STATUS.md` with the current state and complete/release the task in tick.md.
 
 ### Platform timeout protocol
 
@@ -41,13 +46,35 @@ On platforms with short response timeouts (Discord ~2min, Slack ACK ~3s):
 
 ---
 
+## Recovery doctrine
+
+If a session is degraded, bloated, reset, or unhealthy:
+- Reconstruct from workstream files — not from transcript memory
+- `BRIEF.md` and `STATUS.md` must be sufficient to restart the workstream safely
+- Do not trust transcript continuity as source of truth
+
+---
+
+## Isolation doctrine
+
+By default:
+- Do not read another workstream's files
+- Do not search broadly across projects
+- Do not infer from similar names
+
+Cross-workstream synthesis must be explicit and requested by the human.
+
+---
+
 ## Project vs. workstream
 
 > A **project** groups work of the same domain over time — it can contain multiple workstreams.
-> A **workstream** is a concrete sprint of work with a start and end within that domain.
+> A **workstream** is a bounded unit of execution with a start and end within that domain.
 
-If the work needs multiple independent workstreams, or covers an area with its own identity (infra, product, ops, content) → **project**.
+If the work needs multiple independent workstreams, or covers an area with its own identity → **project**.
 If it's scoped work inside an existing area → **workstream** in that project.
+
+Projects are not thread-bound. Workstreams are thread-bound.
 
 ---
 
@@ -57,12 +84,12 @@ To create a new project, any team member says:
 
 > Discover project: [name]
 
-The agent creates `projects/[name]/` with `PROJECT.md`, runs `tick init`, registers the agent, and opens a communication thread. It then asks:
+The agent creates `projects/[name]/` with `PROJECT.md` and `AGENTS.md`, runs `tick init`, registers the agent, and opens a communication thread. It then asks:
 
-1. What domain does this project group?
-2. What does NOT belong in this project?
-3. Who is the human owner?
-4. When will this project be done or ready to archive?
+1. Who is the human owner?
+2. What is the main objective?
+3. What is the success criteria?
+4. When should this project be archived?
 
 Unanswered questions are marked `TBD` — the project proceeds.
 
@@ -73,7 +100,8 @@ Unanswered questions are marked `TBD` — the project proceeds.
 ```
 projects/
 ├── project-alpha/
-│   ├── PROJECT.md           ← Project brief: domain, owner, boundaries
+│   ├── PROJECT.md           ← Project identity: purpose, scope, direction
+│   ├── AGENTS.md            ← Project-level agent context (optional)
 │   ├── TICK.md              ← tick-md: all tasks for this project
 │   ├── .tick/
 │   └── workstreams/
@@ -93,12 +121,12 @@ projects/
 
 ```
 workstreams/[name]/
-├── BRIEF.md         ← What, for whom, problem, appetite + thread_id
-├── STATUS.md        ← Workstream phase, next step, blockers
-├── MEMORY.md        ← Accumulated context, insights, learnings
-├── DECISIONS.md     ← Key decisions log with date + reason
+├── BRIEF.md         ← Workstream identity + thread_id binding (mandatory)
+├── STATUS.md        ← Operational heartbeat: phase, next, blockers
+├── MEMORY.md        ← Durable context across sessions (≤80 lines)
+├── DECISIONS.md     ← Key decisions log with date + rationale
 ├── STAKEHOLDERS.md  ← Relevant people and their role
-├── RESOURCES.md     ← Artifacts index and where they live
+├── RESOURCES.md     ← Artifact registry and where they live
 └── docs/            ← Working artifacts
 ```
 
@@ -115,7 +143,7 @@ workstreams/[name]/
 
 **Workstream MEMORY.md hygiene:** The workstream's MEMORY.md is a curated summary, not a log. Keep it under 80 lines. When it grows past that, consolidate: promote key insights to the top, archive or remove stale entries. Detailed session logs belong in the workstream's `docs/`, not MEMORY.md. These limits apply only to intern-os workstream files — not to your agent framework's own memory system.
 
-**Workstream STATUS.md size:** STATUS.md must answer "where does this workstream stand?" in ≤10 lines. Phase, last session summary, blockers, next step. Nothing else.
+**Workstream STATUS.md size:** STATUS.md must answer "where does this workstream stand?" in ≤10 lines. Phase, next step, owner, blockers, last updated. Nothing else.
 
 ---
 
@@ -124,7 +152,7 @@ workstreams/[name]/
 ### Project lifecycle
 
 ```
-Discover project → PROJECT.md + tick init + thread
+Discover project → PROJECT.md + AGENTS.md + tick init + thread
     → Workstreams activated within the project
         → All workstreams archived
             → PROJECT.md updated with final state

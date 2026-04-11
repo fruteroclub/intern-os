@@ -4,21 +4,22 @@ internOS Workstreams framework — coordinate work across projects, tasks, commu
 
 ## What it does
 
-Installs the **internOS Workstreams** framework — a coordination system where each active workstream exists in four synchronized layers:
+Installs the **internOS Workstreams** framework — a coordination system built on three explicit layers:
 
-| Layer | Tool | Role |
-|-------|------|------|
-| **Project** | Filesystem (`projects/[name]/`) | Organizational container |
-| **Management** | tick.md (`TICK.md`) | Task tracking and coordination |
-| **Communication** | Discord forums · Slack threads | Human and agent collaboration |
-| **Operation** | Filesystem (`workstreams/`) | Source of truth for agents |
+| Layer | What it does |
+|-------|-------------|
+| **Storage** | Workstream files are the authoritative state (`projects/[name]/workstreams/`) |
+| **Resolution** | `thread_id` in BRIEF.md is the exact binding between thread and workstream |
+| **Runtime** | Load only what is needed — BRIEF.md + STATUS.md by default, escalate on demand |
 
 Agents loaded with this framework know how to:
 - Create and manage projects with tick.md task tracking
 - Activate workstreams from any communication thread
-- Load the right workstream context when entering a thread
+- Resolve the right workstream by exact `thread_id` match
+- Load project-level context from `AGENTS.md`
 - Claim tasks before working and release them when done
 - Keep STATUS.md updated across sessions so context never gets lost
+- Reconstruct from files when sessions degrade
 
 ## Install
 
@@ -42,7 +43,7 @@ After installing, follow your framework's setup guide in `adapters/[framework]/S
 
 | Document | What it covers |
 |----------|---------------|
-| `intern-os/references/en/FRAMEWORK.md` | Architecture — four layers, lifecycle, agent bootstrap |
+| `intern-os/references/en/FRAMEWORK.md` | Architecture — three layers, lifecycle, agent bootstrap |
 | `intern-os/references/en/SETUP.md` | First-time setup guide |
 | `intern-os/references/en/PLAYBOOK.md` | Day-to-day operations |
 | `intern-os/references/en/TICK-INTEGRATION.md` | tick.md integration spec |

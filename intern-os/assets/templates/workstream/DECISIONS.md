@@ -1,11 +1,9 @@
-# Decisions
-
-Key decisions log for this workstream.
+# DECISIONS — [Workstream Name]
 
 <!-- Format:
-## [Decision title]
-**Date:** YYYY-MM-DD
-**Decision:** What was decided
-**Reason:** Why this choice was made
-**Alternatives considered:** What else was on the table
+## YYYY-MM-DD — [Decision Title]
+- decision:
+- rationale:
+- impact:
+- status: [active | superseded | reversed]
 -->
