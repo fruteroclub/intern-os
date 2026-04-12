@@ -24,7 +24,7 @@ Los archivos de workstream son el estado operacional autoritativo. No el transcr
 | `AGENTS.md` | Contexto de agente a nivel proyecto: stack, convenciones, personas |
 | `TICK.md` | Gestión de tareas: qué hay que hacer, quién lo hace |
 | Archivos de workstream | Estado operacional: identidad, estado, memoria, decisiones, personas, recursos |
-| `REGISTRY.md` | Índice derivado de workstreams: workstreams activos, vinculaciones de threads, salud (generado, no editado manualmente) |
+| `REGISTRY.md` | Índice derivado de workstreams: todos los workstreams no archivados, vinculaciones de threads, salud (generado, no editado manualmente) |
 
 ### 2. Capa de resolución
 
@@ -495,7 +495,7 @@ rm -rf [workspace]/projects/
 
 ## Registro
 
-`projects/REGISTRY.md` es un índice derivado de todos los workstreams activos. Es generado por `generate-registry.sh` y nunca debe editarse manualmente.
+`projects/REGISTRY.md` es un índice derivado de todos los workstreams no archivados. Es generado por `generate-registry.sh` y nunca debe editarse manualmente.
 
 **Propiedades:**
 - Derivado de BRIEF.md + STATUS.md (fuentes canónicas)
@@ -550,7 +550,7 @@ Estos se reportan como informativos (INFO), no como errores:
 
 | Output | Descripción |
 |--------|-------------|
-| `projects/REGISTRY.md` | Registro derivado de workstreams activos con vinculaciones de threads y estado de salud |
+| `projects/REGISTRY.md` | Registro derivado de workstreams con vinculaciones de threads y estado de salud (todos los no archivados) |
 
 ### Validado por `checkpoint-reminder.sh`
 

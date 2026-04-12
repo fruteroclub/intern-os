@@ -30,8 +30,8 @@ Genera el registro para ver qué existe:
 bash intern-os/scripts/generate-registry.sh <workspace-path>
 ```
 
-Revisa `projects/REGISTRY.md`. La tabla de resumen muestra:
-- Cuántos workstreams existen
+Revisa `projects/REGISTRY.md`. El registro incluye **todos los workstreams no archivados** — usa la columna Phase para distinguir entre workstreams activos, pausados y en backlog. La tabla de resumen muestra:
+- Cuántos workstreams existen (no archivados)
 - Cuántos son saludables, incompletos o sin vincular
 - Cuáles necesitan atención
 
@@ -45,11 +45,9 @@ Esto produce un reporte enfocado: workstreams sin vincular, campos de identidad 
 
 ---
 
-## Fase 2: Normalizar workstreams activos
+## Fase 2: Normalizar workstreams (activos primero)
 
-**Enfócate en los workstreams activos primero.** No intentes normalizar todo de una vez.
-
-Un workstream activo es aquel con trabajo en curso — hilo de comunicación abierto, tareas en progreso, miembros del equipo contribuyendo activamente.
+El registro muestra todos los workstreams no archivados. Durante el rollout, **prioriza los activos primero** — aquellos con trabajo en curso, hilos de comunicación abiertos y tareas en progreso. Los pausados o en backlog pueden esperar.
 
 ### Orden de prioridad
 
@@ -101,14 +99,14 @@ mv projects/[proyecto]/workstreams/[nombre] projects/[proyecto]/workstreams/arch
 Ejecuta ambas herramientas de nuevo para confirmar que el workspace está limpio:
 
 ```bash
-# Chequeo de salud (debería reportar 0 issues para workstreams activos)
+# Chequeo de salud
 bash intern-os/scripts/sync-check.sh <workspace-path>
 
-# Regenerar registro (debería mostrar todos los workstreams activos como healthy)
+# Regenerar registro
 bash intern-os/scripts/generate-registry.sh <workspace-path>
 ```
 
-Revisa `projects/REGISTRY.md` — todos los workstreams activos deberían aparecer como `healthy`.
+Revisa `projects/REGISTRY.md` — los workstreams que normalizaste en la Fase 2 deberían aparecer como `healthy`.
 
 ---
 
@@ -128,12 +126,12 @@ Revisa `projects/REGISTRY.md` — todos los workstreams activos deberían aparec
 
 - [ ] `generate-registry.sh` ejecutado — `projects/REGISTRY.md` generado
 - [ ] `sync-check.sh --rollout` ejecutado y revisado
-- [ ] Todos los workstreams activos tienen `thread_id` en BRIEF.md
-- [ ] Todos los workstreams activos tienen campos de identidad en BRIEF.md
-- [ ] Todos los workstreams activos tienen STATUS.md actualizado
-- [ ] Todos los workstreams activos tienen etiquetas de tarea en TICK.md
+- [ ] Workstreams priorizados tienen `thread_id` en BRIEF.md
+- [ ] Workstreams priorizados tienen campos de identidad en BRIEF.md
+- [ ] Workstreams priorizados tienen STATUS.md actualizado
+- [ ] Workstreams priorizados tienen etiquetas de tarea en TICK.md
 - [ ] Directorios legacy clasificados (archivados o pausados)
-- [ ] Registro regenerado — todos los workstreams activos aparecen como `healthy`
+- [ ] Registro regenerado — workstreams priorizados aparecen como `healthy`
 - [ ] `sync-check.sh` (modo normal) pasa limpio
 
 ---

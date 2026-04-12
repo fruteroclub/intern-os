@@ -30,8 +30,8 @@ Generate the registry to see what exists:
 bash intern-os/scripts/generate-registry.sh <workspace-path>
 ```
 
-Review `projects/REGISTRY.md`. The summary table shows:
-- How many workstreams exist
+Review `projects/REGISTRY.md`. The registry includes **all non-archived workstreams** — use the Phase column to distinguish active, paused, and backlog workstreams. The summary table shows:
+- How many workstreams exist (non-archived)
 - How many are healthy, incomplete, or unbound
 - Which ones need attention
 
@@ -45,11 +45,9 @@ This produces a focused report: unbound workstreams, incomplete identity fields,
 
 ---
 
-## Phase 2: Normalize active workstreams
+## Phase 2: Normalize workstreams (active first)
 
-**Focus on active workstreams first.** Do not try to normalize everything at once.
-
-An active workstream is one with ongoing work — open communication thread, in-progress tasks, team members actively contributing.
+The registry shows all non-archived workstreams. During rollout, **prioritize the active ones first** — those with ongoing work, open communication threads, and in-progress tasks. Paused or backlog workstreams can wait.
 
 ### Priority order
 
@@ -101,14 +99,14 @@ mv projects/[project]/workstreams/[name] projects/[project]/workstreams/archived
 Re-run both tools to confirm the workspace is clean:
 
 ```bash
-# Health check (should report 0 issues for active workstreams)
+# Health check
 bash intern-os/scripts/sync-check.sh <workspace-path>
 
-# Regenerate registry (should show all active workstreams as healthy)
+# Regenerate registry
 bash intern-os/scripts/generate-registry.sh <workspace-path>
 ```
 
-Review `projects/REGISTRY.md` — all active workstreams should show as `healthy`.
+Review `projects/REGISTRY.md` — workstreams you normalized in Phase 2 should now show as `healthy`.
 
 ---
 
@@ -128,12 +126,12 @@ Review `projects/REGISTRY.md` — all active workstreams should show as `healthy
 
 - [ ] `generate-registry.sh` run — `projects/REGISTRY.md` generated
 - [ ] `sync-check.sh --rollout` run and reviewed
-- [ ] All active workstreams have `thread_id` in BRIEF.md
-- [ ] All active workstreams have identity fields in BRIEF.md
-- [ ] All active workstreams have current STATUS.md
-- [ ] All active workstreams have task tags in TICK.md
+- [ ] Prioritized workstreams have `thread_id` in BRIEF.md
+- [ ] Prioritized workstreams have identity fields in BRIEF.md
+- [ ] Prioritized workstreams have current STATUS.md
+- [ ] Prioritized workstreams have task tags in TICK.md
 - [ ] Legacy directories classified (archived or paused)
-- [ ] Registry regenerated — all active workstreams show as `healthy`
+- [ ] Registry regenerated — prioritized workstreams show as `healthy`
 - [ ] `sync-check.sh` (normal mode) passes clean
 
 ---

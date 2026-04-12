@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# generate-registry.sh — internOS active workstream registry generator (v0.3.1)
+# generate-registry.sh — internOS workstream registry generator (v0.3.1)
 #
 # Scans all projects and workstreams in an internOS workspace, reads BRIEF.md
 # and STATUS.md (canonical sources), and generates a derived registry at
@@ -193,14 +193,14 @@ TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
 | Metric | Count |
 |--------|-------|
 | Projects | $TOTAL_PROJECTS |
-| Active workstreams | $TOTAL_WORKSTREAMS |
+| Workstreams (non-archived) | $TOTAL_WORKSTREAMS |
 | Healthy | $TOTAL_HEALTHY |
 | Incomplete | $TOTAL_INCOMPLETE |
 | Unbound | $TOTAL_UNBOUND |
 
 ---
 
-## Active Workstreams
+## Workstreams
 
 | Project | Workstream | Thread ID | Phase | Owner | Health | Path |
 |---------|------------|-----------|-------|-------|--------|------|
