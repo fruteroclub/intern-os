@@ -57,6 +57,11 @@ Do not trust transcript continuity. BRIEF.md + STATUS.md must be sufficient to r
 Do not read another workstream's files by default.
 Cross-workstream synthesis must be explicit and requested.
 
+## Cross-workstream lookup
+
+For operational overview, consult `projects/REGISTRY.md` (derived index).
+Do not use it for single-workstream resolution — use BRIEF.md directly.
+
 ## Activating a new workstream
 
 1. Add task: `tick add "Description" --tag workstream-name --priority high`

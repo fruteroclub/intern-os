@@ -1,6 +1,6 @@
 # internOS — Framework de Workstreams
 
-*Versión: 0.3.0 | Fecha: 2026-04-11 | Estado: v0.3.0 — modelo Proyecto + Workstream, arquitectura de tres capas*
+*Versión: 0.3.1 | Fecha: 2026-04-12 | Estado: v0.3.1 — Registro, protocolo de rollout, herramientas operacionales*
 
 ---
 
@@ -24,6 +24,7 @@ Los archivos de workstream son el estado operacional autoritativo. No el transcr
 | `AGENTS.md` | Contexto de agente a nivel proyecto: stack, convenciones, personas |
 | `TICK.md` | Gestión de tareas: qué hay que hacer, quién lo hace |
 | Archivos de workstream | Estado operacional: identidad, estado, memoria, decisiones, personas, recursos |
+| `REGISTRY.md` | Índice derivado de workstreams: workstreams activos, vinculaciones de threads, salud (generado, no editado manualmente) |
 
 ### 2. Capa de resolución
 
@@ -41,7 +42,7 @@ thread_id: discord:1491150845675438110
 3. Si no existe coincidencia exacta, detenerse y preguntar — o vincular
 4. Nunca resolver por coincidencia difusa, similitud de palabras clave, o proximidad de ruta
 
-**Fuente de verdad:** `BRIEF.md` es la fuente de verdad para la vinculación thread-workstream. Puede existir un registro o índice derivado para rendimiento de búsqueda, pero `BRIEF.md` es canónico.
+**Fuente de verdad:** `BRIEF.md` es la fuente de verdad para la vinculación thread-workstream. El registro derivado en `projects/REGISTRY.md` proporciona búsqueda operacional pero nunca es autoritativo — regénéralo con `generate-registry.sh`.
 
 ### 3. Capa de runtime
 
@@ -492,6 +493,30 @@ rm -rf [workspace]/projects/
 
 ---
 
+## Registro
+
+`projects/REGISTRY.md` es un índice derivado de todos los workstreams activos. Es generado por `generate-registry.sh` y nunca debe editarse manualmente.
+
+**Propiedades:**
+- Derivado de BRIEF.md + STATUS.md (fuentes canónicas)
+- Contiene: proyecto, nombre del workstream, thread_id, fase, propietario, salud, ruta en el filesystem
+- Se regenera bajo demanda — no se actualiza automáticamente
+- Vive en `projects/` (no en la raíz del workspace) para evitar carga automática en cada mensaje del agente
+
+**Cuándo consultar el registro:**
+- Visión operacional cross-workstream
+- Validación de rollout
+- Identificar workstreams sin vincular o incompletos
+- Responder "¿qué está activo ahora mismo?"
+
+**Cuándo NO consultar el registro:**
+- Resolver un solo workstream por thread_id (usar BRIEF.md directamente)
+- Operación normal de workstream (la doctrina de aislamiento sigue aplicando)
+
+Ver ROLLOUT.md para el protocolo completo de rollout.
+
+---
+
 ## Qué es validado por herramientas vs. qué es doctrina
 
 internOS distingue entre reglas que son **validadas por herramientas incluidas** y reglas que son **doctrina para que los agentes sigan**. Ambas importan, pero tienen mecanismos de enforcement diferentes.
@@ -520,6 +545,12 @@ Estos se reportan como informativos (INFO), no como errores:
 | `AGENTS.md` existe por proyecto | INFO |
 | BRIEF.md tiene campos `project`, `workstream`, `owner`, `created` | INFO |
 | `MEMORY.md` acercándose al límite (>50 líneas) | INFO |
+
+### Validado por `generate-registry.sh`
+
+| Output | Descripción |
+|--------|-------------|
+| `projects/REGISTRY.md` | Registro derivado de workstreams activos con vinculaciones de threads y estado de salud |
 
 ### Validado por `checkpoint-reminder.sh`
 
@@ -558,7 +589,9 @@ Estas expectativas de comportamiento son el enfoque correcto para v0.3.0. Versio
 
 ### v0.3.x — Enforcement de runtime
 
-**Registro derivado de thread_id** — para búsqueda rápida sin escanear todos los archivos BRIEF.md.
+**Registro derivado de workstreams** — `projects/REGISTRY.md` generado por `generate-registry.sh`. Incluido en v0.3.1.
+
+**Protocolo de rollout** — proceso formal de migración documentado en ROLLOUT.md. Incluido en v0.3.1.
 
 **Hooks de mutación en bootstrap** — hooks compatibles con OpenClaw para carga automática de workstreams al entrar a un thread.
 
@@ -588,4 +621,5 @@ Agregador que lee todos los archivos `projects/*/TICK.md` y produce una vista un
 - Spec de comunicación: `references/en/COMMUNICATION.md`
 - Integración tick.md: `references/en/TICK-INTEGRATION.md`
 - Setup para nuevas instancias: `references/en/SETUP.md`
+- Protocolo de rollout: `references/es/ROLLOUT.md`
 - Instructivo operacional: `references/en/PLAYBOOK.md`

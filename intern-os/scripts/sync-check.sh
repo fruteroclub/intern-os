@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# sync-check.sh — internOS workspace health check (v0.3.0)
+# sync-check.sh — internOS workspace health check (v0.3.1)
 #
 # Scans all projects and workstreams in an internOS workspace and reports
 # mismatches between filesystem, thread_ids, BRIEF.md identity fields,
@@ -16,7 +16,8 @@
 #   - STATUS.md size (target ≤10 lines)
 #   - MEMORY.md size (target ≤80 lines)
 #
-# Usage: bash sync-check.sh <workspace-path>
+# Usage: bash sync-check.sh <workspace-path> [--rollout]
+#        --rollout  Append a prioritized rollout action list
 # Exit:  0 if all healthy, 1 if issues found
 
 set -euo pipefail
@@ -24,12 +25,23 @@ set -euo pipefail
 # --- Args -------------------------------------------------------------------
 
 if [[ $# -lt 1 ]]; then
-    echo "Usage: sync-check.sh <workspace-path>"
+    echo "Usage: sync-check.sh <workspace-path> [--rollout]"
     echo "  e.g. sync-check.sh ~/.hermes/workspace"
+    echo "  --rollout  Append a prioritized rollout action list"
     exit 2
 fi
 
 WORKSPACE="$1"
+shift
+
+ROLLOUT_MODE=false
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --rollout) ROLLOUT_MODE=true; shift ;;
+        *) echo "Unknown option: $1"; exit 2 ;;
+    esac
+done
+
 PROJECTS_DIR="$WORKSPACE/projects"
 
 if [[ ! -d "$PROJECTS_DIR" ]]; then
@@ -46,8 +58,17 @@ TOTAL_NOTES=0
 
 EXPECTED_FILES=(BRIEF.md STATUS.md MEMORY.md DECISIONS.md STAKEHOLDERS.md RESOURCES.md)
 
-# Track all thread_ids to detect duplicates
-declare -A SEEN_THREAD_IDS
+# Track all thread_ids to detect duplicates (bash 3.2 compatible — no assoc arrays)
+SEEN_THREAD_IDS=""
+SEEN_THREAD_OWNERS=""
+
+# Rollout-specific tracking
+ROLLOUT_UNBOUND=""
+ROLLOUT_UNBOUND_COUNT=0
+ROLLOUT_INCOMPLETE=""
+ROLLOUT_INCOMPLETE_COUNT=0
+ROLLOUT_MISSING_TAGS=""
+ROLLOUT_MISSING_TAGS_COUNT=0
 
 # --- Helpers -----------------------------------------------------------------
 
@@ -67,11 +88,11 @@ info() {
 
 # Extract a field value from a markdown file.
 # Handles "field: value" format (plain or with bold markers).
+# Portable: no PCRE required.
 extract_field() {
     local file="$1"
     local field="$2"
-    grep -oP "(?:^|\*\*?)${field}:?\*?\*?\s*(.+)" "$file" 2>/dev/null \
-        | sed "s/.*${field}[*:]*\s*//" \
+    sed -n "s/^[* ]*${field}[*:]*[[:space:]]*//p" "$file" 2>/dev/null \
         | head -1 \
         | xargs
 }
@@ -94,7 +115,11 @@ check_tick_tag() {
 
 # --- Main scan ---------------------------------------------------------------
 
-echo "internOS Sync Check (v0.3.0)"
+if $ROLLOUT_MODE; then
+    echo "internOS Sync Check (v0.3.1) — Rollout Mode"
+else
+    echo "internOS Sync Check (v0.3.1)"
+fi
 echo "Workspace: $WORKSPACE"
 echo "$(date -u '+%Y-%m-%d %H:%M UTC')"
 echo "========================================"
@@ -193,6 +218,9 @@ for project_dir in "$PROJECTS_DIR"/*/; do
             if [[ -z "$thread_id" ]]; then
                 warn "thread_id is empty or missing in BRIEF.md"
                 ((project_issues++)) || true
+                ROLLOUT_UNBOUND="${ROLLOUT_UNBOUND}${project_name}/${ws_name} → BRIEF.md
+"
+                ((ROLLOUT_UNBOUND_COUNT++)) || true
             else
                 # Validate format: should be platform:id
                 if [[ "$thread_id" =~ ^[a-z]+:.+ ]]; then
@@ -207,42 +235,52 @@ for project_dir in "$PROJECTS_DIR"/*/; do
                         ok "thread_id: $thread_id"
                     fi
 
-                    # Check for duplicate thread_ids
+                    # Check for duplicate thread_ids (bash 3.2 compatible)
                     tid_key="$thread_id"
-                    if [[ -n "${SEEN_THREAD_IDS[$tid_key]+x}" ]]; then
-                        warn "thread_id ($thread_id) is duplicated — also used by ${SEEN_THREAD_IDS[$tid_key]}"
+                    if echo "$SEEN_THREAD_IDS" | grep -qF "|$tid_key|" 2>/dev/null; then
+                        dup_owner=$(echo "$SEEN_THREAD_OWNERS" | grep -F "|$tid_key|" | sed "s/.*|$tid_key|//" | sed 's/|.*//')
+                        warn "thread_id ($thread_id) is duplicated — also used by $dup_owner"
                         ((project_issues++)) || true
                     else
-                        SEEN_THREAD_IDS[$tid_key]="$project_name/$ws_name"
+                        SEEN_THREAD_IDS="${SEEN_THREAD_IDS}|${tid_key}|"
+                        SEEN_THREAD_OWNERS="${SEEN_THREAD_OWNERS}|${tid_key}|${project_name}/${ws_name}|"
                     fi
                 else
                     warn "thread_id format invalid: '$thread_id' (expected platform:id)"
                     ((project_issues++)) || true
+                    ROLLOUT_UNBOUND="${ROLLOUT_UNBOUND}${project_name}/${ws_name} → invalid format '${thread_id}'
+"
+                    ((ROLLOUT_UNBOUND_COUNT++)) || true
                 fi
             fi
 
-            # project field (expected in BRIEF.md)
+            # Identity fields (expected in BRIEF.md)
             brief_project=$(extract_field "$brief_file" "project")
+            brief_ws=$(extract_field "$brief_file" "workstream")
+            brief_owner=$(extract_field "$brief_file" "owner")
+            brief_created=$(extract_field "$brief_file" "created")
+
+            missing_identity=""
             if [[ -z "$brief_project" ]]; then
                 info "BRIEF.md missing 'project' identity field"
+                missing_identity="${missing_identity} project"
             fi
-
-            # workstream field (expected in BRIEF.md)
-            brief_ws=$(extract_field "$brief_file" "workstream")
             if [[ -z "$brief_ws" ]]; then
                 info "BRIEF.md missing 'workstream' identity field"
+                missing_identity="${missing_identity} workstream"
             fi
-
-            # owner field (expected in BRIEF.md)
-            brief_owner=$(extract_field "$brief_file" "owner")
             if [[ -z "$brief_owner" ]]; then
                 info "BRIEF.md missing 'owner' identity field"
+                missing_identity="${missing_identity} owner"
             fi
-
-            # created field (expected in BRIEF.md)
-            brief_created=$(extract_field "$brief_file" "created")
             if [[ -z "$brief_created" ]]; then
                 info "BRIEF.md missing 'created' identity field"
+                missing_identity="${missing_identity} created"
+            fi
+            if [[ -n "$missing_identity" ]]; then
+                ROLLOUT_INCOMPLETE="${ROLLOUT_INCOMPLETE}${project_name}/${ws_name} → missing:${missing_identity}
+"
+                ((ROLLOUT_INCOMPLETE_COUNT++)) || true
             fi
         fi
 
@@ -278,6 +316,9 @@ for project_dir in "$PROJECTS_DIR"/*/; do
             else
                 warn "No task tagged '$ws_name' in TICK.md"
                 ((project_issues++)) || true
+                ROLLOUT_MISSING_TAGS="${ROLLOUT_MISSING_TAGS}${project_name}/${ws_name} → no task tagged '${ws_name}' in TICK.md
+"
+                ((ROLLOUT_MISSING_TAGS_COUNT++)) || true
             fi
         fi
     done
@@ -292,10 +333,61 @@ echo ""
 echo "========================================"
 echo "Summary: $TOTAL_PROJECTS project(s), $TOTAL_WORKSTREAMS workstream(s), $TOTAL_ISSUES issue(s), $TOTAL_NOTES note(s)"
 
+if $ROLLOUT_MODE; then
+    echo ""
+    echo "========================================"
+    echo "Rollout Priority List"
+    echo "========================================"
+
+    echo ""
+    echo "--- Unbound workstreams (missing or invalid thread_id) ---"
+    if [[ $ROLLOUT_UNBOUND_COUNT -gt 0 ]]; then
+        n=1
+        echo "$ROLLOUT_UNBOUND" | while IFS= read -r item; do
+            [[ -z "$item" ]] && continue
+            echo "  $n. $item"
+            ((n++))
+        done
+    else
+        echo "  (none)"
+    fi
+
+    echo ""
+    echo "--- Incomplete identity fields ---"
+    if [[ $ROLLOUT_INCOMPLETE_COUNT -gt 0 ]]; then
+        n=1
+        echo "$ROLLOUT_INCOMPLETE" | while IFS= read -r item; do
+            [[ -z "$item" ]] && continue
+            echo "  $n. $item"
+            ((n++))
+        done
+    else
+        echo "  (none)"
+    fi
+
+    echo ""
+    echo "--- Missing TICK.md tags ---"
+    if [[ $ROLLOUT_MISSING_TAGS_COUNT -gt 0 ]]; then
+        n=1
+        echo "$ROLLOUT_MISSING_TAGS" | while IFS= read -r item; do
+            [[ -z "$item" ]] && continue
+            echo "  $n. $item"
+            ((n++))
+        done
+    else
+        echo "  (none)"
+    fi
+
+    echo ""
+    echo "Rollout summary: $ROLLOUT_UNBOUND_COUNT unbound, $ROLLOUT_INCOMPLETE_COUNT incomplete identity, $ROLLOUT_MISSING_TAGS_COUNT missing tags"
+fi
+
 if [[ $TOTAL_ISSUES -gt 0 ]]; then
+    echo ""
     echo "Status: ISSUES FOUND"
     exit 1
 else
+    echo ""
     echo "Status: ALL HEALTHY"
     exit 0
 fi
