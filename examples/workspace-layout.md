@@ -11,6 +11,7 @@ workspace/
 ├── WORKSTREAMS.md                          ← agent runtime guide (copied from assets/)
 │
 ├── projects/
+│   ├── REGISTRY.md                         ← derived workstream index (generated)
 │   ├── bulldog-capital-website/
 │   │   ├── PROJECT.md                     ← project identity: purpose, scope, direction
 │   │   ├── AGENTS.md                      ← project-level agent context

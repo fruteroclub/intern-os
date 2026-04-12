@@ -1,7 +1,7 @@
 ---
 name: intern-os
 description: internOS Workstreams framework. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
-version: 0.3.0
+version: 0.3.1
 metadata:
   hermes:
     tags: [Workstreams, Project Management, Coordination]
@@ -75,6 +75,7 @@ The workstream files are the authoritative operational state. Not the transcript
 
 ```text
 projects/
+  REGISTRY.md              ← Derived workstream index (generated, not hand-edited)
   [project-name]/
     PROJECT.md
     AGENTS.md
@@ -99,7 +100,7 @@ Resolution must be exact, deterministic, and non-heuristic.
 3. If no exact match exists, stop and ask — never guess
 4. Never resolve by fuzzy matching, keyword similarity, or path proximity
 
-`BRIEF.md` is the source of truth for thread-to-workstream binding.
+`BRIEF.md` is the source of truth for thread-to-workstream binding. The derived registry at `projects/REGISTRY.md` provides operational lookup but is never authoritative — regenerate with `generate-registry.sh`.
 
 ### Runtime layer
 
@@ -243,7 +244,8 @@ projects/[project]/
 The resolution, runtime, recovery, and isolation rules above are **doctrine for agents to follow** — they depend on agents reading and respecting these instructions. They are not mechanically enforced by tooling in v0.3.0.
 
 What **is** validated by shipped tooling:
-- `sync-check.sh` — validates file presence, `thread_id` format and uniqueness, BRIEF.md identity fields, STATUS.md / MEMORY.md size limits
+- `sync-check.sh` — validates file presence, `thread_id` format and uniqueness, BRIEF.md identity fields, STATUS.md / MEMORY.md size limits. Use `--rollout` for a prioritized action list.
+- `generate-registry.sh` — generates derived workstream registry at `projects/REGISTRY.md`
 - `checkpoint-reminder.sh` — detects stale STATUS.md files
 - `tick.md` — enforces task claim/release coordination
 
@@ -255,4 +257,5 @@ See FRAMEWORK.md for the full breakdown of what is validated vs. what is doctrin
 - Playbook: `references/en/PLAYBOOK.md`
 - Communication: `references/en/COMMUNICATION.md`
 - tick.md integration: `references/en/TICK-INTEGRATION.md`
+- Rollout protocol: `references/en/ROLLOUT.md`
 - Framework-specific setup: `adapters/[framework]/SETUP.md`
