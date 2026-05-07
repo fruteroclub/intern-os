@@ -17,30 +17,155 @@
 #   - MEMORY.md size (target ≤80 lines)
 #
 # Usage: bash sync-check.sh <workspace-path> [--rollout]
-#        --rollout  Append a prioritized rollout action list
-# Exit:  0 if all healthy, 1 if issues found
+#        bash sync-check.sh --workstream <abs-path-to-workstream-dir>
+#
+#   --rollout     Append a prioritized rollout action list (workspace mode only)
+#   --workstream  Check a single workstream directory and exit (no workspace walk).
+#                 Findings printed as `LEVEL: message` lines to stdout for easy
+#                 capture by hooks. Used by Claude Code's SessionEnd hook.
+#
+# Exit:  0 if all healthy, 1 if issues found, 2 on usage error
 
 set -euo pipefail
 
 # --- Args -------------------------------------------------------------------
 
-if [[ $# -lt 1 ]]; then
-    echo "Usage: sync-check.sh <workspace-path> [--rollout]"
-    echo "  e.g. sync-check.sh ~/.hermes/workspace"
-    echo "  --rollout  Append a prioritized rollout action list"
+WORKSPACE=""
+ROLLOUT_MODE=false
+WORKSTREAM_PATH=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --rollout)
+            ROLLOUT_MODE=true; shift ;;
+        --workstream)
+            if [[ $# -lt 2 ]]; then
+                echo "Error: --workstream requires a path argument" >&2
+                exit 2
+            fi
+            WORKSTREAM_PATH="$2"; shift 2 ;;
+        --*)
+            echo "Unknown option: $1" >&2; exit 2 ;;
+        *)
+            if [[ -z "$WORKSPACE" ]]; then
+                WORKSPACE="$1"
+            else
+                echo "Unexpected argument: $1" >&2; exit 2
+            fi
+            shift ;;
+    esac
+done
+
+# Mutually exclusive: workstream mode OR workspace mode.
+if [[ -n "$WORKSTREAM_PATH" && -n "$WORKSPACE" ]]; then
+    echo "Error: --workstream is mutually exclusive with a workspace argument" >&2
+    exit 2
+fi
+if [[ -n "$WORKSTREAM_PATH" && "$ROLLOUT_MODE" == "true" ]]; then
+    echo "Error: --workstream and --rollout cannot be combined" >&2
+    exit 2
+fi
+if [[ -z "$WORKSTREAM_PATH" && -z "$WORKSPACE" ]]; then
+    cat >&2 <<'EOF'
+Usage:
+  sync-check.sh <workspace-path> [--rollout]
+  sync-check.sh --workstream <abs-path-to-workstream-dir>
+
+  --rollout     Append a prioritized rollout action list (workspace mode only)
+  --workstream  Check a single workstream directory and exit
+EOF
     exit 2
 fi
 
-WORKSPACE="$1"
-shift
+# --- Workstream-scoped mode -------------------------------------------------
+#
+# Quick, focused check on a single workstream. Outputs findings as
+# `LEVEL: message` lines (LEVEL is INFO or WARN) to make capture by hooks
+# trivial. Exits 0 if clean, 1 if any WARN was emitted.
 
-ROLLOUT_MODE=false
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --rollout) ROLLOUT_MODE=true; shift ;;
-        *) echo "Unknown option: $1"; exit 2 ;;
-    esac
-done
+if [[ -n "$WORKSTREAM_PATH" ]]; then
+    if [[ ! -d "$WORKSTREAM_PATH" ]]; then
+        echo "Error: workstream path does not exist: $WORKSTREAM_PATH" >&2
+        exit 2
+    fi
+
+    ws_path="$(cd "$WORKSTREAM_PATH" && pwd -P)"
+    ws_name="$(basename "$ws_path")"
+    ws_warnings=0
+
+    EXPECTED_FILES=(BRIEF.md STATUS.md MEMORY.md DECISIONS.md STAKEHOLDERS.md RESOURCES.md)
+
+    # Files present
+    for f in "${EXPECTED_FILES[@]}"; do
+        if [[ ! -f "$ws_path/$f" ]]; then
+            echo "WARN: missing expected file: $f"
+            ((ws_warnings++)) || true
+        fi
+    done
+
+    # BRIEF identity + thread_id
+    brief="$ws_path/BRIEF.md"
+    if [[ -f "$brief" ]]; then
+        thread_id=$(sed -n "s/^[* ]*thread_id[*:]*[[:space:]]*//p" "$brief" 2>/dev/null | head -1 | xargs)
+        if [[ -z "$thread_id" ]]; then
+            echo "WARN: BRIEF.md has no thread_id"
+            ((ws_warnings++)) || true
+        elif [[ ! "$thread_id" =~ ^[a-z-]+:.+ ]]; then
+            echo "WARN: thread_id format invalid: '$thread_id' (expected platform:id)"
+            ((ws_warnings++)) || true
+        fi
+
+        for field in project workstream owner created; do
+            value=$(sed -n "s/^[* ]*${field}[*:]*[[:space:]]*//p" "$brief" 2>/dev/null | head -1 | xargs)
+            if [[ -z "$value" ]]; then
+                echo "INFO: BRIEF.md missing '${field}' identity field"
+            fi
+        done
+    fi
+
+    # STATUS.md size — flag if >15 content lines (≤10 by design)
+    status_file="$ws_path/STATUS.md"
+    if [[ -f "$status_file" ]]; then
+        status_lines=$(grep -cve '^\s*$' -e '^\s*<!--' "$status_file" 2>/dev/null || echo "0")
+        if [[ "$status_lines" -gt 15 ]]; then
+            echo "WARN: STATUS.md has $status_lines content lines (target: ≤10)"
+            ((ws_warnings++)) || true
+        fi
+    fi
+
+    # STATUS.md staleness — flag if unchanged ≥7 days (operational heartbeat)
+    if [[ -f "$status_file" ]]; then
+        if [[ "$(uname)" == "Darwin" ]]; then
+            status_mtime=$(stat -f %m "$status_file" 2>/dev/null || echo "0")
+        else
+            status_mtime=$(stat -c %Y "$status_file" 2>/dev/null || echo "0")
+        fi
+        now=$(date +%s)
+        age_days=$(( (now - status_mtime) / 86400 ))
+        if [[ "$age_days" -ge 7 ]]; then
+            echo "INFO: STATUS.md unchanged for $age_days days — heartbeat is stale"
+        fi
+    fi
+
+    # MEMORY.md size — hard limit 80, target ≤50
+    memory_file="$ws_path/MEMORY.md"
+    if [[ -f "$memory_file" ]]; then
+        memory_lines=$(wc -l < "$memory_file" | xargs)
+        if [[ "$memory_lines" -gt 80 ]]; then
+            echo "WARN: MEMORY.md has $memory_lines lines (hard limit: 80, target: ≤50) — consolidate before adding more"
+            ((ws_warnings++)) || true
+        elif [[ "$memory_lines" -gt 50 ]]; then
+            echo "INFO: MEMORY.md has $memory_lines lines (approaching limit — target: ≤50)"
+        fi
+    fi
+
+    if [[ $ws_warnings -gt 0 ]]; then
+        exit 1
+    fi
+    exit 0
+fi
+
+# --- Workspace mode (existing behavior) -------------------------------------
 
 PROJECTS_DIR="$WORKSPACE/projects"
 
