@@ -2,6 +2,35 @@
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
 
+## v0.3.2 — 2026-05-07
+
+Hermes Agent native-plumbing release. Addresses [#12](https://github.com/fruteroclub/intern-os/issues/12). Adopts three Hermes mechanisms to reduce manual setup surface area while preserving OpenClaw and Claude Code compatibility. No breaking changes.
+
+### New features
+
+- **Configurable workspace path** — `intern-os/SKILL.md` declares `internos.workspace_path` as a Hermes config var (`metadata.hermes.config`). `hermes setup` prompts for it; the resolved value is injected into the skill payload at activation as a `[Skill config: ...]` block. Default: `~/.hermes/workspace`. Eliminates hardcoded workspace paths from the SKILL body and adapter SETUP.
+- **Prerequisite validation** — `prerequisites.commands: [tick]` surfaces a Hermes setup note when `tick-md` is missing on PATH (advisory; does not block activation).
+- **Setup help** — `setup.help` field provides a human-readable install hint shown alongside the prerequisite note.
+- **Slash command** — `/intern-os` is now auto-registered by Hermes from the skill's `name:` field; documented in the Hermes adapter SETUP.
+
+### Updated files
+
+- `intern-os/SKILL.md` — v0.3.2: enriched frontmatter (`prerequisites`, `setup.help`, `metadata.hermes.config`)
+- `adapters/hermes/SETUP.md` — v0.3.2: rewritten around `hermes setup` flow, slash command, and auto-supporting-files. Manual `cp WORKSTREAMS.md` step removed (auto-listed by Hermes).
+- `IMPLEMENT.md` — **removed**: superseded by adapter SETUPs
+- `CHANGELOG.md` — v0.3.2 entry
+
+### Compatibility
+
+- **OpenClaw, Claude Code, generic adapters** — unaffected. The added frontmatter keys (`prerequisites`, `setup`, `metadata.hermes.config`) are silently ignored by their loaders.
+- **Hermes** — requires support for `metadata.hermes.config` (verified present in current `agent/skill_utils.py`). Any reasonably current Hermes build.
+
+### Spec
+
+Full design: [`docs/specs/v0.3.2-hermes-compat.md`](docs/specs/v0.3.2-hermes-compat.md)
+
+---
+
 ## v0.3.1 — 2026-04-12
 
 Operational visibility and rollout tooling. Addresses [#7](https://github.com/fruteroclub/intern-os/issues/7): workstream registry and rollout protocol for production internOS.
