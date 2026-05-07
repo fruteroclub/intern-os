@@ -1,11 +1,11 @@
 ---
 name: intern-os
 description: internOS Workstreams framework. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
-version: 0.3.2
+version: 0.3.3
 prerequisites:
   commands: [tick]
 setup:
-  help: "Install tick-md with `npm install -g tick-md`. Then run `hermes setup` to configure internos.workspace_path."
+  help: "Install tick-md with `npm install -g tick-md@1`. Then run `hermes setup` to configure internos.workspace_path."
 metadata:
   hermes:
     tags: [Workstreams, Project Management, Coordination]

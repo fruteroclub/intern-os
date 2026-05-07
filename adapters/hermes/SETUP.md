@@ -1,6 +1,6 @@
 # SETUP — Hermes Agent Adapter
 
-*internOS v0.3.2 | 2026-05-07*
+*internOS v0.3.3 | 2026-05-07*
 
 Hermes Agent-specific setup for the internOS Workstreams framework.
 
@@ -25,6 +25,18 @@ For development, symlink instead:
 ```bash
 ln -s [intern-os-repo]/intern-os ~/.hermes/skills/intern-os
 ```
+
+### Hermes security scan
+
+Hermes' installer runs a security scan that flags intern-os as **DANGEROUS** with ~58 `agent_config_mod` findings. These are **expected false positives**: the scanner regex matches any literal mention of `AGENTS.md` / `CLAUDE.md`, and intern-os documents `AGENTS.md` extensively as a load-bearing project-context convention. The skill does not modify your AGENTS.md or CLAUDE.md files.
+
+Use `--force` to override:
+
+```bash
+hermes skills install fruteroclub/intern-os/intern-os --force
+```
+
+Tracked upstream at [nousresearch/hermes-agent](https://github.com/nousresearch/hermes-agent) — once the scanner regex tightens to flag write/append patterns instead of any literal mention, `--force` will no longer be required.
 
 ---
 

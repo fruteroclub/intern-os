@@ -18,7 +18,7 @@ Guía para el administrador o humano que configura una instancia de agente para 
 ## Paso 1: Instalar tick.md
 
 ```bash
-npm install -g tick-md
+npm install -g tick-md@1
 tick --version
 ```
 
