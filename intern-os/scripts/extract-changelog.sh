@@ -17,8 +17,11 @@ if [[ -z "$VERSION" ]]; then
     exit 2
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [[ -z "$REPO_ROOT" ]]; then
+    echo "Error: must be run inside a git repository" >&2
+    exit 2
+fi
 CHANGELOG="$REPO_ROOT/CHANGELOG.md"
 
 if [[ ! -f "$CHANGELOG" ]]; then

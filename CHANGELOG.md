@@ -2,6 +2,34 @@
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
 
+## v0.3.3 — 2026-05-07
+
+Security scan cleanup. Addresses [#17](https://github.com/fruteroclub/intern-os/issues/17). Patch release — no behavior changes, no breaking changes. Reduces Hermes installer's security-scan finding count from 63 to 58 (eliminates 4 actionable findings; remaining 58 are `agent_config_mod` false positives in framework documentation that cannot be removed without gutting the AGENTS.md project-context convention).
+
+### Fixed
+
+- **Pinned `tick-md` install version** — `npm install -g tick-md` → `npm install -g tick-md@1` in `intern-os/SKILL.md` `setup.help`, `intern-os/references/en/SETUP.md`, `intern-os/references/es/SETUP.md`. Eliminates 3 `unpinned_npm_install` (medium, supply chain) findings.
+- **Replaced `cd ../..` path traversal in extract-changelog.sh** — now uses `git rev-parse --show-toplevel` to locate the repo root. Cleaner anyway. Eliminates 1 `path_traversal` (medium, traversal) finding.
+
+### Added
+
+- **Hermes security scan section** in `adapters/hermes/SETUP.md` — explains the expected DANGEROUS verdict, why `agent_config_mod` flags are false positives for this skill, and the `--force` install procedure.
+
+### Updated files
+
+- `intern-os/SKILL.md` — version 0.3.2 → 0.3.3, pinned tick-md@1 in setup.help
+- `intern-os/references/en/SETUP.md` — pinned tick-md@1
+- `intern-os/references/es/SETUP.md` — pinned tick-md@1
+- `intern-os/scripts/extract-changelog.sh` — switched from `cd ../..` to `git rev-parse --show-toplevel`
+- `adapters/hermes/SETUP.md` — added "Hermes security scan" subsection
+- `CHANGELOG.md` — v0.3.3 entry
+
+### Compatibility
+
+No behavior changes. No breaking changes. The `git rev-parse` change in `extract-changelog.sh` adds an implicit dependency on `git` being available (it always is in GitHub Actions, where the script runs). Local invocations from a non-git directory will now exit with a clear error instead of silently resolving the wrong path.
+
+---
+
 ## v0.3.2 — 2026-05-07
 
 Hermes Agent native-plumbing release. Addresses [#12](https://github.com/fruteroclub/intern-os/issues/12). Adopts three Hermes mechanisms to reduce manual setup surface area while preserving OpenClaw and Claude Code compatibility. No breaking changes.

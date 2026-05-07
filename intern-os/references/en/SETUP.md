@@ -18,7 +18,7 @@ Guide for the admin or human configuring an agent instance to use the internOS W
 ## Step 1: Install tick.md
 
 ```bash
-npm install -g tick-md
+npm install -g tick-md@1
 tick --version
 ```
 
