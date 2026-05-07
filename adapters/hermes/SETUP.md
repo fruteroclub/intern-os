@@ -1,6 +1,6 @@
 # SETUP — Hermes Agent Adapter
 
-*internOS v0.3.0 | 2026-04-11*
+*internOS v0.3.2 | 2026-05-07*
 
 Hermes Agent-specific setup for the internOS Workstreams framework.
 
@@ -8,13 +8,13 @@ Hermes Agent-specific setup for the internOS Workstreams framework.
 
 ## Prerequisites
 
-- Hermes Agent installed and running (`~/.hermes/hermes-agent/`)
-- Access to the Hermes workspace
+- Hermes Agent installed and running
+- `tick-md` CLI on PATH: `npm install -g tick-md`
 - At least one platform configured (Telegram, Slack, Discord, etc.)
 
 ---
 
-## Install the skill
+## Install
 
 ```bash
 hermes skills install fruteroclub/intern-os/intern-os
@@ -28,90 +28,36 @@ ln -s [intern-os-repo]/intern-os ~/.hermes/skills/intern-os
 
 ---
 
-## Configure the workspace
+## Configure
 
-### 1. Copy WORKSTREAMS.md
+Run `hermes setup` (or edit `~/.hermes/config.yaml`) and set:
 
-```bash
-cp ~/.hermes/skills/intern-os/assets/WORKSTREAMS.md ~/.hermes/workspace/WORKSTREAMS.md
-```
+- `internos.workspace_path` — path to the internOS workspace where `projects/` lives. Default: `~/.hermes/workspace`.
 
-> Adjust the workspace path to match your Hermes configuration.
+Hermes injects this value into the skill payload at activation as a `[Skill config: ...]` block, so the agent always has the resolved absolute path. No need to hardcode the workspace location anywhere.
 
-### 2. Create the projects directory
+---
 
-```bash
-mkdir -p ~/.hermes/workspace/projects/
-```
-
-### 3. Initialize your first project
+## Initialize the workspace
 
 ```bash
-PROJECT=my-project
-mkdir -p ~/.hermes/workspace/projects/$PROJECT
-cd ~/.hermes/workspace/projects/$PROJECT
+WORKSPACE=~/.hermes/workspace   # or whatever you configured above
+mkdir -p "$WORKSPACE/projects/"
+cd "$WORKSPACE/projects/"
+mkdir my-project && cd my-project
 tick init
-tick agent register @duki --type bot --role engineer
+tick agent register @bot --type bot --role engineer
 ```
+
+> The `WORKSTREAMS.md` runtime guide is auto-listed as a supporting file when intern-os activates — no manual copy required.
 
 ---
 
-## Configure Slack thread-only mode
+## Activate
 
-To use internOS with Slack, configure the Hermes gateway for thread-only operation in the workstreams channels:
+In any thread, type `/intern-os` to load the skill explicitly. Hermes auto-registers a slash command for every installed skill from its `name:` field.
 
-### Environment variables
-
-Add to `~/.hermes/.env`:
-
-```bash
-SLACK_BOT_TOKEN=xoxb-your-bot-token
-SLACK_REQUIRE_MENTION=true
-SLACK_FREE_RESPONSE_CHANNELS=ops-workstreams,tech-workstreams,ceo-workstreams
-```
-
-> `SLACK_FREE_RESPONSE_CHANNELS` enables the agent to respond without @mention in workstream channels. The agent still responds only in threads, not channel root.
-
-### Gateway config
-
-In `~/.hermes/config.yaml`, ensure Slack is enabled:
-
-```yaml
-platforms:
-  slack:
-    enabled: true
-    token: "${SLACK_BOT_TOKEN}"
-    reply_to_mode: "first"
-```
-
----
-
-## Configure Discord
-
-For Discord, ensure the Hermes Discord adapter is configured with access to the `-workstreams` forums:
-
-```yaml
-platforms:
-  discord:
-    enabled: true
-    token: "${DISCORD_TOKEN}"
-```
-
-No special forum configuration needed — Hermes handles Discord threads natively.
-
-**Platform startup protocol for Discord:** internOS requires the agent to emit an acknowledgment before loading any workstream files. In Discord workstream threads, the agent must always ACK first (LIGHT mode: BRIEF + STATUS only, escalate on demand). See SKILL.md for full platform startup table and the three-layer architecture (storage, resolution, runtime).
-
----
-
-## Preload the skill
-
-To have internOS loaded automatically, add it to the gateway start command or config:
-
-```bash
-python cli.py --gateway --skills intern-os
-```
-
-Or configure in `~/.hermes/config.yaml`:
+To preload on every session, add to `~/.hermes/config.yaml`:
 
 ```yaml
 agent:
@@ -121,24 +67,52 @@ agent:
 
 ---
 
-## Restart the gateway
+## Slack thread-only mode (optional)
+
+Add to `~/.hermes/.env`:
 
 ```bash
-systemctl --user restart hermes-gateway
+SLACK_BOT_TOKEN=xoxb-your-bot-token
+SLACK_REQUIRE_MENTION=true
+SLACK_FREE_RESPONSE_CHANNELS=ops-workstreams,tech-workstreams,ceo-workstreams
 ```
+
+In `~/.hermes/config.yaml`:
+
+```yaml
+platforms:
+  slack:
+    enabled: true
+    token: "${SLACK_BOT_TOKEN}"
+    reply_to_mode: "first"
+```
+
+> `SLACK_FREE_RESPONSE_CHANNELS` lets the agent respond without `@mention` in workstream channels. The agent still responds only in threads, never in channel root.
+
+---
+
+## Discord (optional)
+
+In `~/.hermes/config.yaml`:
+
+```yaml
+platforms:
+  discord:
+    enabled: true
+    token: "${DISCORD_TOKEN}"
+```
+
+Forum channels named `*-workstreams` work natively as workstream threads. The agent emits ACK before any file reads (LIGHT mode) — see `intern-os/SKILL.md` for the platform startup table.
 
 ---
 
 ## Verification
 
-- [ ] intern-os skill is in `~/.hermes/skills/`
-- [ ] WORKSTREAMS.md exists in the workspace
-- [ ] `projects/` directory exists
-- [ ] At least one project initialized with tick.md
-- [ ] Agent registered: `cd projects/[project] && tick agent list`
-- [ ] Slack configured (if using Slack)
-- [ ] Discord configured (if using Discord)
-- [ ] Gateway restarted
+- [ ] `hermes skills list | grep intern-os` shows the skill
+- [ ] `which tick` returns a path
+- [ ] Configured workspace exists with `projects/` directory
+- [ ] At least one project initialized with `tick init`
+- [ ] `/intern-os` activates in a session and the payload includes `[Skill config: internos.workspace_path = ...]`
 
 ---
 
@@ -150,40 +124,12 @@ Follow **PLAYBOOK.md** to activate your first workstream.
 
 ## Uninstall
 
-### 1. Remove the skill
-
 ```bash
 hermes skills uninstall intern-os
 ```
 
-Or manually:
-
-```bash
-rm -rf ~/.hermes/skills/intern-os/
-```
-
-### 2. Remove WORKSTREAMS.md from the workspace
-
-```bash
-rm ~/.hermes/workspace/WORKSTREAMS.md
-```
-
-### 3. Remove preload config and restart (only if preloaded)
-
-If you added `intern-os` to `preloaded_skills` in `~/.hermes/config.yaml`, remove that entry and restart the gateway:
-
-```bash
-systemctl --user restart hermes-gateway
-```
-
-If intern-os was not preloaded (the default), no restart is needed — Hermes reads skills from disk per session.
-
-### 4. (Optional) Remove workspace data
-
-The steps above remove the internOS framework but **preserve your project data** (projects, workstreams, TICK.md, task history). To remove everything:
+To remove all project data (destructive — deletes all workstream files, task history, and accumulated context):
 
 ```bash
 rm -rf ~/.hermes/workspace/projects/
 ```
-
-> **Warning:** This deletes all project directories, workstream files, task history, and accumulated context. This cannot be undone.
