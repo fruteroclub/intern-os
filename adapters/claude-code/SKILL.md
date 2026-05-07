@@ -78,12 +78,38 @@ Sessions are individual Claude Code conversations. The thread is the workstream.
 2026-05-07 14:03 · 1f2b9e77-... · implemented resource-binding fix and updated DECISIONS.md
 ```
 
-Two ways to write entries:
-
-- **Hook-driven (preferred):** the `Stop` hook calls `log-session.sh <session_id>` to record at least the timestamp + session ID. Claude itself can fill in the summary as part of the end-of-session protocol by appending to SESSIONS.md directly.
-- **Manual:** call `~/.claude/skills/intern-os/scripts/log-session.sh "<session-id>" "<one-line summary>"` yourself at session end.
+Entries are written automatically when the lifecycle hooks are installed (see below). Manual writes are still possible via `log-session.sh "<session-id>" "<summary>"`, but you usually won't need them.
 
 If the user `/resume`s a session and continues work, no new entry is needed unless meaningful new work happened — judgment call. Don't pad SESSIONS.md with empty resume markers.
+
+## Lifecycle hooks (strongly recommended)
+
+The adapter ships two hooks that do work the doctrine previously relied on Claude remembering. Install them once and the workstream is kept honest automatically.
+
+### SessionStart — pre-load context before the first response token
+
+When a session starts inside a workstream, `session-start.sh` injects a system reminder containing:
+
+- BRIEF.md identity header (thread_id, project, owner, created, last_updated)
+- STATUS.md in full
+- The last 3 SESSIONS.md entries
+- Open tick.md tasks tagged with this workstream
+- Any `.internos-warnings` written by the previous SessionEnd
+
+This means: by the time you read your first user message inside a workstream, the operating context is already in your conversation. **Do not re-read STATUS.md or SESSIONS.md just because you'd "normally" load them at the start of a workstream session — they're already there.** Read BRIEF.md fully, MEMORY.md, DECISIONS.md, etc. only when a specific turn requires them.
+
+If `session-start.sh` exited 2 (binding broken), the system reminder will say so explicitly. Stop and ask the human; don't start work blind.
+
+### SessionEnd — stamp, append, check
+
+When the session ends, `session-end.sh`:
+
+1. Stamps `last_updated: <today>` in BRIEF.md (creating the field if missing). This makes staleness visible to `sync-check.sh` and to humans skimming the file.
+2. Appends a `<timestamp> · <session-id>` line to SESSIONS.md. The summary is your job — append it during the end-of-session protocol *before* the hook fires (the hook only adds the timestamp + id; you add the summary text on the same line).
+3. Runs `sync-check.sh --workstream <path>` and writes findings to `<workstream>/.internos-warnings`. The next SessionStart will surface them.
+4. Does **not** auto-release tick tasks. Claimed-but-not-completed tasks just persist into the next session — that's usually what the human wants ("I'll come back tomorrow"). The findings file will note the unreleased claim.
+
+The hook returns immediately on workstreams it can't resolve, so it costs ~50ms in non-workstream sessions.
 
 ## Doctrines (recap)
 

@@ -9,7 +9,14 @@ directory — there is no implicit default. Each workstream is a long-running
 
 ## Thread resolution (do this first)
 
-At the start of any turn that might touch a workstream, run:
+If the recommended `SessionStart` hook is installed, the workstream context
+(STATUS, last 3 sessions, open tick tasks, prior-session warnings) is already
+injected into the conversation as a system reminder before your first
+response token — do not re-read those files just because the doctrine says
+to. Read BRIEF.md fully, MEMORY.md, DECISIONS.md, etc. only when the current
+turn actually requires them.
+
+If the hook is NOT installed, or you need to re-resolve mid-session, run:
 
 ```bash
 ~/.claude/skills/intern-os/scripts/resolve-thread.sh

@@ -1,13 +1,24 @@
 {
-  "_comment": "internOS — Claude Code hooks. Merge these entries into ~/.claude/settings.json (user-global) or your project's .claude/settings.json. The Stop hook records the session in the active workstream's SESSIONS.md, if any. If pwd is not inside a workstream, the script silently no-ops.",
+  "_comment": "internOS — Claude Code lifecycle hooks. Merge these blocks into ~/.claude/settings.json (user-global) or your project's .claude/settings.json. Both hooks no-op silently when pwd is not inside an internOS workstream. SessionStart pre-loads BRIEF identity / STATUS / SESSIONS tail / open tick tasks / warnings into a system reminder before Claude's first response token. SessionEnd stamps BRIEF.md last_updated, appends a SESSIONS.md entry, runs sync-check on the workstream, and writes findings to .internos-warnings for the next SessionStart to surface. Note: do NOT use the `Stop` event for SESSIONS.md logging — `Stop` fires per agent turn, not at session end.",
   "hooks": {
-    "Stop": [
+    "SessionStart": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/skills/intern-os/scripts/log-session.sh"
+            "command": "~/.claude/skills/intern-os/scripts/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/skills/intern-os/scripts/session-end.sh"
           }
         ]
       }
