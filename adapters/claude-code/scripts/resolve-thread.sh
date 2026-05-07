@@ -16,21 +16,37 @@
 #   resolve-thread.sh <pwd> [<workspace>]   # explicit args (testing)
 #
 # Env:
-#   INTERNOS_WORKSPACE  Workspace root containing projects/ (default: ~/.hermes/workspace)
+#   INTERNOS_WORKSPACE  Workspace root containing projects/ (REQUIRED — no default).
+#                       Set this to the directory whose `projects/` subdirectory
+#                       holds your project directories.
 #
 # Output (stdout, on success): absolute path to the active workstream directory
 # Exit codes:
 #   0  active workstream resolved (path printed to stdout)
 #   1  pwd is not inside a workstream subtree (no active thread — silent, expected)
 #   2  workstream directory found but BRIEF.md missing or thread_id mismatched
-#   3  usage error
+#   3  usage error (missing INTERNOS_WORKSPACE, bad start dir, etc.)
 
 set -euo pipefail
 
 # --- Args -------------------------------------------------------------------
 
 START_DIR="${1:-$PWD}"
-WORKSPACE="${2:-${INTERNOS_WORKSPACE:-$HOME/.hermes/workspace}}"
+WORKSPACE="${2:-${INTERNOS_WORKSPACE:-}}"
+
+if [[ -z "$WORKSPACE" ]]; then
+    cat >&2 <<'EOF'
+resolve-thread: INTERNOS_WORKSPACE is not set.
+
+Set it to the directory that contains your `projects/` directory. Example:
+
+    export INTERNOS_WORKSPACE="$HOME/workspace"
+
+There is no implicit default — the Claude Code adapter requires this to be
+explicit so it never silently picks up a stale or unrelated workspace.
+EOF
+    exit 3
+fi
 
 # Normalize to absolute paths so prefix-matching is well-defined.
 if [[ ! -d "$START_DIR" ]]; then
@@ -40,7 +56,9 @@ fi
 START_DIR="$(cd "$START_DIR" && pwd -P)"
 
 if [[ ! -d "$WORKSPACE" ]]; then
-    # No workspace = no thread. Silent, expected when internOS isn't set up here.
+    # Workspace configured but doesn't exist on disk. Treat as "no thread"
+    # silently so the skill doesn't bark in unrelated sessions; the user will
+    # only notice if they actually try to operate a workstream.
     exit 1
 fi
 WORKSPACE="$(cd "$WORKSPACE" && pwd -P)"

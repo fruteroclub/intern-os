@@ -26,7 +26,7 @@ The full skill is read on demand only when Claude Code's skill loader decides th
 
 - Claude Code CLI installed
 - `tick-md` installed globally: `npm install -g tick-md`
-- An internOS workspace directory (Hermes users already have one at `~/.hermes/workspace`)
+- A directory that will hold your projects — anything works (e.g. `~/workspace`, `~/code`). Inside it, projects live under a `projects/` subdirectory.
 
 ---
 
@@ -51,15 +51,17 @@ If you also want the deep references (`FRAMEWORK.md`, `PLAYBOOK.md`, etc.) acces
 cp -R intern-os/references ~/.claude/skills/intern-os/references
 ```
 
-### 2. Set the workspace path (if not the default)
+### 2. Set the workspace path (required)
 
-The default workspace is `~/.hermes/workspace`. To use a different path, export `INTERNOS_WORKSPACE` in your shell config:
+`INTERNOS_WORKSPACE` is required — there is no implicit default. Point it at the directory that contains your `projects/` directory:
 
 ```bash
-echo 'export INTERNOS_WORKSPACE="$HOME/code/internos-workspace"' >> ~/.zshrc
+echo 'export INTERNOS_WORKSPACE="$HOME/workspace"' >> ~/.zshrc
 ```
 
-Both the skill instructions and the resolver script read this variable. No other configuration is needed.
+(Substitute whatever directory holds your `projects/` subdir — `~/workspace`, `~/code`, etc.) Both the skill instructions and the resolver script read this variable. No other configuration is needed.
+
+If `INTERNOS_WORKSPACE` is unset when the resolver runs, it exits with code 3 and a clear error rather than guessing.
 
 ### 3. (Optional) Install the session-logging hook
 

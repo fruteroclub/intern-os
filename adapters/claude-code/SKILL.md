@@ -41,7 +41,7 @@ The script:
 2. Reads BRIEF.md and verifies `thread_id` exactly equals `claude-code:projects/<project>/workstreams/<name>`.
 3. Prints the workstream path on success, or fails loudly on mismatch.
 
-`<workspace>` defaults to `~/.hermes/workspace` and is overridable with the `INTERNOS_WORKSPACE` environment variable.
+`<workspace>` is set via the `INTERNOS_WORKSPACE` environment variable — required, no implicit default. Point it at the directory that contains your `projects/` directory.
 
 **Mismatch handling.** If the script exits 2, do not proceed and do not patch the file silently. Tell the human what was expected vs. found, and ask whether the workstream was moved, copied, or scaffolded by hand. Quietly fixing thread_id values is exactly the kind of "helpful guess" that corrupts the binding model.
 
