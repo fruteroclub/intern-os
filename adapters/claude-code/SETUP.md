@@ -1,111 +1,135 @@
 # SETUP — Claude Code Adapter
 
-*internOS v0.3.0 | 2026-04-11*
+*internOS Workstreams · Claude Code adapter*
 
-Claude Code-specific setup for the internOS Workstreams framework.
+This adapter lets Claude Code participate in internOS workstreams the same way Hermes (Discord/Slack) and OpenClaw do — but using the working directory as the thread binding instead of a chat-platform thread ID.
+
+---
+
+## How it works
+
+A **thread** in Claude Code is the persistent conversation about a workstream. Each `/resume` continues the same thread; opening a fresh conversation in the same working directory also continues it. Individual sessions are *instances* of the thread.
+
+Resolution is purely cwd-based:
+
+1. Claude Code reads project-root `CLAUDE.md` automatically on every session.
+2. `CLAUDE.md` tells Claude to run `~/.claude/skills/intern-os/scripts/resolve-thread.sh`.
+3. The script walks up from `$PWD`, looks for `<workspace>/projects/<project>/workstreams/<name>`, and verifies BRIEF.md's `thread_id` is `claude-code:projects/<project>/workstreams/<name>`.
+4. If a workstream is found, Claude loads BRIEF.md + STATUS.md and follows the standard internOS operating protocol. If not, the skill stays dormant — zero context cost.
+5. (Optional) A `Stop` hook records the session in the workstream's `SESSIONS.md` so you can trace decisions back to specific `/resume` conversations.
+
+The full skill is read on demand only when Claude Code's skill loader decides the description matches the current task — so the skill doesn't burn context for non-workstream work.
 
 ---
 
 ## Prerequisites
 
 - Claude Code CLI installed
-- A project directory where you work
+- `tick-md` installed globally: `npm install -g tick-md`
+- An internOS workspace directory (Hermes users already have one at `~/.hermes/workspace`)
 
 ---
 
-## Setup
+## Install (user-global)
 
-### 1. Install tick.md
+This adapter installs into `~/.claude/skills/intern-os/` so it's available in every Claude Code session for the user. The skill activates only when Claude detects workstream context.
 
-```bash
-npm install -g tick-md
-```
+### 1. Install the skill
 
-### 2. Copy CLAUDE.md to your project
+From this repo:
 
 ```bash
-cp [intern-os-repo]/adapters/claude-code/CLAUDE.md [your-project]/CLAUDE.md
+mkdir -p ~/.claude/skills/intern-os
+cp adapters/claude-code/SKILL.md ~/.claude/skills/intern-os/SKILL.md
+cp -R adapters/claude-code/scripts ~/.claude/skills/intern-os/scripts
+chmod +x ~/.claude/skills/intern-os/scripts/*.sh
 ```
 
-Claude Code automatically reads `CLAUDE.md` in the project root as project instructions.
-
-### 3. Copy WORKSTREAMS.md
+If you also want the deep references (`FRAMEWORK.md`, `PLAYBOOK.md`, etc.) accessible from the same install:
 
 ```bash
-cp [intern-os-repo]/assets/WORKSTREAMS.md [your-project]/WORKSTREAMS.md
+cp -R intern-os/references ~/.claude/skills/intern-os/references
 ```
 
-### 4. Create the projects directory
+### 2. Set the workspace path (if not the default)
+
+The default workspace is `~/.hermes/workspace`. To use a different path, export `INTERNOS_WORKSPACE` in your shell config:
 
 ```bash
-mkdir -p [your-project]/projects/
+echo 'export INTERNOS_WORKSPACE="$HOME/code/internos-workspace"' >> ~/.zshrc
 ```
 
-### 5. Initialize your first project
+Both the skill instructions and the resolver script read this variable. No other configuration is needed.
+
+### 3. (Optional) Install the session-logging hook
+
+The hook records each session's ID and timestamp in the active workstream's `SESSIONS.md` when the session ends. Sessions outside any workstream are silently ignored.
+
+Merge `adapters/claude-code/hooks/settings.json` into `~/.claude/settings.json` — specifically the `hooks.Stop` array. If you don't already have a `hooks` block, you can copy the file as-is.
+
+If you skip this step, you can still log sessions manually by calling `log-session.sh` from inside Claude.
+
+### 4. Drop CLAUDE.md into projects that operate workstreams
+
+This is per-project, not global. For each repo that should auto-resolve workstreams (typically your workspace repo itself, if you keep it under git):
 
 ```bash
-PROJECT=my-project
-mkdir -p [your-project]/projects/$PROJECT
-cd [your-project]/projects/$PROJECT
-tick init
-tick agent register @claude-code --type bot --role engineer
+cp adapters/claude-code/CLAUDE.md <your-project>/CLAUDE.md
 ```
 
----
-
-## How it works
-
-Claude Code reads `CLAUDE.md` at the start of every session. The internOS instructions tell it to:
-
-1. Check for `WORKSTREAMS.md`
-2. Load the active workstream context
-3. Claim tasks in tick.md before working
-4. Update STATUS.md at session end
-
-No skill installation, no restart needed — `CLAUDE.md` is loaded automatically.
+If the project already has a `CLAUDE.md`, append the contents instead — Claude Code reads the whole file as project instructions.
 
 ---
 
 ## Verification
 
-- [ ] `CLAUDE.md` exists in the project root with internOS instructions
-- [ ] `WORKSTREAMS.md` exists in the project root
-- [ ] `projects/` directory exists
-- [ ] At least one project initialized with tick.md
-- [ ] Agent registered: `cd projects/[project] && tick agent list`
+Run these from the repo root:
+
+```bash
+# 1. Skill is installed where Claude Code can find it
+test -f ~/.claude/skills/intern-os/SKILL.md && echo "skill: ok"
+
+# 2. Resolver runs (should exit 1 here unless this repo is your workspace)
+~/.claude/skills/intern-os/scripts/resolve-thread.sh; echo "resolver exit: $?"
+
+# 3. Resolver finds a real workstream when you cd into one
+mkdir -p /tmp/internos-verify/projects/demo/workstreams/test
+cat > /tmp/internos-verify/projects/demo/workstreams/test/BRIEF.md <<EOF
+thread_id: claude-code:projects/demo/workstreams/test
+EOF
+( cd /tmp/internos-verify/projects/demo/workstreams/test \
+  && INTERNOS_WORKSPACE=/tmp/internos-verify \
+     ~/.claude/skills/intern-os/scripts/resolve-thread.sh )
+rm -rf /tmp/internos-verify
+```
+
+The third command should print the workstream's absolute path.
 
 ---
 
-## Next step
+## Daily use
 
-Follow **PLAYBOOK.md** to activate your first workstream.
+Open Claude Code from inside a workstream directory:
+
+```bash
+cd $INTERNOS_WORKSPACE/projects/my-project/workstreams/feature-x
+claude
+```
+
+Claude resolves the thread, loads BRIEF.md + STATUS.md, claims the tick.md task, and starts work. `/resume` later picks up the same thread because the cwd hasn't changed.
+
+For an operational overview of all active workstreams, ask Claude to consult `$INTERNOS_WORKSPACE/projects/REGISTRY.md` (regenerate with `generate-registry.sh` from the framework-agnostic skill's scripts).
 
 ---
 
 ## Uninstall
 
-### 1. Remove CLAUDE.md (or the internOS section)
-
-If CLAUDE.md contains only internOS instructions:
-
 ```bash
-rm [your-project]/CLAUDE.md
+# Remove the skill (preserves all workstream data)
+rm -rf ~/.claude/skills/intern-os
+
+# Remove project-level CLAUDE.md additions (manual — only if CLAUDE.md is internOS-only)
+# Remove the Stop hook from ~/.claude/settings.json (manual)
 ```
 
-If CLAUDE.md has other project instructions, edit it and remove the `## internOS — Workstreams` section.
-
-### 2. Remove WORKSTREAMS.md
-
-```bash
-rm [your-project]/WORKSTREAMS.md
-```
-
-### 3. (Optional) Remove workspace data
-
-The steps above remove the internOS framework but **preserve your project data** (projects, workstreams, TICK.md, task history). To remove everything:
-
-```bash
-rm -rf [your-project]/projects/
-```
-
-> **Warning:** This deletes all project directories, workstream files, task history, and accumulated context. This cannot be undone.
+Workstream data lives in your workspace and is untouched by uninstall.

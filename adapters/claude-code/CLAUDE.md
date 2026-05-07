@@ -1,93 +1,48 @@
-# internOS — Workstreams
+# internOS — Workstreams (Claude Code)
 
-## Workstreams Operating System
+This project uses internOS. Workstreams live under
+`$INTERNOS_WORKSPACE/projects/<project>/workstreams/<name>/` (default workspace:
+`~/.hermes/workspace`). Each workstream is a long-running *thread*; each Claude
+Code conversation is a *session* inside that thread. `/resume` continues the
+thread with a new session.
 
-If `WORKSTREAMS.md` exists in the project root, read it at the start
-of any session that involves a workstream.
+## Thread resolution (do this first)
 
-Only load the workstream directory matching the active context.
-Do not load all workstreams — keep context clean.
+At the start of any turn that might touch a workstream, run:
 
-Projects live in: `projects/[project-name]/`
-Each project has a TICK.md (task management), an optional AGENTS.md (project context), and workstreams/ directory.
-Workstream directories live in: `projects/[project]/workstreams/[workstream-name]/`
-
-## Resolution
-
-Resolve the workstream by exact `thread_id` in BRIEF.md.
-If no exact match exists, stop and ask — never guess.
-Never resolve by fuzzy matching, keyword similarity, or path proximity.
-
-## Before starting work
-
-1. Resolve workstream by exact `thread_id`
-2. Read project-level context: `projects/[project]/AGENTS.md` (if it exists)
-3. Read the workstream's files (in the workstream directory, not your agent memory):
-   - `BRIEF.md` — read in full (workstream identity + thread_id)
-   - `STATUS.md` — read in full (must be ≤10 lines by design)
-4. Escalate to other files only when the task requires it:
-   - `MEMORY.md` — **last 80 lines only** (search on demand if more context needed)
-   - `DECISIONS.md` — when task involves prior decisions
-   - `STAKEHOLDERS.md` — when task involves people or relationships
-   - `RESOURCES.md` — when task involves artifacts or deployments
-5. Check tasks: `tick list --tag [workstream-name]`
-6. Claim the task: `tick claim TASK-X @claude-code`
-
-## Before ending any working session
-
-1. Complete or release the task:
-   - `tick done TASK-X @claude-code` (if complete)
-   - `tick release TASK-X @claude-code` (if pausing)
-2. Update STATUS.md with:
-   - What was done this session
-   - Current workstream phase
-   - Any blockers
-3. If the workstream's MEMORY.md exceeds 80 lines, consolidate — summary, not log
-
-This is required even if nothing changed. A blank STATUS.md means
-the workstream is invisible to the next agent or session.
-
-## Recovery doctrine
-
-If session is degraded, bloated, or reset: reconstruct from workstream files.
-Do not trust transcript continuity. BRIEF.md + STATUS.md must be sufficient to restart.
-
-## Isolation doctrine
-
-Do not read another workstream's files by default.
-Cross-workstream synthesis must be explicit and requested.
-
-## Cross-workstream lookup
-
-For operational overview, consult `projects/REGISTRY.md` (derived index).
-Do not use it for single-workstream resolution — use BRIEF.md directly.
-
-## Activating a new workstream
-
-1. Add task: `tick add "Description" --tag workstream-name --priority high`
-2. Scaffold directory from templates or manually:
-   ```
-   mkdir -p projects/[project]/workstreams/[name]/docs
-   ```
-3. Fill BRIEF.md with workstream identity (thread_id is mandatory)
-4. Link everything in RESOURCES.md
-
-## Workstream file structure
-
-```
-projects/[project]/workstreams/[name]/
-├── BRIEF.md         ← Workstream identity + thread_id binding (mandatory)
-├── STATUS.md        ← Operational heartbeat: phase, next, blockers
-├── MEMORY.md        ← Durable context across sessions (≤80 lines)
-├── DECISIONS.md     ← Key decisions log with date + rationale
-├── STAKEHOLDERS.md  ← Relevant people and their role
-├── RESOURCES.md     ← Artifact registry and where they live
-└── docs/            ← Working artifacts
+```bash
+~/.claude/skills/intern-os/scripts/resolve-thread.sh
 ```
 
-## References
+- **Exit 0** → stdout is the active workstream's absolute path. Read its
+  `BRIEF.md` and `STATUS.md` (in that order, in full). Escalate to
+  `MEMORY.md` / `DECISIONS.md` / `STAKEHOLDERS.md` / `RESOURCES.md` only when
+  the task requires it.
+- **Exit 1** → no active workstream. The user is working outside any
+  workstream subtree. Do nothing — don't search for one, don't load anything.
+- **Exit 2** → a workstream directory was found but `BRIEF.md` is missing or
+  its `thread_id` doesn't match the canonical
+  `claude-code:projects/<project>/workstreams/<name>` form. Stop and ask the
+  human. Do not silently fix the file.
 
-- Framework: `references/en/FRAMEWORK.md`
-- Playbook: `references/en/PLAYBOOK.md`
-- Communication: `references/en/COMMUNICATION.md`
-- tick.md integration: `references/en/TICK-INTEGRATION.md`
+Resolution is exact and deterministic. Never resolve a workstream by fuzzy
+matching path fragments, similar names, or directory listings — if the
+resolver doesn't return one, there isn't one.
+
+## Operating protocol
+
+Once resolved, follow the standard workstream protocol from the `intern-os`
+skill: claim the tick.md task before working, update `STATUS.md` at session
+end, consolidate `MEMORY.md` if it crosses 80 lines, append a session line to
+`SESSIONS.md`, then `tick done` or `tick release`.
+
+The full doctrine — resolution, runtime, recovery, isolation — lives in the
+`intern-os` skill (`~/.claude/skills/intern-os/SKILL.md`). Load it when
+operating on a workstream; don't duplicate it here.
+
+## Cross-workstream lookups
+
+For an operational overview of what's active across the workspace, consult
+`$INTERNOS_WORKSPACE/projects/REGISTRY.md` (regenerate with
+`generate-registry.sh`). Never use the registry to resolve a single
+workstream — `BRIEF.md` is the authoritative binding.
