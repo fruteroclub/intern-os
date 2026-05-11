@@ -31,7 +31,7 @@ El especialista verifica el binding antes de actuar. La verificación es coincid
 
 - `workstream_path` existe en disco
 - `BRIEF.md` existe en `<workstream_path>/BRIEF.md`
-- `thread_id` del `BRIEF.md` coincide exactamente con el `thread_id` del manifest (igualdad de strings, sin normalización)
+- `thread_id` del `BRIEF.md` coincide con el `thread_id` del manifest tras quitar whitespace circundante de la línea en BRIEF.md (incl. CR final si BRIEF.md fue creado en Windows). Igualdad de strings en todo lo demás — sin case folding, sin normalización Unicode, sin matching difuso.
 - Cada path en `load.required` existe
 
 Cualquier fallo: detenerse, retornar `status: aborted-binding-mismatch` con el nombre del check fallido. Sin fallback, sin matching difuso, sin "proyecto más cercano."

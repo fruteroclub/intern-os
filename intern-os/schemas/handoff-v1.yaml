@@ -3,14 +3,22 @@
 # Canonical schema for isolated-session handoff manifests.
 # Spec: docs/specs/v0.4.0-isolated-handoff.md
 #
-# This file documents the v1 schema in commented YAML. Manifests
-# themselves are written one-per-handoff at:
+# THIS FILE IS A REFERENCE, NOT A FILLABLE TEMPLATE.
+# To create a manifest, copy intern-os/assets/templates/handoff/manifest.yml
+# and edit. The example values below (empty strings, default lists) are
+# illustrative only — do not copy this file directly.
+#
+# Manifests are written one-per-handoff at:
 #   <workstream_path>/handoffs/<handoff_id>.yml
 #
 # Validation: bash intern-os/scripts/verify-handoff.sh <manifest_path>
-#   Exit 0 = all binding_checks passed
-#   Exit 3 = a named binding check failed (failure name on stderr)
-#   Exit 2 = usage/missing-file error
+#   Exit 0 = manifest well-formed AND all binding_checks passed
+#   Exit 2 = manifest malformed (well-formedness) or usage/missing-file error
+#   Exit 3 = manifest well-formed but a named binding check failed
+#
+# The verifier checks both layers — well-formedness (structural validity,
+# artifact_path prefix, also_append target allowlist, required blocks) and
+# binding (workstream_path/BRIEF.md/thread_id/load.required match disk state).
 
 # ── Required: schema version ──────────────────────────────────────────────
 # Specialists must reject unknown schema versions rather than guess.

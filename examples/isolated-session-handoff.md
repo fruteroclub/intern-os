@@ -70,8 +70,8 @@ task:
     populated, including at least 3 named wedges with rationale.
   stop_condition:
     - success condition met
-    - blocked by a question only the human can answer (record and stop)
     - binding_check fails (return aborted-binding-mismatch)
+    - blocked by a question only the human can answer (record and stop)
 
 binding_checks:
   - workstream_path_exists

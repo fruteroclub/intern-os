@@ -31,7 +31,7 @@ The specialist verifies the binding before acting. Verification is exact-match o
 
 - `workstream_path` exists on disk
 - `BRIEF.md` exists at `<workstream_path>/BRIEF.md`
-- `BRIEF.md`'s `thread_id` exactly equals the manifest's `thread_id` (string equality, no normalization)
+- `BRIEF.md`'s `thread_id` equals the manifest's `thread_id` after stripping surrounding whitespace from the BRIEF.md line (incl. trailing CR if BRIEF.md was authored on Windows). String equality otherwise — no case folding, no Unicode normalization, no fuzzy matching.
 - Every path in `load.required` exists
 
 Any failure: stop, return `status: aborted-binding-mismatch` with the failing check name. No fallback, no fuzzy matching, no "closest project."
