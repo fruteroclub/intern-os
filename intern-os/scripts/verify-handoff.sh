@@ -10,7 +10,11 @@
 #     - schema version is v1
 #     - required blocks are present (task:, write_back:, load:)
 #     - workstream_path, thread_id are non-empty
-#     - task.success_condition and task.stop_condition are non-empty
+#     - task.objective, task.success_condition are non-empty (key
+#       presence with a non-empty value on the key line — block scalars
+#       like `|` are accepted at face value; deep block-body emptiness
+#       is not checked, see TODO at A4)
+#     - task.stop_condition has at least one entry
 #     - write_back.artifact_path is under "handoffs/"
 #     - write_back.artifact_schema has at least one entry
 #     - write_back.also_append targets are in {MEMORY.md}
@@ -18,8 +22,8 @@
 #       and STATUS.md at minimum
 #     - Flow-style YAML (`[a, b]`) is rejected for every list field the
 #       verifier consumes (load.required, write_back.also_append,
-#       write_back.artifact_schema). Use block form (`- a` on separate
-#       lines) instead.
+#       write_back.artifact_schema, task.stop_condition). Use block form
+#       (`- a` on separate lines) instead.
 #
 # (B) Named binding_checks (manifest matches reality on disk). Exit 3 on failure.
 #     1. workstream_path_exists       — workstream_path resolves to a directory
@@ -236,9 +240,16 @@ THREAD_ID=$(extract_scalar "thread_id")
 [ -n "$THREAD_ID" ]       || malformed "thread_id is empty"
 
 # A4: required task.* scalars
+# TODO(v0.4.1+): these checks verify the key has a non-empty value on its own
+# line. For block scalars (`success_condition: |\n  body`), extract_nested
+# returns the literal `|` and we treat that as non-empty. Deep block-body
+# emptiness is not currently checked — awk-only constraint makes multi-line
+# block-scalar parsing awkward. A v2+ verifier or a non-bash port can tighten.
+TASK_OBJECTIVE=$(extract_nested "task" "objective")
 TASK_SUCCESS=$(extract_nested "task" "success_condition")
-[ -n "$TASK_SUCCESS" ] || malformed "task.success_condition is empty"
-# stop_condition is a list; we check it has at least one entry below at A8
+[ -n "$TASK_OBJECTIVE" ] || malformed "task.objective is empty"
+[ -n "$TASK_SUCCESS" ]   || malformed "task.success_condition is empty"
+# stop_condition is a list; we check it has at least one entry below at A9
 
 # A5: flow style is rejected for EVERY list field the verifier consumes.
 # Hardcoded list of (parent, child) pairs covered by v1's well-formedness layer.
