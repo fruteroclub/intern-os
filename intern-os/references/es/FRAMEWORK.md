@@ -1,6 +1,6 @@
 # internOS — Framework de Workstreams
 
-*Versión: 0.3.1 | Fecha: 2026-04-12 | Estado: v0.3.1 — Registro, protocolo de rollout, herramientas operacionales*
+*Versión: 0.4.0 | Fecha: 2026-05-11 | Estado: v0.4.0 — Adaptador de ciclo de vida Claude Code, handoff de sesión aislada, proyectos inbox de thread compartido*
 
 ---
 
@@ -493,6 +493,62 @@ rm -rf [workspace]/projects/
 
 ---
 
+## Tipos de proyecto: thread-nativo vs. inbox de thread compartido
+
+internOS soporta dos formas de proyecto para la relación entre `thread_id` y workstream:
+
+### Proyectos thread-nativos (por defecto)
+
+Para Discord, Slack y cualquier plataforma con semántica nativa de threads/forums, la regla es **un workstream por thread**. El `BRIEF.md` de cada workstream declara un `thread_id` único y la capa de resolución es uno-a-uno. Esto es el default y aplica a todo proyecto salvo opt-out explícito.
+
+### Proyectos inbox de thread compartido (opt-in, v0.4.0+)
+
+Algunas plataformas — Telegram, WhatsApp, Signal, iMessage, SMS, LINE — no tienen threads nativos. Un DM o chat **es** la superficie de colaboración. En esas, múltiples workstreams dentro del mismo proyecto inbox legítimamente comparten un `thread_id`.
+
+Para opt-in, setear dos campos en `PROJECT.md`:
+
+```md
+shared_thread_ids: true
+shared_thread_platforms: telegram, whatsapp, signal, imessage, sms, line
+```
+
+Una vez opt-in, las reglas se vuelven:
+
+- Valores `thread_id` duplicados dentro del mismo proyecto se permiten **solo** para plataformas en `shared_thread_platforms`
+- El `thread_id` exacto resuelve al **proyecto** inbox (el contenedor), no directamente a un workstream
+- El workstream activo dentro del proyecto inbox se determina por estado de TICK.md más intención humana explícita (ej. "continuemos el workstream de workspace-cleanup")
+- Valores `thread_id` duplicados **entre proyectos distintos** siguen siendo flaggeados como warnings, incluso si ambos proyectos hacen opt-in
+- Las plataformas thread-nativas (`discord`, `slack`) están **hardcodeadas como nunca-suprimidas**. Listar `discord` o `slack` en `shared_thread_platforms` no tiene efecto — los duplicados en esas plataformas siempre producen warning, sin importar el opt-in
+- Los valores se normalizan antes de comparar: `shared_thread_ids` acepta `true`/`TRUE`/`"true"` (insensible a mayúsculas, comillas opcionales, comentario `#` final eliminado); `shared_thread_platforms` se pasa a minúsculas y se elimina todo whitespace (así `Telegram, WhatsApp` matchea con thread_ids `telegram` y `whatsapp`)
+
+### Ejemplo: un proyecto inbox de Telegram
+
+```
+projects/telegram-inbox-mel/
+├── PROJECT.md          ← shared_thread_ids: true, shared_thread_platforms: telegram
+├── TICK.md
+└── workstreams/
+    ├── dm-intake/
+    │   └── BRIEF.md    ← thread_id: telegram:1234567890
+    ├── workspace-cleanup/
+    │   └── BRIEF.md    ← thread_id: telegram:1234567890  (mismo — permitido)
+    └── tax-prep-q3/
+        └── BRIEF.md    ← thread_id: telegram:1234567890  (mismo — permitido)
+```
+
+Los tres workstreams colaboran sobre el mismo DM de Telegram, que es lo que la experiencia humana requiere.
+
+### Comportamiento del validador
+
+`sync-check.sh` lee `shared_thread_ids` y `shared_thread_platforms` del `PROJECT.md` de cada proyecto. Cuando detecta un `thread_id` duplicado:
+
+- Si el duplicado está dentro del mismo proyecto opt-in Y la plataforma está en el allowlist → emite `INFO  thread_id (...) intentionally shared inside inbox project — also used by ...`
+- En caso contrario → emite `WARN  thread_id (...) is duplicated — also used by ...` y lo cuenta como issue
+
+Esto mantiene la disciplina estricta de Discord/Slack mientras deja que proyectos con forma de inbox funcionen como la plataforma realmente se comporta.
+
+---
+
 ## Registro
 
 `projects/REGISTRY.md` es un índice derivado de todos los workstreams no archivados. Es generado por `generate-registry.sh` y nunca debe editarse manualmente.
@@ -533,7 +589,7 @@ Estos checks son ejecutados por el script de salud del workspace y producen adve
 | `thread_id` existe en BRIEF.md | WARN |
 | Formato de `thread_id` es válido (`plataforma:id`) | WARN |
 | `thread_id` de Slack incluye canal + thread_ts | WARN |
-| No hay `thread_id` duplicados entre workstreams | WARN |
+| No hay `thread_id` duplicados entre workstreams (suprimido para proyectos inbox de thread compartido dentro de sus plataformas permitidas) | WARN |
 | Workstream tiene tag de tarea correspondiente en TICK.md | WARN |
 | Tamaño de `STATUS.md` dentro del objetivo (≤10 líneas de contenido) | WARN |
 | Tamaño de `MEMORY.md` dentro del límite (≤80 líneas) | WARN |

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# sync-check.sh — internOS workspace health check (v0.3.1)
+# sync-check.sh — internOS workspace health check (v0.4.0)
 #
 # Scans all projects and workstreams in an internOS workspace and reports
 # mismatches between filesystem, thread_ids, BRIEF.md identity fields,
@@ -212,12 +212,16 @@ info() {
 }
 
 # Extract a field value from a markdown file.
-# Handles "field: value" format (plain or with bold markers).
+# Handles "field: value" format (plain or with bold markers like **field**: value).
 # Portable: no PCRE required.
+#
+# Field name must be followed by a literal `:` (after optional `*` markers) —
+# this prevents prefix-matching, e.g. extract_field for "shared_thread_ids"
+# will NOT match a line "shared_thread_ids_extra: bogus".
 extract_field() {
     local file="$1"
     local field="$2"
-    sed -n "s/^[* ]*${field}[*:]*[[:space:]]*//p" "$file" 2>/dev/null \
+    sed -n "s/^[* ]*${field}\**:[[:space:]]*//p" "$file" 2>/dev/null \
         | head -1 \
         | xargs
 }
@@ -241,9 +245,9 @@ check_tick_tag() {
 # --- Main scan ---------------------------------------------------------------
 
 if $ROLLOUT_MODE; then
-    echo "internOS Sync Check (v0.3.1) — Rollout Mode"
+    echo "internOS Sync Check (v0.4.0) — Rollout Mode"
 else
-    echo "internOS Sync Check (v0.3.1)"
+    echo "internOS Sync Check (v0.4.0)"
 fi
 echo "Workspace: $WORKSPACE"
 echo "$(date -u '+%Y-%m-%d %H:%M UTC')"
@@ -268,8 +272,49 @@ for project_dir in "$PROJECTS_DIR"/*/; do
     echo "----------------------------------------"
 
     # Check PROJECT.md
+    project_shared_threads=false
+    project_shared_platforms=""
     if [[ -f "$project_dir/PROJECT.md" ]]; then
         ok "PROJECT.md exists"
+
+        # Read project-level shared-thread inbox opt-in (v0.4.0+).
+        # When `shared_thread_ids: true`, duplicate thread_ids inside this
+        # project are permitted for platforms listed in
+        # `shared_thread_platforms` (comma-separated). Used for inbox-style
+        # platforms (Telegram, WhatsApp, Signal, iMessage, etc.) where one
+        # DM is the collaboration surface for multiple workstreams.
+        #
+        # Value normalization (defensive against common user mistakes):
+        # - strip trailing #-comments and surrounding whitespace/quotes
+        # - lowercase for boolean + platform comparisons
+        # - accept: true, "true", TRUE (and friends) — anything else is false
+        sti=$(extract_field "$project_dir/PROJECT.md" "shared_thread_ids")
+        sti_norm=$(printf '%s' "$sti" \
+                   | sed -E 's/[[:space:]]*#.*$//; s/^[[:space:]]+//; s/[[:space:]]+$//; s/^["'\'']//; s/["'\'']$//' \
+                   | tr '[:upper:]' '[:lower:]')
+        if [[ "$sti_norm" == "true" ]]; then
+            project_shared_threads=true
+            # Normalize platform list: strip #-comments + outer quotes,
+            # lowercase, then squash all whitespace (handles tabs too).
+            project_shared_platforms=$(extract_field "$project_dir/PROJECT.md" "shared_thread_platforms" \
+                | sed -E 's/[[:space:]]*#.*$//; s/^["'\'']//; s/["'\'']$//' \
+                | tr '[:upper:]' '[:lower:]' \
+                | tr -d '[:space:]')
+            if [[ -z "$project_shared_platforms" ]]; then
+                warn "shared_thread_ids is true but shared_thread_platforms is empty — opt-in is half-configured and will not suppress any duplicates"
+                ((project_issues++)) || true
+            else
+                info "shared-thread inbox project (platforms: $project_shared_platforms)"
+            fi
+        else
+            # Mirror half-config: platforms set but no opt-in. Silent no-op
+            # without a diagnostic is bad UX — flag it.
+            stp_raw=$(extract_field "$project_dir/PROJECT.md" "shared_thread_platforms")
+            if [[ -n "$stp_raw" ]]; then
+                warn "shared_thread_platforms is set but shared_thread_ids is not 'true' — opt-in is half-configured (the platforms list has no effect without the boolean)"
+                ((project_issues++)) || true
+            fi
+        fi
     else
         warn "PROJECT.md missing"
         ((project_issues++)) || true
@@ -363,9 +408,54 @@ for project_dir in "$PROJECTS_DIR"/*/; do
                     # Check for duplicate thread_ids (bash 3.2 compatible)
                     tid_key="$thread_id"
                     if echo "$SEEN_THREAD_IDS" | grep -qF "|$tid_key|" 2>/dev/null; then
-                        dup_owner=$(echo "$SEEN_THREAD_OWNERS" | grep -F "|$tid_key|" | sed "s/.*|$tid_key|//" | sed 's/|.*//')
-                        warn "thread_id ($thread_id) is duplicated — also used by $dup_owner"
-                        ((project_issues++)) || true
+                        # NOTE: sed delimiter is `#` (not `/`) because Slack
+                        # thread_ids contain `/` (slack:CHANNEL/THREAD_TS) and
+                        # would otherwise be parsed as the sed delimiter and
+                        # corrupt the substitution. `#` is safe — `thread_id`
+                        # format is `[a-z]+:.+` and `#` is not a valid
+                        # platform-name character.
+                        dup_owner=$(echo "$SEEN_THREAD_OWNERS" | grep -F "|$tid_key|" | sed "s#.*|$tid_key|##" | sed 's/|.*//')
+                        dup_project="${dup_owner%%/*}"
+
+                        # Suppress the duplicate warning iff:
+                        #   1) this project opts in (shared_thread_ids: true)
+                        #   2) duplicate is within the SAME project
+                        #   3) thread_id's platform is in shared_thread_platforms
+                        #   4) thread_id's platform is NOT in the hardcoded
+                        #      thread-native set (discord, slack) — those
+                        #      always warn regardless of allowlist, per the
+                        #      framework's "thread-native rules remain
+                        #      unchanged" contract.
+                        # All comparisons are lowercase; platform list was
+                        # already lowercased + whitespace-stripped at parse
+                        # time. The thread_id format regex on line ~366
+                        # forces the platform side to be lowercase already.
+                        suppress_duplicate=false
+                        platform_lc=$(printf '%s' "$platform" | tr '[:upper:]' '[:lower:]')
+                        case " discord slack " in
+                            *" $platform_lc "*) is_thread_native=true ;;
+                            *)                  is_thread_native=false ;;
+                        esac
+
+                        if $project_shared_threads \
+                           && [[ "$dup_project" == "$project_name" ]] \
+                           && [[ -n "$project_shared_platforms" ]] \
+                           && ! $is_thread_native \
+                           && [[ ",${project_shared_platforms}," == *",${platform_lc},"* ]]; then
+                            suppress_duplicate=true
+                        fi
+
+                        # Note: $dup_owner is always the FIRST owner of this
+                        # thread_id (SEEN_THREAD_OWNERS only appends on
+                        # first-seen). For 3+ shared workstreams, the second
+                        # and third both compare against the first — accurate
+                        # but worth using "first used by" wording.
+                        if $suppress_duplicate; then
+                            info "thread_id ($thread_id) intentionally shared inside inbox project — first used by $dup_owner"
+                        else
+                            warn "thread_id ($thread_id) is duplicated — first used by $dup_owner"
+                            ((project_issues++)) || true
+                        fi
                     else
                         SEEN_THREAD_IDS="${SEEN_THREAD_IDS}|${tid_key}|"
                         SEEN_THREAD_OWNERS="${SEEN_THREAD_OWNERS}|${tid_key}|${project_name}/${ws_name}|"
