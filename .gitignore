@@ -2,3 +2,5 @@
 /research
 
 .env
+
+.DS_Store
