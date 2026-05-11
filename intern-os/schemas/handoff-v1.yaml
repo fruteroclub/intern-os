@@ -53,9 +53,9 @@ task:
   objective: ""         # what the specialist is doing (multi-line allowed)
   success_condition: "" # when to consider the task done
   stop_condition:       # list of conditions that halt execution
-    - "success condition met"
-    - "binding_check fails (return aborted-binding-mismatch)"
-    - "blocked by a question only the human can answer (record and stop)"
+    - success condition met
+    - binding_check fails (return aborted-binding-mismatch)
+    - blocked by a question only the human can answer (record and stop)
 
 # ── Required: binding_checks ──────────────────────────────────────────────
 # Ordered list of named, machine-testable predicates. Evaluated in order;
@@ -95,9 +95,9 @@ write_back:
 # Redundant with the doctrine in SKILL.md but useful as an inline reminder
 # carried into the specialist's prompt. Free-text bullets.
 isolation:
-  - "do not read sibling workstreams"
-  - "do not modify files outside workstream_path"
-  - "do not modify BRIEF.md, STATUS.md, or DECISIONS.md"
+  - do not read sibling workstreams
+  - do not modify files outside workstream_path
+  - do not modify BRIEF.md, STATUS.md, or DECISIONS.md
 
 # ── Optional: harness-specific extensions ─────────────────────────────────
 # Top-level keys other adapters/harnesses MAY add. Unknown to the reference
