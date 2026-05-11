@@ -248,14 +248,31 @@ projects/[project]/
 └── workstreams/
 ```
 
+## Isolated-session handoff (multi-agent)
+
+When a coordinating agent delegates work to an isolated specialist (subagent) that does not inherit the parent's transcript or workstream binding, use the **handoff manifest** layer.
+
+The coordinator writes a manifest file at `<workstream>/handoffs/<handoff_id>.yml` that names exactly what the specialist must load, what to do, and where to write back. The specialist verifies the binding deterministically (exact `thread_id` match in `BRIEF.md`, exact path existence) before any action — no fuzzy matching, no broad scans. Work returns as a file at `<workstream>/handoffs/<handoff_id>.md`; the coordinator owns reconciliation back into `STATUS.md` / `DECISIONS.md`.
+
+**Specialist write scope is strict by doctrine.** Specialists may write only to:
+- `handoffs/<handoff_id>.md` (return artifact)
+- `handoffs/<handoff_id>/*` (optional sub-artifacts)
+- `MEMORY.md` (bounded appends per the manifest)
+
+Specialists never write `BRIEF.md`, `STATUS.md`, or `DECISIONS.md`. Those stay coordinator-owned so the operational heartbeat reflects the coordinator's view, not a specialist's intermediate state.
+
+Full reference: `references/en/ISOLATED-HANDOFF.md` (Spanish: `references/es/`).
+Schema: `schemas/handoff-v1.yaml`. Verifier: `scripts/verify-handoff.sh`.
+
 ## Tooling vs. doctrine
 
-The resolution, runtime, recovery, and isolation rules above are **doctrine for agents to follow** — they depend on agents reading and respecting these instructions. They are not mechanically enforced by tooling in v0.3.0.
+The resolution, runtime, recovery, and isolation rules above are **doctrine for agents to follow** — they depend on agents reading and respecting these instructions. They are not mechanically enforced by tooling.
 
 What **is** validated by shipped tooling:
 - `sync-check.sh` — validates file presence, `thread_id` format and uniqueness, BRIEF.md identity fields, STATUS.md / MEMORY.md size limits. Use `--rollout` for a prioritized action list.
 - `generate-registry.sh` — generates derived workstream registry at `projects/REGISTRY.md`
 - `checkpoint-reminder.sh` — detects stale STATUS.md files
+- `verify-handoff.sh` — verifies a handoff manifest against the four named binding checks (workstream_path, BRIEF.md, thread_id match, required load paths)
 - `tick.md` — enforces task claim/release coordination
 
 See FRAMEWORK.md for the full breakdown of what is validated vs. what is doctrine.
@@ -267,4 +284,5 @@ See FRAMEWORK.md for the full breakdown of what is validated vs. what is doctrin
 - Communication: `references/en/COMMUNICATION.md`
 - tick.md integration: `references/en/TICK-INTEGRATION.md`
 - Rollout protocol: `references/en/ROLLOUT.md`
+- Isolated-session handoff: `references/en/ISOLATED-HANDOFF.md`
 - Framework-specific setup: `adapters/[framework]/SETUP.md`

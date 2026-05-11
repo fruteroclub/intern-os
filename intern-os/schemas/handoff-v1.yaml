@@ -1,0 +1,102 @@
+# internOS Handoff Manifest — Schema v1
+#
+# Canonical schema for isolated-session handoff manifests.
+# Spec: docs/specs/v0.4.0-isolated-handoff.md
+#
+# This file documents the v1 schema in commented YAML. Manifests
+# themselves are written one-per-handoff at:
+#   <workstream_path>/handoffs/<handoff_id>.yml
+#
+# Validation: bash intern-os/scripts/verify-handoff.sh <manifest_path>
+#   Exit 0 = all binding_checks passed
+#   Exit 3 = a named binding check failed (failure name on stderr)
+#   Exit 2 = usage/missing-file error
+
+# ── Required: schema version ──────────────────────────────────────────────
+# Specialists must reject unknown schema versions rather than guess.
+internos_handoff: v1
+
+# ── Required: identity ────────────────────────────────────────────────────
+# These four fields are the binding. The specialist verifies all of them
+# against BRIEF.md before any task action.
+handoff_id: ""          # unique within workstream; date-keyed convention:
+                        # YYYY-MM-DD-HHMM-<short-slug>
+project: ""             # project name (matches projects/<name>/ on disk)
+workstream: ""          # workstream name (matches workstreams/<name>/)
+workstream_path: ""     # absolute path to the workstream directory
+thread_id: ""           # platform:id — must exactly equal BRIEF.md's thread_id
+
+# ── Optional: role ────────────────────────────────────────────────────────
+# Descriptive only. Used for logging and human readability.
+role: ""                # e.g. "market-research-specialist", "cto", "cmo"
+
+# ── Required: load list ───────────────────────────────────────────────────
+# Files the specialist may read. Paths are resolved relative to
+# workstream_path unless absolute. Specialist must NOT read files
+# outside this list.
+load:
+  required:             # always read; binding_checks verifies each exists
+    - BRIEF.md
+    - STATUS.md
+  optional: []          # may read if the task warrants; specialist's call
+
+# ── Required: task ────────────────────────────────────────────────────────
+task:
+  objective: ""         # what the specialist is doing (multi-line allowed)
+  success_condition: "" # when to consider the task done
+  stop_condition:       # list of conditions that halt execution
+    - "success condition met"
+    - "binding_check fails (return aborted-binding-mismatch)"
+    - "blocked by a question only the human can answer (record and stop)"
+
+# ── Required: binding_checks ──────────────────────────────────────────────
+# Ordered list of named, machine-testable predicates. Evaluated in order;
+# first failure aborts. v1 ships these four:
+binding_checks:
+  - workstream_path_exists       # workstream_path resolves to a directory
+  - brief_md_exists              # BRIEF.md is present and readable
+  - thread_id_matches            # BRIEF.md's thread_id exactly equals manifest's
+  - load_required_paths_exist    # every load.required path resolves
+#
+# Adapters MAY add custom check names; the reference verifier
+# (verify-handoff.sh) recognizes only the four above. Unknown check names
+# are passed through to the specialist for handling.
+
+# ── Required: write_back ──────────────────────────────────────────────────
+write_back:
+  artifact_path: ""     # path under workstream_path; must start with "handoffs/"
+                        # specialist writes its return artifact here
+  artifact_schema:      # required sections, in order, in the return artifact
+    - objective
+    - work
+    - findings
+    - open-questions
+    - status            # one of: done | blocked | aborted-binding-mismatch
+  also_append: []       # optional bounded appends to coordinator-owned files
+                        # entries: { target: <relative-path>, max_lines: <int> }
+                        # ONLY MEMORY.md is permitted as a target in v1.
+                        # Each entry caps how many lines the specialist may
+                        # append in a single handoff.
+
+# ── Optional: isolation reminders ─────────────────────────────────────────
+# Redundant with the doctrine in SKILL.md but useful as an inline reminder
+# carried into the specialist's prompt. Free-text bullets.
+isolation:
+  - "do not read sibling workstreams"
+  - "do not modify files outside workstream_path"
+  - "do not modify BRIEF.md, STATUS.md, or DECISIONS.md"
+
+# ── Optional: harness-specific extensions ─────────────────────────────────
+# Top-level keys other adapters/harnesses MAY add. Unknown to the reference
+# verifier; ignored by non-matching adapters.
+#
+# hermes:
+#   acp_command: ""
+#   acp_args: []
+#   toolsets: []
+#
+# openclaw:
+#   attachments: []
+#
+# claude_code:
+#   subagent_type: "general-purpose"   # or a user-defined agent name

@@ -90,6 +90,38 @@ If the project already has a `CLAUDE.md`, append the contents instead — Claude
 
 ---
 
+## Isolated-session handoff
+
+When the coordinator delegates to a Claude Code subagent (`Agent` tool / Task tool), use the handoff manifest layer per `references/en/ISOLATED-HANDOFF.md`.
+
+**Claude Code-specific wiring:**
+
+- Native primitive: the `Agent` tool. Subagent gets a fresh conversation — no inherited transcript, no system prompt inheritance. Inherits `cwd` and environment variables (`INTERNOS_WORKSPACE`). Tool allowlists come from the agent definition's frontmatter at `~/.claude/agents/<name>.md`.
+- Coordinator writes the manifest to `<workstream_path>/handoffs/<handoff_id>.yml`.
+- Coordinator constructs the subagent prompt as: a fenced YAML block containing the manifest, followed by free-text task framing plus the verify-then-execute protocol from `references/en/ISOLATED-HANDOFF.md`.
+- Specialist verifies via `bash ~/.claude/skills/intern-os/scripts/verify-handoff.sh <manifest>` as its first action. Exit 3 → write artifact with `status: aborted-binding-mismatch` and the failing check name, then return.
+- Output flows back as a file at `<workstream_path>/<artifact_path>` plus the subagent's one-line return.
+
+**Critical constraint — `SessionStart` / `SessionEnd` hooks do NOT fire inside subagents.** Only `SubagentStop` does. The lifecycle preload that runs for top-level sessions is unavailable to specialists, which means:
+
+- The manifest must be **self-contained** — every required field explicit. There's no preload safety net.
+- The specialist cannot rely on `.internos-warnings` or auto-injected BRIEF/STATUS — it must read them explicitly per the manifest's `load.required`.
+
+**Optional Claude Code manifest extension:**
+
+```yaml
+claude_code:
+  subagent_type: "general-purpose"   # or a user-defined agent at ~/.claude/agents/<name>.md
+```
+
+User-defined agent definitions can codify the verify-then-execute protocol so the coordinator only has to supply the manifest. Example: an agent at `~/.claude/agents/internos-specialist.md` whose system prompt is the full specialist protocol from `references/en/ISOLATED-HANDOFF.md`. The coordinator then spawns it with `subagent_type: "internos-specialist"` and just attaches the manifest.
+
+**Optional post-validation via `SubagentStop` hook:**
+
+A `SubagentStop` hook in `~/.claude/settings.json` can post-validate that the return artifact was written and matches the schema. Useful for catching specialists that silently no-op'd.
+
+---
+
 ## Verification
 
 ```bash

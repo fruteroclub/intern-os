@@ -118,6 +118,31 @@ Forum channels named `*-workstreams` work natively as workstream threads. The ag
 
 ---
 
+## Isolated-session handoff
+
+When the coordinator delegates to an isolated Hermes subagent, use the handoff manifest layer per `references/en/ISOLATED-HANDOFF.md`.
+
+**Hermes-specific wiring:**
+
+- Native primitive: `delegate_task`. Spawns a fresh subagent with its own conversation state, terminal session, and tool access. The child does **not** inherit the parent transcript, memory, or active bindings.
+- Coordinator writes the manifest to `<workstream_path>/handoffs/<handoff_id>.yml`.
+- Coordinator passes the manifest **content** (not just the path) in `delegate_task.context`. The subagent may not have implicit filesystem access to the parent's cwd; embedding the manifest in context guarantees the specialist sees it.
+- Subagent runs `bash <skill-dir>/scripts/verify-handoff.sh <manifest>` as its first action. Exit 3 aborts with the failing check name written to the return artifact.
+- Output flows back two ways: the return artifact at `<workstream_path>/<artifact_path>`, plus the final summary the subagent returns to the coordinator.
+
+**Optional Hermes manifest extensions** (top-level `hermes:` key, ignored by other adapters):
+
+```yaml
+hermes:
+  acp_command: ""        # specific ACP-capable agent binary
+  acp_args: []
+  toolsets: []           # explicit toolset allowlist for the subagent
+```
+
+**Coordinator restriction recommendation:** scope the subagent's `toolsets` to file + terminal as needed for the task. Avoid granting network/external tools unless the task genuinely needs them.
+
+---
+
 ## Verification
 
 - [ ] `hermes skills list | grep intern-os` shows the skill

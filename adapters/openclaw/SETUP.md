@@ -119,6 +119,31 @@ Changes to AGENTS.md take effect in the next session. Restart the agent or wait 
 
 ---
 
+## Isolated-session handoff
+
+When the coordinator delegates to an isolated OpenClaw specialist, use the handoff manifest layer per `references/en/ISOLATED-HANDOFF.md`.
+
+**OpenClaw-specific wiring:**
+
+- Native primitive: `sessions_spawn` with `runtime="subagent"` and default isolated context. **Do not use `context: "fork"`** — that inherits the parent transcript, which weakens isolation and makes provenance less crisp.
+- Coordinator writes the manifest to `<workstream_path>/handoffs/<handoff_id>.yml`.
+- Coordinator spawns the isolated child with the manifest path in the `task` string (or as an `attachments` entry if you want the manifest immutable at launch time).
+- Specialist's first action is `bash <skill-dir>/scripts/verify-handoff.sh <manifest>`. Exit 3 aborts with the failing check name in the return artifact — no further task action.
+- Output flows back two ways: the return artifact at `<workstream_path>/<artifact_path>`, plus the child's completion message to the coordinator.
+
+**Important caveat — doctrinal vs OS isolation:**
+
+OpenClaw subagents have workspace filesystem access by default; they are **not natively sandboxed** to a single workstream subdirectory. The manifest's `isolation` rules and the specialist protocol are **doctrinal**, not OS-enforced. For higher-trust scenarios, layer on filesystem ACLs or container scoping outside intern-os.
+
+**Optional OpenClaw manifest extension:**
+
+```yaml
+openclaw:
+  attachments: []        # files to attach to the spawn (manifest itself is a good choice)
+```
+
+---
+
 ## Verification
 
 - [ ] Skill installed via `openclaw skills install`
