@@ -189,6 +189,48 @@ Activate workstream → Task in TICK.md + thread + directory
 
 ---
 
+## Isolated-session handoff (when delegating to a subagent)
+
+When the coordinating agent spawns an **isolated specialist** (a fresh subagent that doesn't inherit the parent's transcript or workstream binding), use the handoff manifest layer instead of dumping context into the spawn prompt.
+
+### Coordinator: spawning a specialist
+
+1. **Construct the manifest** using the template at `assets/templates/handoff/manifest.yml`. Fill all required fields:
+   - `handoff_id` — date-keyed unique id, e.g. `2026-05-11-1430-research-amber`
+   - `project`, `workstream`, `workstream_path`, `thread_id` — identity (must match `BRIEF.md`)
+   - `load.required` — minimum `BRIEF.md`, `STATUS.md`; add others only if the task needs them
+   - `task.objective`, `success_condition`, `stop_condition`
+   - `write_back.artifact_path` — must start with `handoffs/`
+2. **Write the manifest** to `<workstream>/handoffs/<handoff_id>.yml`.
+3. **Spawn the specialist** via the harness's native primitive (see `adapters/<harness>/SETUP.md`).
+4. **Wait** for the specialist's return: `{artifact_path, status, summary}`.
+5. **Read the return artifact** at the path the specialist wrote.
+6. **Reconcile back into the workstream:**
+   - `status: done` → update `STATUS.md` (phase/next/blockers), append to `DECISIONS.md` if needed.
+   - `status: blocked` → capture the blocker in `STATUS.md`, surface to human.
+   - `status: aborted-binding-mismatch` → don't retry blindly. Inspect the failing check name in the artifact, fix the manifest, re-spawn.
+
+### Specialist: receiving a manifest
+
+1. Read the manifest from the path the coordinator provided.
+2. Run `bash scripts/verify-handoff.sh <manifest>` (or equivalent inline checks). Exit 3 → write artifact with `status: aborted-binding-mismatch` and the failing check name, then return. No fallback.
+3. Read only `load.required` files. Optionally `load.optional` if the task warrants.
+4. Execute `task.objective` until `success_condition` is met or a `stop_condition` fires.
+5. Write the return artifact at `<workstream>/<write_back.artifact_path>` following `write_back.artifact_schema`.
+6. Return `{artifact_path, status, one-line summary}` to the coordinator.
+
+### Hard rules for specialists
+
+- **Never** modify `BRIEF.md`, `STATUS.md`, or `DECISIONS.md`. Those are coordinator-owned.
+- **Never** read sibling workstreams.
+- **Never** broad-scan the workspace.
+- **Never** write outside `<workstream_path>`.
+- Append to `MEMORY.md` only if `write_back.also_append` declares it, and only within `max_lines`.
+
+Full reference: `references/en/ISOLATED-HANDOFF.md`. Schema: `schemas/handoff-v1.yaml`. Verifier: `scripts/verify-handoff.sh`.
+
+---
+
 ## Full reference
 
 - Framework: `references/en/FRAMEWORK.md`
@@ -196,4 +238,5 @@ Activate workstream → Task in TICK.md + thread + directory
 - Playbook: `references/en/PLAYBOOK.md`
 - Communication: `references/en/COMMUNICATION.md`
 - tick.md integration: `references/en/TICK-INTEGRATION.md`
+- Isolated-session handoff: `references/en/ISOLATED-HANDOFF.md`
 - Setup: `references/en/SETUP.md`
