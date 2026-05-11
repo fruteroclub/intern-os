@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# sync-check.sh — internOS workspace health check (v0.3.1)
+# sync-check.sh — internOS workspace health check (v0.4.0)
 #
 # Scans all projects and workstreams in an internOS workspace and reports
 # mismatches between filesystem, thread_ids, BRIEF.md identity fields,
@@ -212,12 +212,16 @@ info() {
 }
 
 # Extract a field value from a markdown file.
-# Handles "field: value" format (plain or with bold markers).
+# Handles "field: value" format (plain or with bold markers like **field**: value).
 # Portable: no PCRE required.
+#
+# Field name must be followed by a literal `:` (after optional `*` markers) —
+# this prevents prefix-matching, e.g. extract_field for "shared_thread_ids"
+# will NOT match a line "shared_thread_ids_extra: bogus".
 extract_field() {
     local file="$1"
     local field="$2"
-    sed -n "s/^[* ]*${field}[*:]*[[:space:]]*//p" "$file" 2>/dev/null \
+    sed -n "s/^[* ]*${field}\**:[[:space:]]*//p" "$file" 2>/dev/null \
         | head -1 \
         | xargs
 }
@@ -241,9 +245,9 @@ check_tick_tag() {
 # --- Main scan ---------------------------------------------------------------
 
 if $ROLLOUT_MODE; then
-    echo "internOS Sync Check (v0.3.1) — Rollout Mode"
+    echo "internOS Sync Check (v0.4.0) — Rollout Mode"
 else
-    echo "internOS Sync Check (v0.3.1)"
+    echo "internOS Sync Check (v0.4.0)"
 fi
 echo "Workspace: $WORKSPACE"
 echo "$(date -u '+%Y-%m-%d %H:%M UTC')"
@@ -301,6 +305,14 @@ for project_dir in "$PROJECTS_DIR"/*/; do
                 ((project_issues++)) || true
             else
                 info "shared-thread inbox project (platforms: $project_shared_platforms)"
+            fi
+        else
+            # Mirror half-config: platforms set but no opt-in. Silent no-op
+            # without a diagnostic is bad UX — flag it.
+            stp_raw=$(extract_field "$project_dir/PROJECT.md" "shared_thread_platforms")
+            if [[ -n "$stp_raw" ]]; then
+                warn "shared_thread_platforms is set but shared_thread_ids is not 'true' — opt-in is half-configured (the platforms list has no effect without the boolean)"
+                ((project_issues++)) || true
             fi
         fi
     else
@@ -396,7 +408,13 @@ for project_dir in "$PROJECTS_DIR"/*/; do
                     # Check for duplicate thread_ids (bash 3.2 compatible)
                     tid_key="$thread_id"
                     if echo "$SEEN_THREAD_IDS" | grep -qF "|$tid_key|" 2>/dev/null; then
-                        dup_owner=$(echo "$SEEN_THREAD_OWNERS" | grep -F "|$tid_key|" | sed "s/.*|$tid_key|//" | sed 's/|.*//')
+                        # NOTE: sed delimiter is `#` (not `/`) because Slack
+                        # thread_ids contain `/` (slack:CHANNEL/THREAD_TS) and
+                        # would otherwise be parsed as the sed delimiter and
+                        # corrupt the substitution. `#` is safe — `thread_id`
+                        # format is `[a-z]+:.+` and `#` is not a valid
+                        # platform-name character.
+                        dup_owner=$(echo "$SEEN_THREAD_OWNERS" | grep -F "|$tid_key|" | sed "s#.*|$tid_key|##" | sed 's/|.*//')
                         dup_project="${dup_owner%%/*}"
 
                         # Suppress the duplicate warning iff:
@@ -427,10 +445,15 @@ for project_dir in "$PROJECTS_DIR"/*/; do
                             suppress_duplicate=true
                         fi
 
+                        # Note: $dup_owner is always the FIRST owner of this
+                        # thread_id (SEEN_THREAD_OWNERS only appends on
+                        # first-seen). For 3+ shared workstreams, the second
+                        # and third both compare against the first — accurate
+                        # but worth using "first used by" wording.
                         if $suppress_duplicate; then
-                            info "thread_id ($thread_id) intentionally shared inside inbox project — also used by $dup_owner"
+                            info "thread_id ($thread_id) intentionally shared inside inbox project — first used by $dup_owner"
                         else
-                            warn "thread_id ($thread_id) is duplicated — also used by $dup_owner"
+                            warn "thread_id ($thread_id) is duplicated — first used by $dup_owner"
                             ((project_issues++)) || true
                         fi
                     else

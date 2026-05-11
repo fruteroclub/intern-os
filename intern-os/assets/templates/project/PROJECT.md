@@ -40,9 +40,10 @@ primary_thread:
 
 <!--
 Add the two fields below at the bottom of this PROJECT.md (OUTSIDE this
-comment block — sync-check.sh is line-based and reads any field-shaped
-line regardless of HTML comments) ONLY for "inbox" projects on non-thread
-messaging platforms (Telegram, WhatsApp, Signal, iMessage, SMS, LINE).
+comment block — sync-check.sh is line-based, so any field line that
+starts at column 0 with `<field>:` is parsed even inside HTML comments)
+ONLY for "inbox" projects on non-thread messaging platforms (Telegram,
+WhatsApp, Signal, iMessage, SMS, LINE).
 On those platforms, one DM/chat is the collaboration surface for multiple
 workstreams, so workstreams legitimately share a thread_id.
 

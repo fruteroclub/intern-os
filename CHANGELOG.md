@@ -2,6 +2,53 @@
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
 
+## v0.4.0 — 2026-05-11
+
+Multi-agent feature release. Bundles three issues: [#16](https://github.com/fruteroclub/intern-os/pull/16) (Claude Code lifecycle adapter), [#10](https://github.com/fruteroclub/intern-os/issues/10) (isolated-session handoff doctrine + manifest), [#11](https://github.com/fruteroclub/intern-os/issues/11) (shared-thread inbox projects). Each landed through dogfood-tested PRs (#19 ran 3 dogfood rounds with 23 findings addressed; #20 ran 2 rounds with 13 findings addressed). No breaking changes.
+
+### New features
+
+- **Claude Code lifecycle adapter (#16)** — cwd-bound workstream resolution + `SessionStart` / `SessionEnd` hooks. Each `/resume` continues the same thread via working-directory binding. Adds `adapters/claude-code/{SKILL.md, SETUP.md, hooks/settings.json, scripts/}` and a `--workstream <path>` flag to `sync-check.sh` for single-workstream scoping.
+
+- **Isolated-session handoff (#10)** — deterministic, file-backed manifest layer so a coordinator can delegate to an isolated specialist subagent (Hermes `delegate_task`, OpenClaw `sessions_spawn`, Claude Code `Agent` tool) without losing workstream binding. Four doctrinal invariants: deterministic resolution, explicit isolation, files-as-source-of-truth, role separation. Ships canonical schema (`intern-os/schemas/handoff-v1.yaml`), POSIX reference verifier (`intern-os/scripts/verify-handoff.sh`) with two-layer validation (well-formedness + binding_checks), manifest template, EN/ES references, per-harness adapter sections, and an end-to-end example.
+
+- **Shared-thread inbox projects (#11)** — project-level opt-in (`shared_thread_ids: true` + `shared_thread_platforms: ...`) for inbox-style messaging platforms (Telegram, WhatsApp, Signal, iMessage, SMS, LINE) where one DM is the collaboration surface for multiple workstreams. `sync-check.sh` suppresses duplicate-thread_id warnings within opted-in projects when the platform is in the allowlist. Discord and Slack are hardcoded as never-suppressed regardless of opt-in.
+
+### Updated files
+
+- `intern-os/SKILL.md` — version 0.3.3 → 0.4.0; new "Isolated-session handoff" section; updated tooling list
+- `intern-os/assets/WORKSTREAMS.md` — version 0.4.0; coordinator + specialist operational guidance for handoffs
+- `intern-os/references/{en,es}/FRAMEWORK.md` — version 0.4.0 header; new "Project shapes" section; updated sync-check validation table
+- `intern-os/references/{en,es}/ISOLATED-HANDOFF.md` — **new**: full reference doc, EN + ES parity
+- `intern-os/schemas/handoff-v1.yaml` — **new**: canonical schema with two-layer dispatch model documented
+- `intern-os/scripts/verify-handoff.sh` — **new**: POSIX verifier (~290 lines, no deps); 4 named binding_checks + well-formedness layer; smoke-tested across happy path + 7 failure modes
+- `intern-os/scripts/sync-check.sh` — version 0.4.0; reads project-level `shared_thread_ids` / `shared_thread_platforms`; case-insensitive value parsing; hardcoded discord/slack never-suppressed set; half-config warnings (both directions); fixed sed-delimiter bug on slack thread_ids; tightened `extract_field` to require `:` (no prefix matching)
+- `intern-os/assets/templates/{handoff/manifest.yml, project/PROJECT.md}` — **new** handoff template; PROJECT.md adds commented-out shared-thread inbox section
+- `adapters/claude-code/{SKILL.md, SETUP.md, CLAUDE.md, hooks/, scripts/}` — Claude Code adapter (new + updated)
+- `adapters/{hermes, openclaw, claude-code}/SETUP.md` — per-harness isolated-handoff sections
+- `examples/isolated-session-handoff.md` — **new**: end-to-end walkthrough
+- `docs/specs/v0.4.0-isolated-handoff.md` — **new**: accepted spec (graduated 2026-05-08)
+- `CHANGELOG.md` — v0.4.0 entry
+
+### Compatibility
+
+- **Solo-agent thread-bound usage unchanged.** Handoff layer is opt-in via manifests; shared-thread inbox is opt-in per-project; Claude Code adapter is additive.
+- **No breaking changes.** Existing projects (no `shared_thread_ids` field) keep the previous strict duplicate-detection. Existing workstreams without `handoffs/` subdirectory work as before.
+- **OpenClaw + Hermes adapters** — gain isolated-handoff sections but require no install changes for existing users.
+
+### Known limitations (deferred to v0.4.1+)
+
+- Manifest immutability is doctrine-only (no signing). Covered by the manifest-signing open question in the spec.
+- Concurrent specialists for the same workstream are not formally locked.
+- Cross-workstream handoff requires spawning two specialists, one per workstream.
+- `binding_checks` array in manifests is documentary in v1; v2+ verifiers may parse and dispatch.
+
+### Dogfood notes
+
+The handoff doctrine itself was dogfooded through 5 specialist-spawning cycles across PR #19 (3 rounds) and PR #20 (2 rounds). 36 total findings; 33 fixed in the bundled release; 3 architectural concerns deferred with explicit rationale. One CRITICAL exploit (flow-style YAML bypassing the allowlist) and one CRITICAL contract violation (template silent opt-in) were caught by dogfood and fixed before merge.
+
+---
+
 ## v0.3.3 — 2026-05-07
 
 Security scan cleanup. Addresses [#17](https://github.com/fruteroclub/intern-os/issues/17). Patch release — no behavior changes, no breaking changes. Reduces Hermes installer's security-scan finding count from 63 to 58 (eliminates 4 actionable findings; remaining 58 are `agent_config_mod` false positives in framework documentation that cannot be removed without gutting the AGENTS.md project-context convention).

@@ -1,6 +1,6 @@
 # internOS — Workstreams Framework
 
-*Version: 0.3.1 | Date: 2026-04-12 | Status: v0.3.1 — Registry, rollout protocol, operational tooling*
+*Version: 0.4.0 | Date: 2026-05-11 | Status: v0.4.0 — Claude Code lifecycle adapter, isolated-session handoff, shared-thread inbox projects*
 
 ---
 
