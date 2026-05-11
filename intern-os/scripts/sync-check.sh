@@ -268,8 +268,23 @@ for project_dir in "$PROJECTS_DIR"/*/; do
     echo "----------------------------------------"
 
     # Check PROJECT.md
+    project_shared_threads=false
+    project_shared_platforms=""
     if [[ -f "$project_dir/PROJECT.md" ]]; then
         ok "PROJECT.md exists"
+
+        # Read project-level shared-thread inbox opt-in (v0.4.0+).
+        # When `shared_thread_ids: true`, duplicate thread_ids inside this
+        # project are permitted for platforms listed in
+        # `shared_thread_platforms` (comma-separated). Used for inbox-style
+        # platforms (Telegram, WhatsApp, Signal, iMessage, etc.) where one
+        # DM is the collaboration surface for multiple workstreams.
+        sti=$(extract_field "$project_dir/PROJECT.md" "shared_thread_ids")
+        if [[ "$sti" == "true" ]]; then
+            project_shared_threads=true
+            project_shared_platforms=$(extract_field "$project_dir/PROJECT.md" "shared_thread_platforms")
+            info "shared-thread inbox project (platforms: ${project_shared_platforms:-<none specified>})"
+        fi
     else
         warn "PROJECT.md missing"
         ((project_issues++)) || true
@@ -364,8 +379,27 @@ for project_dir in "$PROJECTS_DIR"/*/; do
                     tid_key="$thread_id"
                     if echo "$SEEN_THREAD_IDS" | grep -qF "|$tid_key|" 2>/dev/null; then
                         dup_owner=$(echo "$SEEN_THREAD_OWNERS" | grep -F "|$tid_key|" | sed "s/.*|$tid_key|//" | sed 's/|.*//')
-                        warn "thread_id ($thread_id) is duplicated — also used by $dup_owner"
-                        ((project_issues++)) || true
+                        dup_project="${dup_owner%%/*}"
+
+                        # Suppress the duplicate warning iff:
+                        #   1) this project opts in (shared_thread_ids: true)
+                        #   2) duplicate is within the SAME project
+                        #   3) thread_id's platform is in shared_thread_platforms
+                        # Otherwise warn as before.
+                        suppress_duplicate=false
+                        if $project_shared_threads \
+                           && [[ "$dup_project" == "$project_name" ]] \
+                           && [[ -n "$project_shared_platforms" ]] \
+                           && [[ ",${project_shared_platforms// /}," == *",${platform},"* ]]; then
+                            suppress_duplicate=true
+                        fi
+
+                        if $suppress_duplicate; then
+                            info "thread_id ($thread_id) intentionally shared inside inbox project — also used by $dup_owner"
+                        else
+                            warn "thread_id ($thread_id) is duplicated — also used by $dup_owner"
+                            ((project_issues++)) || true
+                        fi
                     else
                         SEEN_THREAD_IDS="${SEEN_THREAD_IDS}|${tid_key}|"
                         SEEN_THREAD_OWNERS="${SEEN_THREAD_OWNERS}|${tid_key}|${project_name}/${ws_name}|"
