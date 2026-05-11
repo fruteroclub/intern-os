@@ -8,19 +8,31 @@
 #
 # (A) Well-formedness (manifest is structurally valid). Exit 2 on failure.
 #     - schema version is v1
-#     - required blocks are present (task:, write_back:)
+#     - required blocks are present (task:, write_back:, load:)
 #     - workstream_path, thread_id are non-empty
+#     - task.success_condition and task.stop_condition are non-empty
 #     - write_back.artifact_path is under "handoffs/"
+#     - write_back.artifact_schema has at least one entry
 #     - write_back.also_append targets are in {MEMORY.md}
-#     - load.required uses block-style YAML lists (flow-style `[a, b]`
-#       is not supported in v1; emit a clear error)
+#     - load.required uses block-style YAML lists and includes BRIEF.md
+#       and STATUS.md at minimum
+#     - Flow-style YAML (`[a, b]`) is rejected for every list field the
+#       verifier consumes (load.required, write_back.also_append,
+#       write_back.artifact_schema). Use block form (`- a` on separate
+#       lines) instead.
 #
 # (B) Named binding_checks (manifest matches reality on disk). Exit 3 on failure.
 #     1. workstream_path_exists       — workstream_path resolves to a directory
 #     2. brief_md_exists              — BRIEF.md is present at workstream_path/BRIEF.md
 #     3. thread_id_matches            — BRIEF.md's thread_id equals manifest's
-#                                       (after stripping surrounding whitespace)
+#                                       (after stripping surrounding whitespace
+#                                       from BOTH sides — manifest and BRIEF.md)
 #     4. load_required_paths_exist    — every load.required path resolves
+#
+# Note on the manifest's `binding_checks` array: in v1 this is documentary —
+# the v1 verifier always runs the four checks above unconditionally and in
+# this fixed order. Adapters and future verifier versions (v2+) may parse
+# the array and dispatch named checks; v1 does not.
 #
 # Exit codes:
 #   0 — all checks passed
@@ -59,6 +71,7 @@ extract_scalar() {
             sub(key, "", $0)
             sub(/^[[:space:]]+/, "", $0)
             sub(/[[:space:]]+#.*$/, "", $0)
+            sub(/[[:space:]]+$/, "", $0)
             sub(/^"/, "", $0); sub(/"$/, "", $0)
             sub(/^'\''/, "", $0); sub(/'\''$/, "", $0)
             print
@@ -116,18 +129,21 @@ extract_list() {
     ' "$MANIFEST"
 }
 
-# Detect if a child key is using flow-style YAML on its own line, e.g.
+# Detect if a child key is using NON-EMPTY flow-style YAML, e.g.
 #   required: [BRIEF.md, STATUS.md]
-# v1 does not support flow style; this lets us emit a specific error instead
-# of silently treating it as empty.
+# v1 does not support flow style for non-empty lists — those need to use
+# block form so the verifier's awk-based extractors can parse them. Empty
+# flow-style (`field: []`) is allowed (semantically equivalent to no field;
+# acts as a placeholder in templates).
 # detect_flow_style <parent> <child>  →  prints matched line if found
 #
-# Uses [[]] character class for literal `[` — backslash escaping in awk -v
-# values varies across BSD/GNU awk, so the character-class form is portable.
+# Match: `<child>: [<at-least-one-non-bracket-non-whitespace>]`.
+# Uses [[]] / []] character classes for literal `[` / `]` — backslash
+# escaping in awk -v values varies across BSD/GNU awk.
 detect_flow_style() {
     local parent="$1"
     local child="$2"
-    awk -v parent="^${parent}:" -v child="^[[:space:]]+${child}:.*[[]" '
+    awk -v parent="^${parent}:" -v child="^[[:space:]]+${child}:[[:space:]]*[[][[:space:]]*[^][:space:]]" '
         $0 ~ parent { in_parent = 1; next }
         in_parent && $0 ~ child { print; exit }
         in_parent && $0 ~ /^[^[:space:]]/ { exit }
@@ -219,13 +235,31 @@ THREAD_ID=$(extract_scalar "thread_id")
 [ -n "$WORKSTREAM_PATH" ] || malformed "workstream_path is empty"
 [ -n "$THREAD_ID" ]       || malformed "thread_id is empty"
 
-# A4: load.required: must be block-style YAML (flow style unsupported in v1)
-FLOW_HIT=$(detect_flow_style "load" "required" || true)
-if [ -n "$FLOW_HIT" ]; then
-    malformed "load.required uses YAML flow style (e.g. '[a, b]'); v1 supports block style only — use '- BRIEF.md' on separate lines"
-fi
+# A4: required task.* scalars
+TASK_SUCCESS=$(extract_nested "task" "success_condition")
+[ -n "$TASK_SUCCESS" ] || malformed "task.success_condition is empty"
+# stop_condition is a list; we check it has at least one entry below at A8
 
-# A5: write_back.artifact_path must start with "handoffs/"
+# A5: flow style is rejected for EVERY list field the verifier consumes.
+# Hardcoded list of (parent, child) pairs covered by v1's well-formedness layer.
+# binding_checks and artifact_schema are not iterated by the verifier (yet)
+# but we still reject flow style for consistency with spec language.
+for pair in "load required" "write_back also_append" "write_back artifact_schema" "binding_checks BINDING_CHECKS_FLAT" "task stop_condition"; do
+    set -- $pair
+    parent="$1"
+    child="$2"
+    # Special case: binding_checks is itself a top-level list, not nested.
+    # The pattern below uses extract_list_top instead — but to keep v1 small,
+    # we skip the top-level binding_checks flow-style check and rely on the
+    # documentary-only stance documented in the header.
+    [ "$child" = "BINDING_CHECKS_FLAT" ] && continue
+    FLOW_HIT=$(detect_flow_style "$parent" "$child" || true)
+    if [ -n "$FLOW_HIT" ]; then
+        malformed "${parent}.${child} uses YAML flow style (e.g. '[a, b]'); v1 supports block style only — use '- a' on separate lines"
+    fi
+done
+
+# A6: write_back.artifact_path must start with "handoffs/"
 ARTIFACT_PATH=$(extract_nested "write_back" "artifact_path")
 [ -n "$ARTIFACT_PATH" ] || malformed "write_back.artifact_path is empty"
 case "$ARTIFACT_PATH" in
@@ -233,7 +267,7 @@ case "$ARTIFACT_PATH" in
     *) malformed "write_back.artifact_path must start with 'handoffs/' (got: '$ARTIFACT_PATH')" ;;
 esac
 
-# A6: write_back.also_append targets must be in allowlist
+# A7: write_back.also_append targets must be in allowlist
 APPEND_TARGETS=$(extract_list_field "write_back" "also_append" "target" || true)
 while IFS= read -r target; do
     [ -n "$target" ] || continue
@@ -244,6 +278,22 @@ while IFS= read -r target; do
 done <<EOF
 $APPEND_TARGETS
 EOF
+
+# A8: write_back.artifact_schema must have at least one entry
+ARTIFACT_SCHEMA=$(extract_list "write_back" "artifact_schema" || true)
+[ -n "$ARTIFACT_SCHEMA" ] || malformed "write_back.artifact_schema must have at least one section name"
+
+# A9: task.stop_condition must have at least one entry
+STOP_CONDITIONS=$(extract_list "task" "stop_condition" || true)
+[ -n "$STOP_CONDITIONS" ] || malformed "task.stop_condition must have at least one entry"
+
+# A10: load.required must include BRIEF.md and STATUS.md at minimum
+REQUIRED_PATHS=$(extract_list "load" "required")
+if [ -z "$REQUIRED_PATHS" ]; then
+    malformed "load.required is empty (at minimum BRIEF.md, STATUS.md required)"
+fi
+echo "$REQUIRED_PATHS" | grep -qxF "BRIEF.md"  || malformed "load.required must include 'BRIEF.md'"
+echo "$REQUIRED_PATHS" | grep -qxF "STATUS.md" || malformed "load.required must include 'STATUS.md'"
 
 # ─────────────────────────────────────────────────────────────────────────
 # Layer B — named binding_checks (exit 3 on failure)
@@ -266,11 +316,7 @@ if [ "$BRIEF_THREAD_ID" != "$THREAD_ID" ]; then
     fail "thread_id_matches" "manifest='$THREAD_ID' BRIEF.md='$BRIEF_THREAD_ID'"
 fi
 
-# B4: load_required_paths_exist
-REQUIRED_PATHS=$(extract_list "load" "required")
-if [ -z "$REQUIRED_PATHS" ]; then
-    malformed "load.required is empty (at minimum BRIEF.md, STATUS.md required)"
-fi
+# B4: load_required_paths_exist (REQUIRED_PATHS already extracted in A10)
 
 while IFS= read -r path; do
     [ -n "$path" ] || continue

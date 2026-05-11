@@ -63,12 +63,17 @@ task:
 binding_checks:
   - workstream_path_exists       # workstream_path resolves to a directory
   - brief_md_exists              # BRIEF.md is present and readable
-  - thread_id_matches            # BRIEF.md's thread_id exactly equals manifest's
+  - thread_id_matches            # BRIEF.md's thread_id matches manifest's
+                                 # (after stripping surrounding whitespace
+                                 # from both sides)
   - load_required_paths_exist    # every load.required path resolves
 #
-# Adapters MAY add custom check names; the reference verifier
-# (verify-handoff.sh) recognizes only the four above. Unknown check names
-# are passed through to the specialist for handling.
+# v1 dispatch model: the reference verifier (verify-handoff.sh) runs the
+# four checks above UNCONDITIONALLY and in this fixed order — it does not
+# parse this array. The array is documentary for v1 and reserves the wire
+# format for v2+ verifiers that may parse and dispatch. Adapters wanting
+# extended checks (e.g., a Hermes-specific `mcp_server_reachable`) must
+# reimplement the verifier in their host language, not patch v1.
 
 # ── Required: write_back ──────────────────────────────────────────────────
 write_back:

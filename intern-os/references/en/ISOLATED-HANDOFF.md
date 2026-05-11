@@ -97,18 +97,22 @@ The four named binding checks shipped in v1:
 |---|---|
 | `workstream_path_exists` | `workstream_path` resolves to a directory |
 | `brief_md_exists` | `BRIEF.md` is readable at `<workstream_path>/BRIEF.md` |
-| `thread_id_matches` | `BRIEF.md`'s `thread_id` exactly equals manifest's |
+| `thread_id_matches` | `BRIEF.md`'s `thread_id` equals manifest's, after stripping surrounding whitespace from both sides |
 | `load_required_paths_exist` | every path in `load.required` resolves |
 
 Run order matters — `workstream_path_exists` first; subsequent checks fail less informatively without it.
+
+The verifier also enforces a **well-formedness layer** that runs before the binding checks: required blocks (`task:`, `write_back:`, `load:`), non-empty scalar fields, `load.required` includes `BRIEF.md` and `STATUS.md`, `write_back.artifact_path` starts with `handoffs/`, `also_append` targets in the allowlist, and no non-empty flow-style YAML in list fields.
+
+**v1 dispatch model:** the v1 verifier runs the four named checks unconditionally and in fixed order. The `binding_checks` array in the manifest is **documentary** for v1 — coordinators include it to declare intent; v1 does not parse it. v2+ verifiers may parse and dispatch.
 
 Reference implementation: [`intern-os/scripts/verify-handoff.sh`](../../scripts/verify-handoff.sh). POSIX bash, no deps.
 
 ```bash
 bash intern-os/scripts/verify-handoff.sh <manifest-path>
-# Exit 0 — all checks passed
-# Exit 3 — a named check failed (failing name printed to stderr)
-# Exit 2 — usage / missing manifest / parse error
+# Exit 0 — all well-formedness AND binding_checks passed
+# Exit 2 — manifest malformed (well-formedness) OR usage / missing-file
+# Exit 3 — manifest valid but a named binding check failed
 ```
 
 Adapters may reimplement in their host language; semantics must match.
@@ -160,14 +164,16 @@ Do not:
 
 ## Storage layout
 
+The diagram below shows a typical workstream with v0.4.0 additions. **Only `BRIEF.md` and `STATUS.md` are required by the handoff layer** (verified by `load_required_paths_exist` and `brief_md_exists`); the rest are standard intern-os workstream files shown for context, not handoff-specific.
+
 ```
 <workstream_path>/
-├── BRIEF.md
-├── STATUS.md
-├── MEMORY.md
-├── DECISIONS.md
-├── STAKEHOLDERS.md
-├── RESOURCES.md
+├── BRIEF.md                          ← REQUIRED for handoff (binding source)
+├── STATUS.md                         ← REQUIRED for handoff (heartbeat)
+├── MEMORY.md                         ← optional, allowlisted append target
+├── DECISIONS.md                      ← optional, coordinator-owned
+├── STAKEHOLDERS.md                   ← optional, standard workstream file
+├── RESOURCES.md                      ← optional, standard workstream file
 ├── handoffs/                         ← added by v0.4.0
 │   ├── <handoff_id>.yml              ← manifest (durable record)
 │   ├── <handoff_id>.md               ← return artifact (specialist output)

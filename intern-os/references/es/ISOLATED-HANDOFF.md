@@ -97,18 +97,22 @@ Los cuatro binding checks nombrados de v1:
 |---|---|
 | `workstream_path_exists` | `workstream_path` resuelve a un directorio |
 | `brief_md_exists` | `BRIEF.md` es legible en `<workstream_path>/BRIEF.md` |
-| `thread_id_matches` | `thread_id` del `BRIEF.md` coincide exactamente con el del manifest |
+| `thread_id_matches` | `thread_id` del `BRIEF.md` coincide con el del manifest, tras quitar whitespace circundante de ambos lados |
 | `load_required_paths_exist` | cada ruta en `load.required` resuelve |
 
 El orden importa — `workstream_path_exists` primero; los checks siguientes fallan con menos información sin él.
+
+El verificador también aplica una **capa de well-formedness** que corre antes de los binding checks: bloques requeridos (`task:`, `write_back:`, `load:`), scalars no vacíos, `load.required` incluye `BRIEF.md` y `STATUS.md`, `write_back.artifact_path` empieza con `handoffs/`, targets de `also_append` en el allowlist, y rechazo de listas YAML flow-style no vacías.
+
+**Modelo de dispatch v1:** el verificador v1 corre los cuatro checks nombrados incondicionalmente y en orden fijo. El array `binding_checks` en el manifest es **documental** para v1 — los coordinadores lo incluyen para declarar intención; v1 no lo parsea. Verificadores v2+ pueden parsear y despachar.
 
 Implementación de referencia: [`intern-os/scripts/verify-handoff.sh`](../../scripts/verify-handoff.sh). Bash POSIX, sin dependencias.
 
 ```bash
 bash intern-os/scripts/verify-handoff.sh <ruta-del-manifest>
-# Exit 0 — todos los checks pasaron
-# Exit 3 — un check nombrado falló (nombre del check al stderr)
-# Exit 2 — uso / manifest faltante / error de parseo
+# Exit 0 — todos los checks (well-formedness Y binding) pasaron
+# Exit 2 — manifest malformado (well-formedness) O uso / archivo faltante
+# Exit 3 — manifest válido pero un binding check nombrado falló
 ```
 
 Los adaptadores pueden reimplementar en su lenguaje host; la semántica debe coincidir.
@@ -161,14 +165,16 @@ No:
 
 ## Layout de almacenamiento
 
+El diagrama abajo muestra un workstream típico con las adiciones de v0.4.0. **Solo `BRIEF.md` y `STATUS.md` son requeridos por la capa de handoff** (verificados por `load_required_paths_exist` y `brief_md_exists`); el resto son archivos estándar de workstream intern-os mostrados para contexto, no específicos de handoff.
+
 ```
 <workstream_path>/
-├── BRIEF.md
-├── STATUS.md
-├── MEMORY.md
-├── DECISIONS.md
-├── STAKEHOLDERS.md
-├── RESOURCES.md
+├── BRIEF.md                          ← REQUERIDO para handoff (fuente del binding)
+├── STATUS.md                         ← REQUERIDO para handoff (heartbeat)
+├── MEMORY.md                         ← opcional, target permitido para append
+├── DECISIONS.md                      ← opcional, propiedad del coordinador
+├── STAKEHOLDERS.md                   ← opcional, archivo estándar de workstream
+├── RESOURCES.md                      ← opcional, archivo estándar de workstream
 ├── handoffs/                         ← agregado en v0.4.0
 │   ├── <handoff_id>.yml              ← manifest (registro durable)
 │   ├── <handoff_id>.md               ← artefacto de retorno (salida del especialista)
