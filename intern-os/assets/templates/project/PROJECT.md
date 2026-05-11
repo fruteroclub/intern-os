@@ -39,7 +39,9 @@ primary_thread:
 ## Communication (optional — shared-thread inbox projects only)
 
 <!--
-Uncomment and set these fields ONLY for "inbox" projects on non-thread
+Add the two fields below at the bottom of this PROJECT.md (OUTSIDE this
+comment block — sync-check.sh is line-based and reads any field-shaped
+line regardless of HTML comments) ONLY for "inbox" projects on non-thread
 messaging platforms (Telegram, WhatsApp, Signal, iMessage, SMS, LINE).
 On those platforms, one DM/chat is the collaboration surface for multiple
 workstreams, so workstreams legitimately share a thread_id.
@@ -49,11 +51,15 @@ each workstream must have a unique thread_id. Duplicates produce a WARN.
 
 When `shared_thread_ids: true`, duplicate thread_ids inside THIS project
 are permitted for platforms listed in `shared_thread_platforms`. The rule
-stays strict for thread-native platforms (Discord, Slack) regardless of
-this opt-in.
+stays strict for thread-native platforms (Discord, Slack) — they are
+hardcoded as never-suppressed regardless of this opt-in.
 
-shared_thread_ids: true
-shared_thread_platforms: telegram, whatsapp, signal, imessage, sms, line
+The two lines below are SHOWN AS EXAMPLES — they are prefixed with `# `
+so sync-check.sh does NOT read them. To actually opt in, copy these two
+lines outside this comment block and remove the leading `# `:
+
+# shared_thread_ids: true
+# shared_thread_platforms: telegram, whatsapp, signal, imessage, sms, line
 -->
 
 

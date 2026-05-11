@@ -515,7 +515,8 @@ When opted in, the rules become:
 - The exact `thread_id` resolves to the inbox **project** (the container), not directly to one workstream
 - The active workstream within the inbox project is determined by TICK.md state plus explicit human intent (e.g. "let's resume the workspace-cleanup workstream")
 - Duplicate `thread_id` values **across different projects** are still flagged as warnings, even if both projects opt in
-- Thread-native rules remain unchanged — a Discord/Slack `thread_id` in an opted-in project still produces a warning if duplicated
+- Thread-native platforms (`discord`, `slack`) are **hardcoded as never-suppressed**. Listing `discord` or `slack` in `shared_thread_platforms` has no effect — duplicates on those platforms always warn, regardless of opt-in
+- Values are normalized before comparison: `shared_thread_ids` accepts `true`/`TRUE`/`"true"` (case-insensitive, optional quotes, trailing `#` comment stripped); `shared_thread_platforms` is lowercased and all whitespace stripped (so `Telegram, WhatsApp` matches `telegram` and `whatsapp` thread_ids)
 
 ### Example: a Telegram inbox project
 

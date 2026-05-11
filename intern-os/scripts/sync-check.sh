@@ -279,11 +279,29 @@ for project_dir in "$PROJECTS_DIR"/*/; do
         # `shared_thread_platforms` (comma-separated). Used for inbox-style
         # platforms (Telegram, WhatsApp, Signal, iMessage, etc.) where one
         # DM is the collaboration surface for multiple workstreams.
+        #
+        # Value normalization (defensive against common user mistakes):
+        # - strip trailing #-comments and surrounding whitespace/quotes
+        # - lowercase for boolean + platform comparisons
+        # - accept: true, "true", TRUE (and friends) — anything else is false
         sti=$(extract_field "$project_dir/PROJECT.md" "shared_thread_ids")
-        if [[ "$sti" == "true" ]]; then
+        sti_norm=$(printf '%s' "$sti" \
+                   | sed -E 's/[[:space:]]*#.*$//; s/^[[:space:]]+//; s/[[:space:]]+$//; s/^["'\'']//; s/["'\'']$//' \
+                   | tr '[:upper:]' '[:lower:]')
+        if [[ "$sti_norm" == "true" ]]; then
             project_shared_threads=true
-            project_shared_platforms=$(extract_field "$project_dir/PROJECT.md" "shared_thread_platforms")
-            info "shared-thread inbox project (platforms: ${project_shared_platforms:-<none specified>})"
+            # Normalize platform list: strip #-comments + outer quotes,
+            # lowercase, then squash all whitespace (handles tabs too).
+            project_shared_platforms=$(extract_field "$project_dir/PROJECT.md" "shared_thread_platforms" \
+                | sed -E 's/[[:space:]]*#.*$//; s/^["'\'']//; s/["'\'']$//' \
+                | tr '[:upper:]' '[:lower:]' \
+                | tr -d '[:space:]')
+            if [[ -z "$project_shared_platforms" ]]; then
+                warn "shared_thread_ids is true but shared_thread_platforms is empty — opt-in is half-configured and will not suppress any duplicates"
+                ((project_issues++)) || true
+            else
+                info "shared-thread inbox project (platforms: $project_shared_platforms)"
+            fi
         fi
     else
         warn "PROJECT.md missing"
@@ -385,12 +403,27 @@ for project_dir in "$PROJECTS_DIR"/*/; do
                         #   1) this project opts in (shared_thread_ids: true)
                         #   2) duplicate is within the SAME project
                         #   3) thread_id's platform is in shared_thread_platforms
-                        # Otherwise warn as before.
+                        #   4) thread_id's platform is NOT in the hardcoded
+                        #      thread-native set (discord, slack) — those
+                        #      always warn regardless of allowlist, per the
+                        #      framework's "thread-native rules remain
+                        #      unchanged" contract.
+                        # All comparisons are lowercase; platform list was
+                        # already lowercased + whitespace-stripped at parse
+                        # time. The thread_id format regex on line ~366
+                        # forces the platform side to be lowercase already.
                         suppress_duplicate=false
+                        platform_lc=$(printf '%s' "$platform" | tr '[:upper:]' '[:lower:]')
+                        case " discord slack " in
+                            *" $platform_lc "*) is_thread_native=true ;;
+                            *)                  is_thread_native=false ;;
+                        esac
+
                         if $project_shared_threads \
                            && [[ "$dup_project" == "$project_name" ]] \
                            && [[ -n "$project_shared_platforms" ]] \
-                           && [[ ",${project_shared_platforms// /}," == *",${platform},"* ]]; then
+                           && ! $is_thread_native \
+                           && [[ ",${project_shared_platforms}," == *",${platform_lc},"* ]]; then
                             suppress_duplicate=true
                         fi
 
