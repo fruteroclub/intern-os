@@ -17,6 +17,25 @@ jobs:
         id: version
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
+      - name: Verify version markers match tag
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          EXPECTED="${TAG#v}"
+
+          VERSION_FILE=$(tr -d '[:space:]' < intern-os/VERSION)
+          if [ "$VERSION_FILE" != "$EXPECTED" ]; then
+            echo "ERROR: intern-os/VERSION is '$VERSION_FILE', expected '$EXPECTED' (from tag $TAG)"
+            exit 1
+          fi
+
+          SKILL_VERSION=$(awk -F': *' '/^version: / { print $2; exit }' intern-os/SKILL.md | tr -d '[:space:]')
+          if [ "$SKILL_VERSION" != "$EXPECTED" ]; then
+            echo "ERROR: intern-os/SKILL.md version: is '$SKILL_VERSION', expected '$EXPECTED' (from tag $TAG)"
+            exit 1
+          fi
+
+          echo "Version markers match tag $TAG"
+
       - name: Extract release notes from CHANGELOG.md
         run: |
           bash intern-os/scripts/extract-changelog.sh "${{ steps.version.outputs.tag }}" > /tmp/release-notes.md
