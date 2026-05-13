@@ -51,6 +51,12 @@ After installing, follow your framework's setup guide in `adapters/[framework]/S
 
 Spanish versions available in `intern-os/references/es/`.
 
+## Versioning
+
+The active line is `0.x` to reflect alpha status. The latest release is published at [GitHub Releases](https://github.com/fruteroclub/intern-os/releases) and `gh api /repos/fruteroclub/intern-os/releases/latest` returns the correct version.
+
+`v1.0.0`, `v1.0.1`, and `v1.1.0` tags exist on the remote from a premature pre-`0.x` versioning attempt. They have no corresponding GitHub Releases attached and should not be used. They are preserved (not deleted) to avoid breaking any installs that may have pinned to them.
+
 ## License
 
 [AGPL v3](LICENSE) for open source use. Commercial license required for B2B products and SaaS — contact [hola@frutero.club](mailto:hola@frutero.club).
