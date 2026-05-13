@@ -2,6 +2,25 @@
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
 
+## v0.4.1 — 2026-05-13
+
+DX patch. Addresses [#21](https://github.com/fruteroclub/intern-os/issues/21). Installed skill now carries forward version/source metadata so agents and humans can tell what's running and where it came from. No breaking changes.
+
+### Fixed
+
+- **Installed skill is self-describing.** Adds `repo:` field to `intern-os/SKILL.md` frontmatter and a new `intern-os/VERSION` file packaged alongside `SKILL.md`. Before, an install at `~/.claude/skills/intern-os/` had no `repo:`, no `VERSION`, no `CHANGELOG` — checking for updates required guessing the repo URL.
+- **Release workflow guards version consistency.** `.github/workflows/release.yml` now asserts that `intern-os/VERSION` and the `version:` field in `intern-os/SKILL.md` both match the pushed tag. Prevents drift between the three places version lives.
+
+### Documentation
+
+- **Versioning note added to README.** Records that `v1.0.0` / `v1.0.1` / `v1.1.0` tags on the remote are premature rollbacks; the active line is `0.x`. Closes [#23](https://github.com/fruteroclub/intern-os/issues/23).
+
+### Compatibility
+
+- No behavior changes. Existing installs upgrade by re-installing or copying the new `VERSION` file alongside `SKILL.md`.
+
+---
+
 ## v0.4.0 — 2026-05-11
 
 Multi-agent feature release. Bundles three issues: [#16](https://github.com/fruteroclub/intern-os/pull/16) (Claude Code lifecycle adapter), [#10](https://github.com/fruteroclub/intern-os/issues/10) (isolated-session handoff doctrine + manifest), [#11](https://github.com/fruteroclub/intern-os/issues/11) (shared-thread inbox projects). Each landed through dogfood-tested PRs (#19 ran 3 dogfood rounds with 23 findings addressed; #20 ran 2 rounds with 13 findings addressed). No breaking changes.
