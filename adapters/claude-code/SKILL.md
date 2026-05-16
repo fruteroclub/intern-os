@@ -43,6 +43,14 @@ The script:
 
 `<workspace>` is set via the `INTERNOS_WORKSPACE` environment variable — required, no implicit default. Point it at the directory that contains your `projects/` directory.
 
+**Multiple workspaces.** `INTERNOS_WORKSPACE` is PATH-style: colon-separate multiple workspace roots when each represents a distinct org / operating-system surface. Resolution walks the list in order and picks the first workspace that is an ancestor of `$PWD`. Example:
+
+```
+export INTERNOS_WORKSPACE="$HOME/workspaces/frutero:$HOME/workspaces/poktalabs"
+```
+
+Each workspace is independent: its own `projects/` tree, its own project-level `AGENTS.md`, its own workstream directories. There is no cross-workspace resolution — `$PWD` belongs to exactly one workspace at a time, and the isolation doctrine applies across workspaces just as it does across projects. The `thread_id` is canonical relative to its workspace, so a workstream at `<frutero>/projects/foo/workstreams/bar` and one at `<poktalabs>/projects/foo/workstreams/bar` are different threads despite identical canonical thread_ids — resolution is anchored to `$PWD`, not the thread_id alone.
+
 **Mismatch handling.** If the script exits 2, do not proceed and do not patch the file silently. Tell the human what was expected vs. found, and ask whether the workstream was moved, copied, or scaffolded by hand. Quietly fixing thread_id values is exactly the kind of "helpful guess" that corrupts the binding model.
 
 ## Operating protocol
