@@ -118,34 +118,58 @@ fi
 rel_workstream="${workstream_dir#$WORKSPACE/}"
 expected_thread_id="claude-code:$rel_workstream"
 
-# Extract the thread_id value. Accept formats like:
+# Extract a single thread_id-style field value. Accepts both spaced and
+# unspaced forms, trims surrounding whitespace. Empty string if not present.
+#
+# Example matches (for FIELD=thread_id):
 #   thread_id: claude-code:projects/foo/workstreams/bar
 #   thread_id:claude-code:projects/foo/workstreams/bar
-# Trim surrounding whitespace.
-actual_thread_id="$(
-    awk -F: '
-        /^[[:space:]]*thread_id[[:space:]]*:/ {
+extract_field() {
+    local field="$1"
+    awk -v f="$field" '
+        $0 ~ "^[[:space:]]*" f "[[:space:]]*:" {
             sub(/^[^:]*:[[:space:]]*/, "", $0)
             gsub(/[[:space:]]+$/, "", $0)
             print
             exit
         }
     ' "$brief"
-)"
+}
 
-if [[ -z "$actual_thread_id" ]]; then
-    echo "resolve-thread: BRIEF.md has no thread_id: $brief" >&2
-    echo "resolve-thread: expected: $expected_thread_id" >&2
+# Resolution accepts two binding forms:
+#
+#   1. Primary binding — `thread_id: claude-code:projects/<p>/workstreams/<w>`
+#      The workstream is "owned" by Claude Code; thread_id is canonical.
+#
+#   2. Dual binding — `thread_id` belongs to another platform (Slack, Discord,
+#      Telegram, etc.) where humans collaborate, and a sibling field
+#      `thread_id_claude_code: claude-code:projects/<p>/workstreams/<w>`
+#      anchors the Claude Code adapter. Used when one workstream spans a
+#      human-comms surface and an agent-ops surface.
+#
+# Either field matching the canonical `claude-code:` form for this directory
+# is a successful bind. The framework spec (COMMUNICATION.md) only requires
+# a single `thread_id`; `thread_id_claude_code` is this adapter's escape
+# hatch for cross-platform workstreams.
+
+primary_tid="$(extract_field thread_id)"
+cc_tid="$(extract_field thread_id_claude_code)"
+
+if [[ -z "$primary_tid" && -z "$cc_tid" ]]; then
+    echo "resolve-thread: BRIEF.md has no thread_id or thread_id_claude_code: $brief" >&2
+    echo "resolve-thread: expected one of them to equal: $expected_thread_id" >&2
     exit 2
 fi
 
-if [[ "$actual_thread_id" != "$expected_thread_id" ]]; then
-    echo "resolve-thread: thread_id mismatch in $brief" >&2
-    echo "  expected: $expected_thread_id" >&2
-    echo "  found:    $actual_thread_id" >&2
-    echo "  This usually means the workstream was moved or scaffolded elsewhere." >&2
-    echo "  Stop and ask the human — never guess." >&2
-    exit 2
+if [[ "$primary_tid" == "$expected_thread_id" || "$cc_tid" == "$expected_thread_id" ]]; then
+    echo "$workstream_dir"
+    exit 0
 fi
 
-echo "$workstream_dir"
+echo "resolve-thread: thread_id mismatch in $brief" >&2
+echo "  expected (in thread_id or thread_id_claude_code): $expected_thread_id" >&2
+[[ -n "$primary_tid" ]] && echo "  thread_id:              $primary_tid" >&2
+[[ -n "$cc_tid"      ]] && echo "  thread_id_claude_code:  $cc_tid" >&2
+echo "  This usually means the workstream was moved or scaffolded elsewhere." >&2
+echo "  Stop and ask the human — never guess." >&2
+exit 2
