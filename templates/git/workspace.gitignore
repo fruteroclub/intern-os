@@ -1,0 +1,25 @@
+# internOS workspace-level .gitignore
+#
+# Lives at the workspace root (e.g. `~/workspaces/<org>/.gitignore`).
+# The workspace repo tracks org-scoped internOS state ONLY — projects each have
+# their own repo (see templates/git/project.gitignore), and code repos live
+# inside projects. Allowlist style: ignore everything, then re-include the
+# internOS file shapes this repo is allowed to track.
+#
+# Update when the framework adds a new workspace-level file shape.
+
+# Ignore everything at the workspace root by default.
+/*
+
+# Re-include the internOS state this repo owns.
+!/.gitignore
+!/README.md
+!/AGENTS.md
+!/docs/
+!/projects/
+
+# Inside projects/, only the workspace-level registry is tracked here. Each
+# individual project directory is its own repo and must remain opaque to this
+# one — never commit a project's internOS files from the workspace repo.
+projects/*
+!projects/REGISTRY.md
