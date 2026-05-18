@@ -1,13 +1,14 @@
 # internOS project-level .gitignore
 #
 # Lives at a project root (e.g. `<workspace>/projects/<project>/.gitignore`).
-# The project repo tracks project-scoped internOS state ONLY — code repos
-# (services, products, libraries) live as sibling subdirectories inside the
-# project and each have their own .git. Allowlist style: ignore everything,
-# then re-include the internOS file shapes this repo is allowed to track.
+# This file is for the PROJECT REPO — the one that lives at <org>/<project>
+# on GitHub. The project repo tracks internOS state (PROJECT.md, AGENTS.md,
+# POD.md, TICK.md, workstreams/, docs/) AND a `code/` container directory
+# whose subdirectories are independent code repos.
 #
-# Update when the framework adds a new project- or workstream-level file
-# shape.
+# Allowlist style: ignore everything, then re-include the internOS file
+# shapes plus the code/ container (but not its nested repos). Update when
+# the framework adds a new project- or workstream-level file shape.
 
 # Ignore everything at the project root by default.
 /*
@@ -15,12 +16,19 @@
 # Re-include the canonical project-level internOS files.
 !/.gitignore
 !/PROJECT.md
+!/POD.md
 !/TICK.md
 !/AGENTS.md
 !/CLAUDE.md
 !/README.md
 !/docs/
 !/workstreams/
+!/code/
+
+# tick.md tooling: re-include its config but not its runtime state.
+!/.tick/
+.tick/*
+!.tick/config.yml
 
 # Inside workstreams/, allowlist the canonical per-workstream files. Any
 # scratch artifact, generated output, or nested code repo inside a workstream
@@ -36,3 +44,9 @@ workstreams/*/*
 !workstreams/*/ONBOARDING.md
 !workstreams/*/README.md
 !workstreams/*/docs/
+
+# Inside code/, track the container's README only. Each subdirectory is an
+# independent git repo with its own remote and must remain opaque to this one.
+code/*
+!code/README.md
+!code/.gitkeep
