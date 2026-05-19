@@ -1,6 +1,8 @@
 # Transfer Modules (TM) for internOS
 
-*Status: convention. Derived from lived practice (Hermes/Aibus TMs shipped in agencia, 2026-05). Spec version 1.0.*
+*Status: convention. Derived from lived practice (Hermes/Aibus TMs shipped in agencia, 2026-05). Spec version 1.1.*
+
+*Changelog: v1.0 — initial spec with `internOS.project` and `internOS.workstream`. v1.1 — added `internOS.engagement-delivery` for cross-project deliveries (one project's deliverable flows into another project's operational context).*
 
 ## Concept
 
@@ -10,16 +12,19 @@ TMs are a **packaging layer on top of internOS**, not part of the core resolutio
 
 This standard formalizes the practice already running in `<workspace>/.tms/` directories.
 
-## Types (v1)
+## Types
 
-The standard ships with two TM types. Both follow the same package layout; they differ in scope and what gets included in the payload.
+The standard ships with three TM types.
 
-| Type | Scope | Payload contains | Typical use |
+| Type | Direction | Payload contains | Typical use |
 | --- | --- | --- | --- |
-| `internOS.project` | One project | `PROJECT.md`, `AGENTS.md`, `POD.md`, `TICK.md`, `docs/`, all `workstreams/*/`, `.tick/config.yml` | Hand off a whole project to a collaborator or other agent harness. Most common. |
-| `internOS.workstream` | One workstream inside a project | The workstream's files + a **read-only context header** (parent `PROJECT.md`, `AGENTS.md`, `POD.md`) so the receiver can orient | Hand off a single thread of work without exporting the whole project. Useful for narrow specialist handoffs (review, fixup, deep technical work). |
+| `internOS.project` | snapshot of one project | `PROJECT.md`, `AGENTS.md`, `POD.md`, `TICK.md`, `docs/`, all `workstreams/*/`, `.tick/config.yml` | Hand off a whole project to a collaborator or other agent harness. Loop-back: receiver returns changes via PR. |
+| `internOS.workstream` | snapshot of one workstream | The workstream's files + a **read-only context header** (parent `PROJECT.md`, `AGENTS.md`, `POD.md`) so the receiver can orient | Hand off a single thread of work without exporting the whole project. Loop-back. |
+| `internOS.engagement-delivery` | **cross-project**: source project → target project | Source state pointers + deliverables (code repos, runtime endpoints) + update operations to apply against target project files + a runtime bundle (MCP config, per-skill SKILL.md mirrors) | Flow consequences of work done in project B into project A's operational context. Used when work spins off into a separate project but a commercial / engagement project needs the deliverable referenced. **Not** loop-back: nothing flows back. |
 
-Workspace-tier and pod-tier TMs are out of scope for v1. Add them when the lived practice demands it.
+Project-tier and workstream-tier TMs are **snapshot** types — they capture a slice of state at a point in time. Engagement-delivery TMs are **directed-flow** types — they describe a change to apply elsewhere.
+
+Workspace-tier and pod-tier TMs are out of scope. Add them when the lived practice demands it.
 
 ## Package layout
 
@@ -91,9 +96,9 @@ Two distinct versions:
 ## TM.yml — machine-readable manifest
 
 ```yaml
-tm_version: 1.0                     # spec version, mirrors tm_spec_version in SKILL.md
+tm_version: 1.1                     # spec version, mirrors tm_spec_version in SKILL.md
 name: <tm-name>
-type: internOS.project              # or internOS.workstream
+type: internOS.project              # or internOS.workstream or internOS.engagement-delivery
 created_at: <ISO 8601>
 
 source:
@@ -130,6 +135,75 @@ verification:
   checksum_file: CHECKSUMS.sha256
 ```
 
+### Engagement-delivery additions to TM.yml
+
+For `type: internOS.engagement-delivery`, the `source` block is supplemented by a `target` block, and three additional blocks describe what flows where:
+
+```yaml
+type: internOS.engagement-delivery
+
+source:
+  workspace: <source-workspace>
+  project: <source-project>             # where the work was done
+  workstreams: [<source-workstream>, ...] # workstreams in source that produced the deliverable
+  canonical_path: workspaces/<source-workspace>/projects/<source-project>
+
+target:
+  workspace: <target-workspace>
+  project: <target-project>             # where the TM gets applied
+  workstreams: [<target-workstream>, ...] # workstreams in target whose state files this TM updates
+  canonical_path: workspaces/<target-workspace>/projects/<target-project>
+  repo: <git-remote-or-null>            # null if target is not yet git-tracked
+
+deliverables:                            # what was produced and how to consume it
+  - kind: code-artifact
+    name: <human-readable>
+    repo: <git-remote>                   # e.g. agencia-frutero/pyme-companion-engine
+    runtime:
+      rest_url: <env-var-or-literal>     # e.g. $ENGINE_URL or https://...
+      mcp_endpoint: <env-var-or-literal> # e.g. $ENGINE_URL/mcp
+      health_check: <env-var-or-literal>/healthz
+      auth: <none | env-var | other>
+      catalog:                           # tools / skills / endpoints the deliverable exposes
+        - id: <name>
+          kind: skill | endpoint | other
+          description: <short>
+
+updates:                                 # file-level changes to apply against target project
+  - target_file: PROJECT.md              # path relative to target canonical_path
+    op: append-section                   # append-section | replace | merge | create
+    section_title: "## Delivered artifacts"  # required for append-section
+    content_path: payload/updates/PROJECT.md.append-section
+  - target_file: workstreams/<ws>/STATUS.md
+    op: replace
+    content_path: payload/updates/workstreams/<ws>/STATUS.md.replace
+  - target_file: workstreams/<ws>/RESOURCES.md
+    op: merge                            # interpreted by author; receiver inspects diff before applying
+    content_path: payload/updates/workstreams/<ws>/RESOURCES.md.merge
+  - target_file: workstreams/<ws>/DECISIONS.md
+    op: append-section
+    section_title: "## D-DELIVERY-<n>: <decision-title>"
+    content_path: payload/updates/workstreams/<ws>/DECISIONS.md.append-section
+
+apply_protocol:
+  preferred: pr                          # pr | branch | staging-dir
+  target_repo: <git-remote-or-null>      # required if preferred=pr or branch
+  branch_prefix: tm/<tm-name>/
+  staging_dir: .tm-incoming/<tm-name>/   # used if preferred=staging-dir OR target_repo is null
+  require_summary: true
+  require_diff_review: true
+```
+
+**Apply modes:**
+
+- **`pr`** — apply script clones (or assumes a clone of) `target_repo`, creates a branch under `branch_prefix`, applies updates, commits, pushes, opens PR. Receiver merges after review.
+- **`branch`** — same as `pr` but stops at push, leaves PR creation to the receiver.
+- **`staging-dir`** — apply script writes the proposed updates into `<target-canonical-path>/<staging_dir>` as plain files. Receiver inspects, then either copies into place manually or `git init`s the project and commits. Used when the target project has no git binding yet.
+
+If `apply_protocol.preferred = pr` but `target.repo = null`, the apply script falls back to staging-dir mode automatically and prints a notice with a migration command (see `docs/specs/git-tracking.md`).
+
+The `return_protocol` block is **not used** for engagement-delivery — the flow is one-way. If the target wants to acknowledge ingestion, that's a regular project update inside target, not a TM return.
+
 ## Default scope per type
 
 Authors should treat these as the **baseline** — TMs may extend `excludes` for sensitive cases but should not narrow the canonical `includes`.
@@ -155,7 +229,31 @@ Authors should treat these as the **baseline** — TMs may extend `excludes` for
 - The workstream's `docs/**`
 - A **read-only context header** copied from the parent project — `PROJECT.md`, `AGENTS.md`, `POD.md`. The receiver loads these for orientation but has `forbidden_writes` over them.
 
-### Default `excludes` (both types)
+### `internOS.engagement-delivery` — payload shape
+
+Engagement-delivery TMs do **not** follow the project/workstream payload shape. Their payload is structured around the *operations* the receiver applies and the *runtime handles* the receiver consumes:
+
+```
+payload/
+├── updates/                       ← file-level changes to apply against the target project
+│   ├── PROJECT.md.append-section  ← named by the update operation (see `updates` block in TM.yml)
+│   ├── workstreams/<ws>/STATUS.md.replace
+│   ├── workstreams/<ws>/RESOURCES.md.merge
+│   └── ...
+├── runtime/                       ← operational handles for using the deliverable
+│   ├── mcp.json                   ← MCP server config snippet (e.g. pyme-engine pointing at $ENGINE_URL/mcp)
+│   ├── skills/                    ← mirror of the deliverable's per-skill SKILL.md files
+│   │   ├── <skill-1>/SKILL.md
+│   │   └── ...
+│   ├── USAGE.md                   ← how to call the deliverable (REST, MCP, env vars, auth)
+│   └── ENGINE_REFERENCE.md        ← endpoint table, health checks, repo URL, contact for issues
+└── source-snapshot/               ← OPTIONAL — selected source files referenced by updates (provenance)
+    └── workstreams/<source-ws>/STATUS.md
+```
+
+The `updates/` filename suffixes (`.replace`, `.append-section`, `.merge`, `.create`) map 1:1 to entries in `TM.yml`'s `updates` block so verifiers can cross-check.
+
+### Default `excludes` (all types)
 
 These are baseline forbidden patterns the verification script enforces:
 
@@ -198,14 +296,17 @@ These are baseline forbidden patterns the verification script enforces:
 
 `scripts/verify_tm.sh` is portable bash with zero runtime dependencies beyond standard POSIX utilities + `sha256sum` (Linux) or `shasum -a 256` (macOS). It checks:
 
-1. **Structural completeness** — required files present (`SKILL.md`, `references/TM.yml`, `references/IMPORT.md`, `references/RETURN.md`, `references/REDACTION_REPORT.md`).
+1. **Structural completeness** — required files present (`SKILL.md`, `references/TM.yml`, `references/IMPORT.md`, `references/REDACTION_REPORT.md`). `RETURN.md` is required for snapshot types (`internOS.project`, `internOS.workstream`) but not for `internOS.engagement-delivery` (which uses `APPLY.md` instead — one-way flow).
 2. **Payload required files** — based on the declared `type`:
    - `internOS.project`: `payload/<canonical_path>/PROJECT.md`, `AGENTS.md`, `TICK.md`
    - `internOS.workstream`: `payload/<canonical_path>/BRIEF.md`, `STATUS.md`
+   - `internOS.engagement-delivery`: `payload/updates/` and `payload/runtime/` both present; every `updates[].content_path` in `TM.yml` resolves to an existing file
 3. **Forbidden patterns absent** — no file inside `payload/` matches the default exclude globs.
 4. **Checksums** — `sha256sum -c CHECKSUMS.sha256` (or `shasum -a 256 -c` on macOS) passes.
 
 The reference implementation is in `templates/tm/scripts/verify_tm.sh`.
+
+For `internOS.engagement-delivery` TMs, a sibling `scripts/apply_to_target.sh` script implements the apply protocol declared in `TM.yml` (pr / branch / staging-dir). It is **always** an opt-in step run by the receiver — never invoked automatically.
 
 ## Cross-harness compatibility
 

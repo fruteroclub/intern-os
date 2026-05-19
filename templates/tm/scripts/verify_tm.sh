@@ -61,15 +61,31 @@ yaml_get() {
 
 # --- 1. Structural completeness --------------------------------------------
 
+# Required files differ slightly by type. Read TM.yml type first so we know
+# whether to require RETURN.md (snapshot types) or APPLY.md (engagement-delivery).
+TM_YML_PRE="$TM_ROOT/references/TM.yml"
+TM_TYPE_PRE=""
+if [[ -f "$TM_YML_PRE" ]]; then
+    TM_TYPE_PRE="$(yaml_get "$TM_YML_PRE" type)"
+fi
+
 REQUIRED_FILES=(
     SKILL.md
     README.md
     references/TM.yml
     references/IMPORT.md
-    references/RETURN.md
     references/REDACTION_REPORT.md
     scripts/verify_tm.sh
 )
+
+case "$TM_TYPE_PRE" in
+    internOS.engagement-delivery)
+        REQUIRED_FILES+=(references/APPLY.md scripts/apply_to_target.sh)
+        ;;
+    *)
+        REQUIRED_FILES+=(references/RETURN.md)
+        ;;
+esac
 
 for f in "${REQUIRED_FILES[@]}"; do
     if [[ ! -f "$TM_ROOT/$f" ]]; then
@@ -103,23 +119,58 @@ case "$TM_TYPE" in
         REQUIRED_PAYLOAD=(BRIEF.md STATUS.md)
         ANCHOR=BRIEF.md
         ;;
+    internOS.engagement-delivery)
+        # Different payload shape: payload/updates/ + payload/runtime/.
+        # No anchor file inside a canonical_path subtree to locate.
+        if [[ ! -d "$PAYLOAD_DIR/updates" ]]; then
+            fail "engagement-delivery TM missing payload/updates/" 1
+        fi
+        if [[ ! -d "$PAYLOAD_DIR/runtime" ]]; then
+            fail "engagement-delivery TM missing payload/runtime/" 1
+        fi
+        # Every content_path declared in TM.yml's updates block must exist.
+        while IFS= read -r cp; do
+            [[ -z "$cp" ]] && continue
+            if [[ ! -f "$TM_ROOT/$cp" ]]; then
+                fail "updates content_path missing: $cp" 1
+            fi
+        done < <(awk '
+            /^updates:/ { in_b=1; next }
+            in_b && /^[a-zA-Z_]+:/ && !/^[[:space:]]/ { in_b=0 }
+            in_b && /^[[:space:]]+content_path:[[:space:]]*/ {
+                sub(/^[[:space:]]+content_path:[[:space:]]*/, "")
+                gsub(/^["'\''[:space:]]+|["'\''[:space:]]+$/, "")
+                print
+            }
+        ' "$TM_YML")
+        # If a runtime/mcp.json exists, validate it as JSON.
+        if [[ -f "$PAYLOAD_DIR/runtime/mcp.json" ]]; then
+            if command -v python3 >/dev/null 2>&1; then
+                python3 -c "import json,sys; json.load(open('$PAYLOAD_DIR/runtime/mcp.json'))" 2>/dev/null \
+                    || fail "payload/runtime/mcp.json is not valid JSON" 1
+            fi
+        fi
+        ANCHOR=""   # Skip the anchor-based payload search below.
+        ;;
     *)
-        fail "unsupported TM type: $TM_TYPE (expected internOS.project or internOS.workstream)" 1
+        fail "unsupported TM type: $TM_TYPE (expected internOS.project, internOS.workstream, or internOS.engagement-delivery)" 1
         ;;
 esac
 
-# Find the canonical payload subdirectory by locating the anchor file.
-CANON_PAYLOAD="$(find "$PAYLOAD_DIR" -type f -name "$ANCHOR" 2>/dev/null | head -1)"
-if [[ -z "$CANON_PAYLOAD" ]]; then
-    fail "payload anchor not found: expected $ANCHOR somewhere under payload/" 1
-fi
-CANON_DIR="$(dirname "$CANON_PAYLOAD")"
-
-for f in "${REQUIRED_PAYLOAD[@]}"; do
-    if [[ ! -f "$CANON_DIR/$f" ]]; then
-        fail "payload missing required file: $(basename "$CANON_DIR")/$f" 1
+# Find the canonical payload subdirectory by locating the anchor file (snapshot types only).
+if [[ -n "$ANCHOR" ]]; then
+    CANON_PAYLOAD="$(find "$PAYLOAD_DIR" -type f -name "$ANCHOR" 2>/dev/null | head -1)"
+    if [[ -z "$CANON_PAYLOAD" ]]; then
+        fail "payload anchor not found: expected $ANCHOR somewhere under payload/" 1
     fi
-done
+    CANON_DIR="$(dirname "$CANON_PAYLOAD")"
+
+    for f in "${REQUIRED_PAYLOAD[@]}"; do
+        if [[ ! -f "$CANON_DIR/$f" ]]; then
+            fail "payload missing required file: $(basename "$CANON_DIR")/$f" 1
+        fi
+    done
+fi
 
 # --- 3. Forbidden patterns --------------------------------------------------
 
