@@ -93,15 +93,18 @@ yaml_scalar() {
     ' "$file"
 }
 
-# Read the entire `updates:` block as records and emit them as TSV:
-#   target_file<TAB>op<TAB>section_title<TAB>content_path
-# section_title may be empty.
+# Read the `updates:` block and emit ONE FIELD PER LINE in the fixed order:
+#   target_file
+#   op
+#   section_title        (may be blank line if absent)
+#   content_path
+# Records are not separated — caller reads 4 lines at a time. This avoids
+# IFS/separator quoting pitfalls when reading multi-line YAML values.
 parse_updates() {
     awk '
         BEGIN { in_block=0; in_item=0 }
         /^updates:[[:space:]]*$/ { in_block=1; next }
         in_block && /^[a-zA-Z_]+:/ && !/^[[:space:]]/ {
-            # Hit the next top-level block
             if (in_item) emit()
             in_block=0
             in_item=0
@@ -127,7 +130,7 @@ parse_updates() {
             line=$0; sub(/^[[:space:]]+content_path:[[:space:]]*/,"",line); gsub(/^["'\''[:space:]]+|["'\''[:space:]]+$/,"",line); cp=line; next
         }
         function emit() {
-            printf "%s\t%s\t%s\t%s\n", tf, op, st, cp
+            printf "%s\n%s\n%s\n%s\n", tf, op, st, cp
         }
         END { if (in_item) emit() }
     ' "$TM_YML"
@@ -215,7 +218,11 @@ if [[ "$MODE" == "staging-dir" ]]; then
 fi
 
 count_applied=0
-while IFS=$'\t' read -r target_file op section_title content_path; do
+# Read 4 lines per record. parse_updates emits one field per line in fixed order.
+while IFS= read -r target_file && \
+      IFS= read -r op && \
+      IFS= read -r section_title && \
+      IFS= read -r content_path; do
     [[ -z "$target_file" ]] && continue
     src="$TM_ROOT/$content_path"
     if [[ ! -f "$src" ]]; then
