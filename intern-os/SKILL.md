@@ -233,7 +233,7 @@ projects/[project]/workstreams/[name]/
 ├── MEMORY.md        ← Durable context across sessions (≤80 lines)
 ├── DECISIONS.md     ← Key decisions log with date + rationale
 ├── STAKEHOLDERS.md  ← Relevant people and their role
-├── RESOURCES.md     ← Artifact registry and where they live
+├── RESOURCES.md     ← Artifact registry (incl. heavy-asset pointers — see template)
 └── docs/            ← Working artifacts
 ```
 

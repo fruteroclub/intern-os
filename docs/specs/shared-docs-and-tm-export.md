@@ -130,6 +130,26 @@ At TM export time, the export process MUST:
 
 This makes exported workstream TMs self-contained — the receiving project / agent has all referenced docs available without needing access to the source project's filesystem.
 
+### 6a. Heavy-asset pointer convention
+
+Workstream `RESOURCES.md` has two tables: the canonical resource table (text-shaped artifacts) and a **heavy-asset table** for binary / non-text content — images, audio, video, large PDFs (>~5MB), datasets, ML model weights, archives.
+
+Heavy assets are *referenced*, not *embedded*:
+
+- They live in `<workstream>/docs/assets/<kind>/<file>` (preferred) or in external storage (Drive, S3, Git LFS).
+- The RESOURCES.md heavy-asset row records: name, kind, location (relative path or external URL), size, notes.
+- The bytes do not enter `docs/*.md` and they are not inlined as base64.
+
+At TM export time:
+
+1. Heavy-asset rows are carried through verbatim in the exported `RESOURCES.md`.
+2. The bytes of heavy assets **do not travel with the TM**. The receiving agent follows the pointer if and when it needs the asset.
+3. If the heavy asset's `Location` is a relative path (`docs/assets/...`) and the source brain is accessible to the receiver (auth handshake outside this spec), the receiver may fetch on demand. Otherwise the receiver must coordinate with the source brain owner.
+
+Rationale: keeps TM payloads small + portable, avoids byte-duplication across exports, and matches how human collaborators already treat linked vs. embedded content. A 24-line markdown referencing a 5MB PDF becomes a 24-line markdown + a 1-line pointer in RESOURCES.md, not a 5MB TM payload bloat.
+
+Schema: see `intern-os/assets/templates/workstream/RESOURCES.md` for the canonical two-table layout.
+
 ### 7. LLM-Wiki indexing
 
 The shared-docs convention is designed to be consumed by an LLM-Wiki indexer (Obsidian + LLM-powered semantic search). Implementers of indexers can rely on:

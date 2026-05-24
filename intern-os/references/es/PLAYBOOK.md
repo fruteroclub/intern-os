@@ -145,6 +145,13 @@ thread_id: [plataforma]:[id]
 - **Directory:** projects/[project]/workstreams/[name]/
 ```
 
+Para registros más ricos (múltiples recursos, owners, URLs externas), usa la
+plantilla canónica de dos tablas en `intern-os/assets/templates/workstream/RESOURCES.md`.
+Esa plantilla incluye una **tabla de punteros a heavy-assets** para contenido binario
+o no-texto (imágenes, audio, video, PDFs grandes, datasets) — los heavy-assets se
+*referencian* en RESOURCES.md, nunca se embeben, y los bytes no viajan cuando el
+workstream se exporta como Transfer Module.
+
 ---
 
 ## Trabajar una sesión

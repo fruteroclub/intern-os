@@ -143,6 +143,13 @@ thread_id: [platform]:[id]
 - **Directory:** projects/[project]/workstreams/[name]/
 ```
 
+For richer registries (multiple resources, owners, external URLs), use the canonical
+two-table template at `intern-os/assets/templates/workstream/RESOURCES.md`. That
+template includes a **heavy-asset pointer table** for binary / non-text content
+(images, audio, video, large PDFs, datasets) — heavy assets are *referenced* in
+RESOURCES.md, never embedded, and the bytes do not travel when the workstream
+is exported as a Transfer Module.
+
 ---
 
 ## Working a session
