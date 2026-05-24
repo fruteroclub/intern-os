@@ -1,0 +1,83 @@
+# internOS Transfer Module manifest — engagement-delivery type
+# Spec: docs/specs/transfer-modules.md (fruteroclub/intern-os), v1.1
+# Authors: replace placeholders, prune unused entries.
+
+tm_version: 1.1
+name: <TM_NAME>
+type: internOS.engagement-delivery
+created_at: "<ISO8601>"
+
+# Where the work was done. The deliverable lives here in its canonical form.
+source:
+  workspace: <SOURCE_WORKSPACE>
+  project: <SOURCE_PROJECT>
+  workstreams:
+    - <source-workstream>
+  canonical_path: workspaces/<SOURCE_WORKSPACE>/projects/<SOURCE_PROJECT>
+
+# Where the TM is applied. State updates land here. Repo may be null if the
+# target project doesn't have its own git binding yet (the apply script will
+# fall back to staging-dir mode automatically).
+target:
+  workspace: <TARGET_WORKSPACE>
+  project: <TARGET_PROJECT>
+  workstreams:
+    - <target-workstream>
+  canonical_path: workspaces/<TARGET_WORKSPACE>/projects/<TARGET_PROJECT>
+  repo: <git-remote-or-null>
+
+# What was produced + how the target consumes it.
+deliverables:
+  - kind: code-artifact
+    name: <human-readable name, e.g. pyme-companion-engine>
+    repo: <git-remote, e.g. agencia-frutero/pyme-companion-engine>
+    runtime:
+      rest_url: "<env var or literal, e.g. $ENGINE_URL>"
+      mcp_endpoint: "<env var or literal, e.g. $ENGINE_URL/mcp>"
+      health_check: "<e.g. $ENGINE_URL/healthz>"
+      auth: "<none | env-var name | other>"
+      catalog:
+        - id: <skill-or-endpoint-id>
+          kind: skill
+          description: "<short>"
+
+# File-level changes to apply against the target project. Each entry's
+# content_path must resolve to a file under payload/updates/.
+updates:
+  - target_file: PROJECT.md
+    op: append-section
+    section_title: "## Delivered artifacts"
+    content_path: payload/updates/PROJECT.md.append-section
+
+  - target_file: workstreams/<target-workstream>/STATUS.md
+    op: replace
+    content_path: payload/updates/workstreams/<target-workstream>/STATUS.md.replace
+
+  - target_file: workstreams/<target-workstream>/RESOURCES.md
+    op: merge
+    content_path: payload/updates/workstreams/<target-workstream>/RESOURCES.md.merge
+
+  - target_file: workstreams/<target-workstream>/DECISIONS.md
+    op: append-section
+    section_title: "## D-DELIVERY-001: <decision-title>"
+    content_path: payload/updates/workstreams/<target-workstream>/DECISIONS.md.append-section
+
+# How updates are applied. preferred:
+#   pr           — script creates branch, applies, commits, pushes, opens PR
+#   branch       — same, but stops at push (no PR open)
+#   staging-dir  — script writes proposed changes to target's .tm-incoming/<TM_NAME>/
+#                  for manual review (used when target.repo is null)
+apply_protocol:
+  preferred: pr
+  branch_prefix: tm/<TM_NAME>/
+  staging_dir: .tm-incoming/<TM_NAME>/
+  require_summary: true
+  require_diff_review: true
+
+verification:
+  internos_sync_check: bash <intern-os-checkout>/intern-os/scripts/sync-check.sh <target-workspace-path>
+  checksum_file: CHECKSUMS.sha256
+
+# No return_protocol — engagement-delivery is one-way. If the receiver finds
+# bugs in the deliverable, they open a PR against deliverables[].repo, not
+# against this TM.

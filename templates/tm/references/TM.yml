@@ -1,0 +1,81 @@
+# internOS Transfer Module manifest — machine-readable scope, permissions, return protocol.
+# Spec: docs/specs/transfer-modules.md (fruteroclub/intern-os)
+# Authors: replace placeholders, prune unused entries, add type-specific includes.
+
+tm_version: 1.0
+name: <TM_NAME>
+type: internOS.<TYPE>                   # project | workstream
+created_at: "<ISO8601>"
+
+source:
+  workspace: <WORKSPACE>
+  project: <PROJECT>
+  workstream: <WORKSTREAM_OR_NULL>      # null for project TMs
+  canonical_path: workspaces/<WORKSPACE>/projects/<PROJECT><WORKSTREAM_PATH_SUFFIX>
+
+scope:
+  primary: <project_or_workstream>
+
+  # Canonical baseline; do not narrow without explicit reason.
+  # For internOS.project, expect the full project shape.
+  # For internOS.workstream, expect the workstream shape PLUS parent project
+  # context headers (PROJECT.md, AGENTS.md, POD.md) included read-only.
+  includes:
+    - PROJECT.md
+    - AGENTS.md
+    - POD.md
+    - TICK.md
+    - .tick/config.yml
+    - docs/**/*.md
+    - docs/**/*.pdf
+    - workstreams/**/BRIEF.md
+    - workstreams/**/STATUS.md
+    - workstreams/**/MEMORY.md
+    - workstreams/**/DECISIONS.md
+    - workstreams/**/STAKEHOLDERS.md
+    - workstreams/**/RESOURCES.md
+    - workstreams/**/SESSIONS.md
+    - workstreams/**/ONBOARDING.md
+    - workstreams/**/README.md
+    - workstreams/**/docs/**/*.md
+    - workstreams/**/docs/**/*.pdf
+
+  # Baseline excludes. These are enforced by scripts/verify_tm.sh.
+  # Extend (do not remove) for sensitive cases.
+  excludes:
+    - code/**
+    - .tick/lock
+    - .tick/session.json
+    - "**/__pycache__/**"
+    - "**/*.pyc"
+    - "**/.env"
+    - "**/.env.*"
+    - "**/auth.json"
+    - "**/*.lock"
+    - "**/*.pid"
+    - "**/.internos-warnings"
+
+permissions:
+  default: read
+  allowed_writes:
+    - workspaces/<WORKSPACE>/projects/<PROJECT><WORKSTREAM_PATH_SUFFIX>/**
+  forbidden_writes:
+    - workspaces/<WORKSPACE>/projects/<PROJECT><WORKSTREAM_PATH_SUFFIX>/code/**
+    - SOUL.md
+    - config.yaml
+    - memories/**
+    - sessions/**
+    - logs/**
+
+return_protocol:
+  preferred: pull_request                # pull_request | branch | patch
+  target_repo: <git-remote-or-private>   # e.g. agencia-frutero/<project>
+  target_path: workspaces/<WORKSPACE>/projects/<PROJECT><WORKSTREAM_PATH_SUFFIX>
+  branch_prefix: tm/<TM_NAME>/
+  require_summary: true
+  require_diff_review: true
+  require_sync_check: true
+
+verification:
+  internos_sync_check: bash <intern-os-checkout>/intern-os/scripts/sync-check.sh <workspace-path>
+  checksum_file: CHECKSUMS.sha256
