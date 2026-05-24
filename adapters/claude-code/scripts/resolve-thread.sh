@@ -16,9 +16,15 @@
 #   resolve-thread.sh <pwd> [<workspace>]   # explicit args (testing)
 #
 # Env:
-#   INTERNOS_WORKSPACE  Workspace root containing projects/ (REQUIRED — no default).
-#                       Set this to the directory whose `projects/` subdirectory
-#                       holds your project directories.
+#   INTERNOS_WORKSPACE  One or more workspace roots, each containing a `projects/`
+#                       subdirectory (REQUIRED — no default). PATH-style:
+#                       colon-separated list. Resolution iterates the list in order
+#                       and picks the first workspace that is an ancestor of $PWD.
+#
+#                       Single workspace:
+#                           export INTERNOS_WORKSPACE="$HOME/workspaces/frutero"
+#                       Multiple workspaces (one per org, for example):
+#                           export INTERNOS_WORKSPACE="$HOME/workspaces/frutero:$HOME/workspaces/poktalabs"
 #
 # Output (stdout, on success): absolute path to the active workstream directory
 # Exit codes:
@@ -32,15 +38,17 @@ set -euo pipefail
 # --- Args -------------------------------------------------------------------
 
 START_DIR="${1:-$PWD}"
-WORKSPACE="${2:-${INTERNOS_WORKSPACE:-}}"
+WORKSPACE_LIST="${2:-${INTERNOS_WORKSPACE:-}}"
 
-if [[ -z "$WORKSPACE" ]]; then
+if [[ -z "$WORKSPACE_LIST" ]]; then
     cat >&2 <<'EOF'
 resolve-thread: INTERNOS_WORKSPACE is not set.
 
-Set it to the directory that contains your `projects/` directory. Example:
+Set it to one or more workspace roots (each containing a `projects/` directory).
+PATH-style: colon-separated. Examples:
 
-    export INTERNOS_WORKSPACE="$HOME/workspace"
+    export INTERNOS_WORKSPACE="$HOME/workspaces/frutero"
+    export INTERNOS_WORKSPACE="$HOME/workspaces/frutero:$HOME/workspaces/poktalabs"
 
 There is no implicit default — the Claude Code adapter requires this to be
 explicit so it never silently picks up a stale or unrelated workspace.
@@ -55,25 +63,32 @@ if [[ ! -d "$START_DIR" ]]; then
 fi
 START_DIR="$(cd "$START_DIR" && pwd -P)"
 
-if [[ ! -d "$WORKSPACE" ]]; then
-    # Workspace configured but doesn't exist on disk. Treat as "no thread"
-    # silently so the skill doesn't bark in unrelated sessions; the user will
-    # only notice if they actually try to operate a workstream.
+# Find the first configured workspace that is an ancestor of START_DIR.
+# Missing workspaces on disk are skipped silently — the skill stays quiet in
+# unrelated sessions and only barks when the human actually tries to operate.
+WORKSPACE=""
+IFS=':' read -r -a _ws_candidates <<< "$WORKSPACE_LIST"
+for _ws in "${_ws_candidates[@]}"; do
+    [[ -z "$_ws" ]] && continue
+    [[ -d "$_ws" ]] || continue
+    _ws_abs="$(cd "$_ws" && pwd -P)"
+    case "$START_DIR/" in
+        "$_ws_abs"/*)
+            WORKSPACE="$_ws_abs"
+            break ;;
+    esac
+done
+
+if [[ -z "$WORKSPACE" ]]; then
+    # Not under any configured workspace — no thread to resolve.
     exit 1
 fi
-WORKSPACE="$(cd "$WORKSPACE" && pwd -P)"
 
 # --- Walk up from $START_DIR, looking for a workstream dir ------------------
 #
 # A workstream dir is exactly: <WORKSPACE>/projects/<project>/workstreams/<name>
 # We walk up until we find a directory whose path matches that shape, OR we
 # leave the workspace subtree.
-
-# If we're not under the workspace at all, there's no thread to resolve.
-case "$START_DIR/" in
-    "$WORKSPACE"/*) : ;;
-    *) exit 1 ;;
-esac
 
 current="$START_DIR"
 workstream_dir=""
@@ -103,34 +118,58 @@ fi
 rel_workstream="${workstream_dir#$WORKSPACE/}"
 expected_thread_id="claude-code:$rel_workstream"
 
-# Extract the thread_id value. Accept formats like:
+# Extract a single thread_id-style field value. Accepts both spaced and
+# unspaced forms, trims surrounding whitespace. Empty string if not present.
+#
+# Example matches (for FIELD=thread_id):
 #   thread_id: claude-code:projects/foo/workstreams/bar
 #   thread_id:claude-code:projects/foo/workstreams/bar
-# Trim surrounding whitespace.
-actual_thread_id="$(
-    awk -F: '
-        /^[[:space:]]*thread_id[[:space:]]*:/ {
+extract_field() {
+    local field="$1"
+    awk -v f="$field" '
+        $0 ~ "^[[:space:]]*" f "[[:space:]]*:" {
             sub(/^[^:]*:[[:space:]]*/, "", $0)
             gsub(/[[:space:]]+$/, "", $0)
             print
             exit
         }
     ' "$brief"
-)"
+}
 
-if [[ -z "$actual_thread_id" ]]; then
-    echo "resolve-thread: BRIEF.md has no thread_id: $brief" >&2
-    echo "resolve-thread: expected: $expected_thread_id" >&2
+# Resolution accepts two binding forms:
+#
+#   1. Primary binding — `thread_id: claude-code:projects/<p>/workstreams/<w>`
+#      The workstream is "owned" by Claude Code; thread_id is canonical.
+#
+#   2. Dual binding — `thread_id` belongs to another platform (Slack, Discord,
+#      Telegram, etc.) where humans collaborate, and a sibling field
+#      `thread_id_claude_code: claude-code:projects/<p>/workstreams/<w>`
+#      anchors the Claude Code adapter. Used when one workstream spans a
+#      human-comms surface and an agent-ops surface.
+#
+# Either field matching the canonical `claude-code:` form for this directory
+# is a successful bind. The framework spec (COMMUNICATION.md) only requires
+# a single `thread_id`; `thread_id_claude_code` is this adapter's escape
+# hatch for cross-platform workstreams.
+
+primary_tid="$(extract_field thread_id)"
+cc_tid="$(extract_field thread_id_claude_code)"
+
+if [[ -z "$primary_tid" && -z "$cc_tid" ]]; then
+    echo "resolve-thread: BRIEF.md has no thread_id or thread_id_claude_code: $brief" >&2
+    echo "resolve-thread: expected one of them to equal: $expected_thread_id" >&2
     exit 2
 fi
 
-if [[ "$actual_thread_id" != "$expected_thread_id" ]]; then
-    echo "resolve-thread: thread_id mismatch in $brief" >&2
-    echo "  expected: $expected_thread_id" >&2
-    echo "  found:    $actual_thread_id" >&2
-    echo "  This usually means the workstream was moved or scaffolded elsewhere." >&2
-    echo "  Stop and ask the human — never guess." >&2
-    exit 2
+if [[ "$primary_tid" == "$expected_thread_id" || "$cc_tid" == "$expected_thread_id" ]]; then
+    echo "$workstream_dir"
+    exit 0
 fi
 
-echo "$workstream_dir"
+echo "resolve-thread: thread_id mismatch in $brief" >&2
+echo "  expected (in thread_id or thread_id_claude_code): $expected_thread_id" >&2
+[[ -n "$primary_tid" ]] && echo "  thread_id:              $primary_tid" >&2
+[[ -n "$cc_tid"      ]] && echo "  thread_id_claude_code:  $cc_tid" >&2
+echo "  This usually means the workstream was moved or scaffolded elsewhere." >&2
+echo "  Stop and ask the human — never guess." >&2
+exit 2

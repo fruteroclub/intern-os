@@ -67,7 +67,13 @@ fi
 
 # --- Read context files -----------------------------------------------------
 
-ws_rel="${workstream_dir#${INTERNOS_WORKSPACE%/}/}"
+# Derive a display string of the form `<workspace-name>/projects/<project>/workstreams/<name>`
+# without depending on which entry of $INTERNOS_WORKSPACE matched — works for
+# single- and multi-workspace setups alike.
+proj_suffix="${workstream_dir##*/projects/}"
+workspace_root="${workstream_dir%/projects/*}"
+workspace_name="$(basename "$workspace_root")"
+ws_rel="${workspace_name}/projects/${proj_suffix}"
 
 # BRIEF identity header — first ~12 lines, which contain the YAML-ish id block.
 brief_header=""

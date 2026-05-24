@@ -392,8 +392,10 @@ for project_dir in "$PROJECTS_DIR"/*/; do
 "
                 ((ROLLOUT_UNBOUND_COUNT++)) || true
             else
-                # Validate format: should be platform:id
-                if [[ "$thread_id" =~ ^[a-z]+:.+ ]]; then
+                # Validate format: should be platform:id. Platform names may
+                # contain hyphens (e.g. `claude-code`) — keep in sync with the
+                # --workstream-mode check, which already allows `[a-z-]+`.
+                if [[ "$thread_id" =~ ^[a-z-]+:.+ ]]; then
                     platform="${thread_id%%:*}"
                     id_part="${thread_id#*:}"
 

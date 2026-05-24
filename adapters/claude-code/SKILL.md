@@ -43,6 +43,25 @@ The script:
 
 `<workspace>` is set via the `INTERNOS_WORKSPACE` environment variable — required, no implicit default. Point it at the directory that contains your `projects/` directory.
 
+**Multiple workspaces.** `INTERNOS_WORKSPACE` is PATH-style: colon-separate multiple workspace roots when each represents a distinct org / operating-system surface. Resolution walks the list in order and picks the first workspace that is an ancestor of `$PWD`. Example:
+
+```
+export INTERNOS_WORKSPACE="$HOME/workspaces/frutero:$HOME/workspaces/poktalabs"
+```
+
+Each workspace is independent: its own `projects/` tree, its own project-level `AGENTS.md`, its own workstream directories. There is no cross-workspace resolution — `$PWD` belongs to exactly one workspace at a time, and the isolation doctrine applies across workspaces just as it does across projects. The `thread_id` is canonical relative to its workspace, so a workstream at `<frutero>/projects/foo/workstreams/bar` and one at `<poktalabs>/projects/foo/workstreams/bar` are different threads despite identical canonical thread_ids — resolution is anchored to `$PWD`, not the thread_id alone.
+
+**Dual binding (cross-platform workstreams).** The framework's `COMMUNICATION.md` only specifies a single `thread_id` per workstream, but a workstream often spans two surfaces: a human-comms thread (Slack/Discord/Telegram) and an agent-ops adapter (Claude Code). When that happens, keep the primary `thread_id` as whichever platform the humans collaborate on, and add a sibling `thread_id_claude_code:` field carrying the canonical `claude-code:projects/<project>/workstreams/<name>` value:
+
+```yaml
+---
+thread_id: slack:C0B38H2J1R6:1778202295.870079
+thread_id_claude_code: claude-code:projects/mi-pase/workstreams/daily-pricing-pipeline
+---
+```
+
+The resolver accepts either field — whichever matches the canonical form for the current directory binds the thread. Use `thread_id_claude_code` only when the primary `thread_id` belongs to another platform; when Claude Code *is* the primary surface, put the canonical value directly in `thread_id` and omit the override.
+
 **Mismatch handling.** If the script exits 2, do not proceed and do not patch the file silently. Tell the human what was expected vs. found, and ask whether the workstream was moved, copied, or scaffolded by hand. Quietly fixing thread_id values is exactly the kind of "helpful guess" that corrupts the binding model.
 
 ## Operating protocol
