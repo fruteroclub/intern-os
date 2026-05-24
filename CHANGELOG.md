@@ -2,6 +2,60 @@
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
 
+## v0.5.0-alpha.0 — 2026-05-23
+
+Alpha release. Bundles four contribution branches authored against `main` after v0.4.1: Claude Code multi-workspace + dual-binding adapter, three-tier git-tracking convention, Transfer Modules packaging standard (spec v1.0 + v1.1 with the `engagement-delivery` type), and a spec stub for project-level shared docs + TM export. Three of the four ship implementation; the fourth (shared-docs) is spec-only and lands as an alpha-tagged design artifact for review. Authored and validated locally before the alpha tag — see "Validation" below. No breaking changes for solo-workspace single-binding users.
+
+### New features
+
+- **Claude Code multi-workspace + dual-binding adapter.** `INTERNOS_WORKSPACE` now accepts a PATH-style colon-separated list of workspace roots, so one Claude Code install can resolve workstreams across `agencia/`, `poktalabs/`, `frutero/`, etc. without per-shell switching. The resolver walks each root in declaration order. Dual-binding: BRIEF.md may declare both `thread_id:` and a `thread_id_claude_code:` fallback — the resolver accepts the fallback when the primary `thread_id` belongs to another platform (e.g. an `internal:` design thread still resolves under Claude Code). Sync-check's workspace-scan thread_id regex now accepts hyphens in platform names (`claude-code` was previously flagged invalid). Touches `adapters/claude-code/{SKILL.md, scripts/resolve-thread.sh, scripts/session-start.sh}` and `intern-os/scripts/sync-check.sh`.
+
+- **Three-tier git-tracking convention.** New spec `docs/specs/git-tracking.md` establishes the workspace-repo / project-repo / `code/` clones layering: the project repo holds state (BRIEF/STATUS/DECISIONS/TICK/workstreams) and contains a `code/` subdir whose contents are opaque to the parent. Ships `templates/git/workspace.gitignore` and `templates/git/project.gitignore` as allowlist-style ignores so nested code clones remain self-managed without leaking into the project repo's history. Lived application: internOS itself moved from `poktalabs/projects/research/intern-os/` to a first-class project `poktalabs/projects/intern-os/` under this convention (2026-05-19).
+
+- **Transfer Modules (TM) packaging standard — spec v1.0 + v1.1.** Formalizes TMs as portable, scoped context capsules that move workstream state between agents and environments. Spec v1.0 (`docs/specs/transfer-modules.md`) defines the base structure: `SKILL.md`, `references/{TM.yml, IMPORT.md, REDACTION_REPORT.md}`, `scripts/verify_tm.sh`, and a typed `payload/`. Spec v1.1 adds the `internOS.engagement-delivery` TM type — for delivering a frozen engagement context to a receiving team — with `payload/{source-snapshot, runtime, updates}`, an `apply_to_target.sh` script (one-field-per-line parser, rewritten for robustness), and `references/{APPLY.md, EXPORT_MANIFEST.md, RETURN.md}`. Ships `templates/tm/` and `templates/tm/engagement-delivery/` as starting structures. Portable verifier (`templates/tm/scripts/verify_tm.sh`) is POSIX + sha256 only, zero runtime deps. Verified end-to-end against the live `method-lab-engine-delivery` TM.
+
+- **Shared docs + TM export contract — spec only.** `docs/specs/shared-docs-and-tm-export.md` introduces project-level `docs/` as the home for shared documents and external-system artifact snapshots that drive project state (e.g. `/office-hours` design docs), plus a TM-export contract extension that resolves workstream `RESOURCES.md` references into `<workstream>/docs/` at export time. Motivated by scaffolding the Nubia project, which surfaced the gap (no home for cross-workstream docs, no portability contract for external-artifact snapshots, no LLM-Wiki indexability guarantees). **No implementation in this alpha** — template updates, `.gitignore` allowlist for `docs/`, and TM-export tooling are deferred to a follow-up. Spec lands tagged for design review.
+
+### Updated files
+
+- `intern-os/VERSION` — 0.4.1 → 0.5.0-alpha.0
+- `intern-os/SKILL.md` — `version:` 0.4.1 → 0.5.0-alpha.0
+- `adapters/claude-code/SKILL.md` — multi-workspace + dual-binding documentation
+- `adapters/claude-code/scripts/resolve-thread.sh` — colon-separated `INTERNOS_WORKSPACE` walk; `thread_id_claude_code:` fallback
+- `adapters/claude-code/scripts/session-start.sh` — multi-workspace surface in preload context
+- `intern-os/scripts/sync-check.sh` — hyphen-platform regex fix in workspace-scan thread_id validation
+- `docs/specs/git-tracking.md` — **new**: three-tier git-tracking convention
+- `docs/specs/transfer-modules.md` — **new**: TM standard spec v1.0 + v1.1
+- `docs/specs/shared-docs-and-tm-export.md` — **new**: spec stub (no implementation)
+- `templates/git/{workspace,project}.gitignore` — **new**: allowlist ignores
+- `templates/tm/{SKILL.md, README.md, references/, scripts/}` — **new**: base TM template
+- `templates/tm/engagement-delivery/{SKILL.md, README.md, references/, scripts/}` — **new**: engagement-delivery TM template
+- `CHANGELOG.md` — this entry
+
+### Validation
+
+Validated against this machine's live workspaces before the alpha tag:
+
+- Resolver walks colon-separated `INTERNOS_WORKSPACE` and resolves workstreams under multiple workspace roots (exit 0 for in-scope, silent exit 1 for out-of-scope).
+- `sync-check` workspace sweep accepts `claude-code:` thread_ids and recognizes mixed-platform projects without false-positive warnings.
+- `sync-check --workstream` mode runs clean against the alpha workstream.
+- Portable TM verifier (`templates/tm/scripts/verify_tm.sh`) passes against the live `method-lab-engine-delivery` TM; byte-identical to the verifier shipped inside that TM.
+- Hook scripts (`session-start.sh`, `session-end.sh`) match the hooks declared in `adapters/claude-code/hooks/settings.json`.
+
+### Compatibility
+
+- **Solo-workspace single-binding usage unchanged.** Existing single-path `INTERNOS_WORKSPACE` values continue to work — the resolver treats `INTERNOS_WORKSPACE=/path/to/workspace` and `INTERNOS_WORKSPACE=/path/to/workspace` (no colon) identically.
+- **Workstreams without `thread_id_claude_code:` keep their previous resolution behavior.** The fallback is opt-in per workstream.
+- **TM standard is additive.** Existing workstreams without a TM keep working; the standard only applies when a TM is exported.
+- **Git-tracking convention is documentation.** No tooling enforces it; existing project layouts continue to work.
+- **No upgrade required for existing installs** unless you want the new resolver behavior. To upgrade: re-run the install per `adapters/claude-code/SETUP.md`.
+
+### Known limitations (deferred to v0.5.0 stable or later)
+
+- Shared-docs convention (IOS-5) ships as a spec stub only. Template updates, `.gitignore` allowlist for `docs/`, and TM-export resolver work are outstanding. Implementation lands in a follow-up alpha or in v0.5.0 stable.
+- TM-export tooling does not yet automate the snapshot-into-`<workstream>/docs/` step the shared-docs spec describes.
+- `session-start.sh` `tick-md` task discovery does not yet surface frontmatter-tagged tasks in TICK.md (pre-existing in v0.4.x; orthogonal to this release).
+
 ## v0.4.1 — 2026-05-13
 
 DX patch. Addresses [#21](https://github.com/fruteroclub/intern-os/issues/21). Installed skill now carries forward version/source metadata so agents and humans can tell what's running and where it came from. No breaking changes.
