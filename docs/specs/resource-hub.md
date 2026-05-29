@@ -1,14 +1,28 @@
 # Spec: Resource Hub
 
-version: 0.1
+version: 0.2
 status: draft
 created: 2026-05-28
+updated: 2026-05-29
 supersedes: n/a
 related: open-source-projects-library.md
 
 ## Purpose
 
-The Resource Hub is a set of flat Markdown registry files at `~/workspaces/` that give any agent or human a single-load reference for what tools, skills, and knowledge sources are available across all workspaces. Each file covers one resource type. Loading the relevant file(s) is enough to answer "what do we have?" without traversing workspace trees.
+The Resource Hub is a dedicated `~/workspaces/resources/` workspace that gives any agent or human a single-load reference for what tools, skills, and knowledge sources are available across all workspaces. The `resources/` directory is itself an internOS workspace — it has its own `AGENTS.md` and is indexed by gbrain. Each registry file covers one resource type. Loading the relevant file(s) is enough to answer "what do we have?" without traversing workspace trees.
+
+## Canonical location
+
+The `resources/` workspace lives at `~/workspaces/resources/` — always at the internOS home root level, sibling to the other workspaces. It is not project-specific.
+
+```
+~/workspaces/
+  resources/
+    AGENTS.md      ← workspace identity + usage guide
+    LIBRARY.md     ← opensrc cache registry
+    SKILLS.md      ← agent skills registry
+    VAULTS.md      ← knowledge vaults registry
+```
 
 ## Registry files
 

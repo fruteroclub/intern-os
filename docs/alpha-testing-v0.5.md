@@ -35,6 +35,7 @@ YYYY-MM-DD · <handle> · <feature> · <finding> [ok | gap | bug | regression]
 | 2026-05-28 | mel | open-source-projects-library | LIBRARY.md location should be `~/workspaces/LIBRARY.md` not `~/.opensrc/` | fixed |
 | 2026-05-28 | mel | resource-hub | scope expanded OSPL → Resource Hub (LIBRARY+SKILLS+VAULTS); template applied to poktalabs device; 3 live files in place | ok |
 | 2026-05-28 | mel | resource-hub | prior-art audit surfaced 3 parallel implementations (aibus-os resources-hub, dnai-brain OSPL, dnai-brain skills-tracking-system) — all independent, no shared standard; internOS Resource Hub is the canonical fix | ok |
+| 2026-05-29 | mel | resource-hub | canonical location promoted from `~/workspaces/*.md` root files to `~/workspaces/resources/` dedicated workspace; resources/ treated as first-class internOS workspace with own AGENTS.md | ok |
 
 ## Notify list (for alpha.1 + stable ship)
 
