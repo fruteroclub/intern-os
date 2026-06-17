@@ -2,7 +2,9 @@
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
 
-## Unreleased
+## v0.5.0-alpha.1 — 2026-06-16
+
+Alpha point release within the `0.5.0` line. Adds two Claude Code adapter skills — `session-wrap` and `export-sessions` — making the claude-code adapter the first internOS adapter to ship more than one skill. Both are optional installs and Claude-Code-specific (gbrain / Claude memories / gstack); no changes to the platform-neutral core and no breaking changes.
 
 ### New features
 
@@ -16,6 +18,8 @@
 - `adapters/claude-code/skills/export-sessions/SKILL.md` — **new**: whole-project host-migration skill (judgment layer over the engine scripts)
 - `adapters/claude-code/scripts/export-sessions.sh`, `adapters/claude-code/scripts/import-sessions.sh` — **new**: the migration engine (bundle/encrypt + restore/decrypt, manifest-driven)
 - `adapters/claude-code/SETUP.md` — **new steps 5–6**: install the `session-wrap` and `export-sessions` companion skills, plus verification lines
+- `intern-os/VERSION` — 0.5.0-alpha.0 → 0.5.0-alpha.1
+- `intern-os/SKILL.md` — `version:` 0.5.0-alpha.0 → 0.5.0-alpha.1
 - `CHANGELOG.md` — this entry
 
 ## v0.5.0-alpha.0 — 2026-05-23
