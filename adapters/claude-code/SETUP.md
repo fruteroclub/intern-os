@@ -88,6 +88,45 @@ cp adapters/claude-code/CLAUDE.md <your-project>/CLAUDE.md
 
 If the project already has a `CLAUDE.md`, append the contents instead — Claude Code reads the whole file as project instructions.
 
+### 5. Install the `session-wrap` companion skill (optional)
+
+internOS bundles a companion skill, **`session-wrap`** — the curated, human-judgment half of
+session-end (the hooks in step 3 are the deterministic half). It synthesizes the session's
+decisions/learnings/bugs into gbrain, updates the active workstream's STATUS/DECISIONS/TICK,
+saves durable memories, and writes a dated pick-up checkpoint before a `/clear` or compact. It is
+Claude-Code-specific (it relies on gbrain, Claude memories, and the SessionEnd breadcrumb), which
+is why it ships under this adapter rather than the platform-neutral core. Install it as its own
+skill:
+
+```bash
+REPO=$(pwd)   # or wherever you've cloned intern-os
+cp -R "$REPO/adapters/claude-code/skills/session-wrap" ~/.claude/skills/session-wrap
+```
+
+Invoke it with `/session-wrap` (or just ask to "wrap up" / "save and clear") at a session
+boundary. Skip this step if you don't use gbrain — the rest of the adapter works without it.
+
+### 6. Install the `export-sessions` skill (optional)
+
+internOS also bundles **`export-sessions`** — a whole-project host-migration command. It bundles
+the four stores that track a project (internOS repo(s) via `git bundle`, Claude Code sessions +
+memories, gstack artifacts, gbrain pages) into one gpg-encrypted archive, then restores it on
+another internOS-native host (`import-sessions`). Like `session-wrap` it ships under this adapter,
+because it moves Claude Code + gbrain + gstack state. Install the skill plus its engine scripts:
+
+```bash
+REPO=$(pwd)   # or wherever you've cloned intern-os
+cp -R "$REPO/adapters/claude-code/skills/export-sessions" ~/.claude/skills/export-sessions
+cp "$REPO/adapters/claude-code/scripts/export-sessions.sh" \
+   "$REPO/adapters/claude-code/scripts/import-sessions.sh" ~/.claude/skills/intern-os/scripts/
+chmod +x ~/.claude/skills/intern-os/scripts/export-sessions.sh \
+         ~/.claude/skills/intern-os/scripts/import-sessions.sh
+```
+
+Invoke with `/export-sessions` to migrate a project to another internOS-native host. The bundle is
+gpg-AES-256 encrypted by default — carry the passphrase separately from the archive. Skip if you
+don't use gbrain/gstack.
+
 ---
 
 ## Isolated-session handoff
@@ -131,6 +170,8 @@ test -x ~/.claude/skills/intern-os/scripts/resolve-thread.sh && echo "resolver: 
 test -x ~/.claude/skills/intern-os/scripts/session-start.sh && echo "session-start: ok"
 test -x ~/.claude/skills/intern-os/scripts/session-end.sh && echo "session-end: ok"
 test -f ~/.claude/skills/intern-os/scripts/sync-check.sh && echo "sync-check: ok"
+test -f ~/.claude/skills/session-wrap/SKILL.md && echo "session-wrap: ok"   # only if step 5 ran
+test -f ~/.claude/skills/export-sessions/SKILL.md && echo "export-sessions: ok"   # only if step 6 ran
 
 # 2. Resolver runs (should exit 1 here unless cwd is in a workstream)
 ~/.claude/skills/intern-os/scripts/resolve-thread.sh; echo "resolver exit: $?"

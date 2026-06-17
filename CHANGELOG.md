@@ -2,6 +2,22 @@
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
 
+## Unreleased
+
+### New features
+
+- **`session-wrap` companion skill bundled in the Claude Code adapter.** internOS now ships a second Claude Code skill alongside the core `intern-os` skill: `session-wrap`, the curated human-judgment half of session-end (the existing `SessionEnd` hook is the deterministic half). It synthesizes a session's decisions / learnings / bugs / commitments, records them to gbrain (`add_timeline_entry` / `put_page`, never a raw import), updates the active workstream's STATUS/DECISIONS/journal/TICK, saves durable Claude memories, and writes a dated cold-start pick-up checkpoint under the project's `docs/checkpoints/` before a `/clear` or compact — ending on a continue-vs-clear prompt. Lives under the **claude-code adapter** rather than the platform-neutral core because its mechanism (gbrain, Claude memories, the `~/.claude/gbrain-session-queue.jsonl` breadcrumb) is Claude-Code-specific. This makes the claude-code adapter the first internOS adapter to ship more than one skill. Optional install (adapter SETUP.md step 5); skip it if you don't use gbrain.
+
+- **`export-sessions` skill + engine for whole-project host migration.** A third Claude Code adapter skill, `export-sessions`, with its engine scripts (`scripts/export-sessions.sh` + `import-sessions.sh`), exports an entire internOS project's tracking state — internOS repo(s) via `git bundle` (incl. unpushed commits + the gitignored `journals/`), Claude Code session transcripts + memories, gstack artifacts, and gbrain pages (markdown, re-embedded on import) — into one gpg-AES-256-encrypted bundle, then restores it on another internOS-native host. Path-derived slugs are remapped on import; code subrepos are recorded for clone-from-remote (not bundled) to keep the archive lean. Broader than a Transfer Module: it carries session history + agent memory, which TMs deliberately don't. Like `session-wrap` it ships under the **claude-code adapter** (it moves Claude Code + gbrain + gstack state). Optional install (adapter SETUP.md step 6).
+
+### Updated files
+
+- `adapters/claude-code/skills/session-wrap/SKILL.md` — **new**: bundled companion skill (gains a `repo:` provenance field)
+- `adapters/claude-code/skills/export-sessions/SKILL.md` — **new**: whole-project host-migration skill (judgment layer over the engine scripts)
+- `adapters/claude-code/scripts/export-sessions.sh`, `adapters/claude-code/scripts/import-sessions.sh` — **new**: the migration engine (bundle/encrypt + restore/decrypt, manifest-driven)
+- `adapters/claude-code/SETUP.md` — **new steps 5–6**: install the `session-wrap` and `export-sessions` companion skills, plus verification lines
+- `CHANGELOG.md` — this entry
+
 ## v0.5.0-alpha.0 — 2026-05-23
 
 Alpha release. Bundles four contribution branches authored against `main` after v0.4.1: Claude Code multi-workspace + dual-binding adapter, three-tier git-tracking convention, Transfer Modules packaging standard (spec v1.0 + v1.1 with the `engagement-delivery` type), and a spec stub for project-level shared docs + TM export. Three of the four ship implementation; the fourth (shared-docs) is spec-only and lands as an alpha-tagged design artifact for review. Authored and validated locally before the alpha tag — see "Validation" below. No breaking changes for solo-workspace single-binding users.
