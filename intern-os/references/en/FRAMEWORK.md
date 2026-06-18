@@ -1,6 +1,6 @@
 # internOS — Workstreams Framework
 
-*Version: 0.4.0 | Date: 2026-05-11 | Status: v0.4.0 — Claude Code lifecycle adapter, isolated-session handoff, shared-thread inbox projects*
+*Version: 0.5.0-alpha.2 | Date: 2026-06-18 | Status: alpha — adds workspaces-container support (one gateway, many workspaces)*
 
 ---
 
@@ -43,6 +43,8 @@ thread_id: discord:1491150845675438110
 4. Never resolve by fuzzy matching, keyword similarity, or path proximity
 
 **Source of truth:** `BRIEF.md` is the source of truth for thread-to-workstream binding. The derived registry at `projects/REGISTRY.md` provides operational lookup but is never authoritative — regenerate it with `generate-registry.sh`.
+
+**Single workspace vs. workspaces container:** the configured workspace path (`internos.workspace_path` in Hermes, `INTERNOS_WORKSPACE` in Claude Code) may be **either** a single workspace (a directory that directly contains `projects/`) **or** a workspaces container — a directory whose immediate children are each workspaces (canonically named `workspaces`, e.g. `~/.hermes/workspaces`, `~/workspaces`). Detection is structural, not name-based: `<path>/projects/` present → single workspace; absent but `<path>/*/projects/` present → container. In container mode, resolution scans `<container>/*/projects/*/workstreams/*/BRIEF.md` — the same exact-match rule, only over a wider set, since `thread_id` is globally unique. A container groups independent workspaces without merging them; the isolation doctrine applies across workspaces exactly as across projects, and new projects/workstreams are created inside a chosen child workspace, never at the container root.
 
 ### 3. Runtime layer
 

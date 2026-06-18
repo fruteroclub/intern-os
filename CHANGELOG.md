@@ -2,6 +2,29 @@
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
 
+## v0.5.0-alpha.2 — 2026-06-18
+
+Alpha point release within the `0.5.0` line. Brings the **workspaces-container** model to the Hermes adapter — the gateway-side analogue of the Claude Code PATH-style multi-workspace resolver shipped in v0.5.0-alpha.0. One Hermes gateway can now operate across several independent workspaces by pointing `internos.workspace_path` at a top-level container (canonically `<any-path>/workspaces`). Backward-compatible: a path that directly contains `projects/` is still a single workspace and behaves exactly as before.
+
+### New features
+
+- **Workspaces container support (Hermes-side, framework-wide).** `internos.workspace_path` (Hermes) / `INTERNOS_WORKSPACE` (Claude Code) may now point at a **workspaces container** — a directory whose immediate children are each workspaces (each with its own `projects/`) — in addition to a single workspace. Detection is **structural, not name-based**: `<path>/projects/` present → single workspace; absent but `<path>/*/projects/` present → container. Resolution in container mode scans `<container>/*/projects/*/workstreams/*/BRIEF.md` by exact `thread_id` (globally unique, so the match is authoritative across workspaces); the matching rule is unchanged, only the search set widens. The isolation doctrine applies across workspaces just as across projects, and new projects/workstreams are always created inside a chosen child workspace, never at the container root.
+
+### Updated files
+
+- `intern-os/SKILL.md` — `version:` 0.5.0-alpha.1 → 0.5.0-alpha.2; `metadata.hermes.config` description for `internos.workspace_path` now states it accepts a workspace **or** a container; new "Single workspace vs. workspaces container" subsection under the resolution layer; container note on the activation scaffold; tooling bullets note container-awareness
+- `intern-os/scripts/sync-check.sh` — v0.5.0; accepts a container path (iterates every child workspace) and enforces `thread_id` uniqueness **across** the whole container; per-workspace headers; container-aware summary; single-workspace + `--workstream` modes unchanged
+- `intern-os/scripts/generate-registry.sh` — v0.5.0; container mode generates one `projects/REGISTRY.md` per child workspace plus a container-level index at `<container>/REGISTRY.md`
+- `adapters/hermes/SETUP.md` — documents the container option (with structure diagram), the `skills.config.internos.workspace_path` injection note, and a container verification step
+- `intern-os/references/{en,es}/FRAMEWORK.md` — resolution-layer subsection on single workspace vs. container (EN + ES parity); version header bump
+- `intern-os/VERSION` — 0.5.0-alpha.1 → 0.5.0-alpha.2
+- `CHANGELOG.md` — this entry
+
+### Compatibility
+
+- **No breaking changes.** Single-workspace installs (path with its own `projects/`) detect as before and behave identically; container behavior only activates when the path has no `projects/` of its own but its children do.
+- **No Hermes-core change required.** Hermes already injects `skills.config.internos.workspace_path` verbatim into the skill payload; container support lives entirely in the framework skill, scripts, and docs.
+
 ## v0.5.0-alpha.1 — 2026-06-16
 
 Alpha point release within the `0.5.0` line. Adds two Claude Code adapter skills — `session-wrap` and `export-sessions` — making the claude-code adapter the first internOS adapter to ship more than one skill. Both are optional installs and Claude-Code-specific (gbrain / Claude memories / gstack); no changes to the platform-neutral core and no breaking changes.
