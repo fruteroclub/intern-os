@@ -1,6 +1,6 @@
 # internOS — Framework de Workstreams
 
-*Versión: 0.4.0 | Fecha: 2026-05-11 | Estado: v0.4.0 — Adaptador de ciclo de vida Claude Code, handoff de sesión aislada, proyectos inbox de thread compartido*
+*Versión: 0.5.0-alpha.2 | Fecha: 2026-06-18 | Estado: alpha — agrega soporte de contenedor de workspaces (un gateway, múltiples workspaces)*
 
 ---
 
@@ -43,6 +43,8 @@ thread_id: discord:1491150845675438110
 4. Nunca resolver por coincidencia difusa, similitud de palabras clave, o proximidad de ruta
 
 **Fuente de verdad:** `BRIEF.md` es la fuente de verdad para la vinculación thread-workstream. El registro derivado en `projects/REGISTRY.md` proporciona búsqueda operacional pero nunca es autoritativo — regénéralo con `generate-registry.sh`.
+
+**Workspace único vs. contenedor de workspaces:** la ruta de workspace configurada (`internos.workspace_path` en Hermes, `INTERNOS_WORKSPACE` en Claude Code) puede ser **o** un workspace único (un directorio que contiene `projects/` directamente) **o** un contenedor de workspaces — un directorio cuyos hijos inmediatos son cada uno workspaces (canónicamente llamado `workspaces`, p. ej. `~/.hermes/workspaces`, `~/workspaces`). La detección es estructural, no por nombre: `<ruta>/projects/` presente → workspace único; ausente pero `<ruta>/*/projects/` presente → contenedor. En modo contenedor, la resolución escanea `<contenedor>/*/projects/*/workstreams/*/BRIEF.md` — la misma regla de coincidencia exacta, solo sobre un conjunto más amplio, dado que `thread_id` es globalmente único. Un contenedor agrupa workspaces independientes sin fusionarlos; la doctrina de aislamiento aplica entre workspaces igual que entre proyectos, y los nuevos proyectos/workstreams se crean dentro de un workspace hijo elegido, nunca en la raíz del contenedor.
 
 ### 3. Capa de runtime
 

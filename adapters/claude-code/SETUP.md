@@ -66,6 +66,14 @@ echo 'export INTERNOS_WORKSPACE="$HOME/workspace"' >> ~/.zshrc
 
 (Substitute whatever directory holds your `projects/` subdir.) Both the skill instructions and the resolver script read this variable.
 
+You can also point it at a **workspaces container** (a directory whose children are each workspaces, canonically `~/workspaces`) — the resolver expands it to its child workspaces, so one entry covers a whole multi-workspace setup:
+
+```bash
+echo 'export INTERNOS_WORKSPACE="$HOME/workspaces"' >> ~/.zshrc
+```
+
+PATH-style colon-separated lists still work and may mix containers and single workspaces.
+
 If `INTERNOS_WORKSPACE` is unset when the resolver runs, it exits with code 3 and a clear error rather than guessing.
 
 ### 3. Install the lifecycle hooks (strongly recommended)

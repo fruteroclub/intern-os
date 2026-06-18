@@ -3,7 +3,9 @@
 This project uses internOS. Workstreams live under
 `$INTERNOS_WORKSPACE/projects/<project>/workstreams/<name>/`. Set
 `INTERNOS_WORKSPACE` to the directory that contains your `projects/`
-directory — there is no implicit default. Each workstream is a long-running
+directory — there is no implicit default. It may be a single workspace, a
+colon-separated PATH-style list, or a workspaces container (a directory whose
+children are each workspaces, canonically `~/workspaces`). Each workstream is a long-running
 *thread*; each Claude Code conversation is a *session* inside that thread.
 `/resume` continues the thread with a new session.
 

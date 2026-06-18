@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 #
-# sync-check.sh — internOS workspace health check (v0.4.0)
+# sync-check.sh — internOS workspace health check (v0.5.0)
 #
 # Scans all projects and workstreams in an internOS workspace and reports
 # mismatches between filesystem, thread_ids, BRIEF.md identity fields,
 # and tick.md tasks.
+#
+# The <workspace-path> may be a single workspace (a directory that directly
+# contains projects/) OR a workspaces container (a directory whose immediate
+# children are each workspaces, canonically named "workspaces"). Given a
+# container, every child workspace is scanned and thread_id uniqueness is
+# enforced across the whole container.
 #
 # Validates:
 #   - PROJECT.md and TICK.md existence per project
@@ -165,12 +171,29 @@ if [[ -n "$WORKSTREAM_PATH" ]]; then
     exit 0
 fi
 
-# --- Workspace mode (existing behavior) -------------------------------------
+# --- Workspace mode (single workspace OR workspaces container) --------------
+#
+# Detection is structural, not name-based:
+#   - <path>/projects exists                  → single workspace
+#   - <path>/projects absent, but >=1 child   → workspaces container; each
+#     <path>/*/projects exists                  such child is a workspace
 
-PROJECTS_DIR="$WORKSPACE/projects"
+WORKSPACES=()
+IS_CONTAINER=false
 
-if [[ ! -d "$PROJECTS_DIR" ]]; then
-    echo "Error: $PROJECTS_DIR does not exist"
+if [[ -d "$WORKSPACE/projects" ]]; then
+    WORKSPACES=("$WORKSPACE")
+else
+    for child in "$WORKSPACE"/*/; do
+        [[ -d "${child}projects" ]] && WORKSPACES+=("${child%/}")
+    done
+    if [[ ${#WORKSPACES[@]} -gt 0 ]]; then
+        IS_CONTAINER=true
+    fi
+fi
+
+if [[ ${#WORKSPACES[@]} -eq 0 ]]; then
+    echo "Error: $WORKSPACE has no projects/ and no immediate child contains projects/" >&2
     exit 2
 fi
 
@@ -245,15 +268,34 @@ check_tick_tag() {
 # --- Main scan ---------------------------------------------------------------
 
 if $ROLLOUT_MODE; then
-    echo "internOS Sync Check (v0.4.0) — Rollout Mode"
+    echo "internOS Sync Check (v0.5.0) — Rollout Mode"
 else
-    echo "internOS Sync Check (v0.4.0)"
+    echo "internOS Sync Check (v0.5.0)"
 fi
-echo "Workspace: $WORKSPACE"
+if $IS_CONTAINER; then
+    echo "Workspaces container: $WORKSPACE (${#WORKSPACES[@]} workspaces)"
+else
+    echo "Workspace: $WORKSPACE"
+fi
 echo "$(date -u '+%Y-%m-%d %H:%M UTC')"
 echo "========================================"
 
-for project_dir in "$PROJECTS_DIR"/*/; do
+# WS_DISPLAY prefixes owner/rollout labels in container mode so the same
+# project name in two different workspaces is never conflated (empty in
+# single-workspace mode → behavior unchanged).
+WS_DISPLAY=""
+for WS_ROOT in "${WORKSPACES[@]}"; do
+    PROJECTS_DIR="$WS_ROOT/projects"
+    if $IS_CONTAINER; then
+        workspace_name=$(basename "$WS_ROOT")
+        WS_DISPLAY="${workspace_name}::"
+        echo ""
+        echo "########################################"
+        echo "Workspace: $workspace_name  ($WS_ROOT)"
+        echo "########################################"
+    fi
+
+  for project_dir in "$PROJECTS_DIR"/*/; do
     [[ -d "$project_dir" ]] || continue
 
     project_name=$(basename "$project_dir")
@@ -388,7 +430,7 @@ for project_dir in "$PROJECTS_DIR"/*/; do
             if [[ -z "$thread_id" ]]; then
                 warn "thread_id is empty or missing in BRIEF.md"
                 ((project_issues++)) || true
-                ROLLOUT_UNBOUND="${ROLLOUT_UNBOUND}${project_name}/${ws_name} → BRIEF.md
+                ROLLOUT_UNBOUND="${ROLLOUT_UNBOUND}${WS_DISPLAY}${project_name}/${ws_name} → BRIEF.md
 "
                 ((ROLLOUT_UNBOUND_COUNT++)) || true
             else
@@ -440,7 +482,7 @@ for project_dir in "$PROJECTS_DIR"/*/; do
                         esac
 
                         if $project_shared_threads \
-                           && [[ "$dup_project" == "$project_name" ]] \
+                           && [[ "$dup_project" == "${WS_DISPLAY}${project_name}" ]] \
                            && [[ -n "$project_shared_platforms" ]] \
                            && ! $is_thread_native \
                            && [[ ",${project_shared_platforms}," == *",${platform_lc},"* ]]; then
@@ -460,12 +502,12 @@ for project_dir in "$PROJECTS_DIR"/*/; do
                         fi
                     else
                         SEEN_THREAD_IDS="${SEEN_THREAD_IDS}|${tid_key}|"
-                        SEEN_THREAD_OWNERS="${SEEN_THREAD_OWNERS}|${tid_key}|${project_name}/${ws_name}|"
+                        SEEN_THREAD_OWNERS="${SEEN_THREAD_OWNERS}|${tid_key}|${WS_DISPLAY}${project_name}/${ws_name}|"
                     fi
                 else
                     warn "thread_id format invalid: '$thread_id' (expected platform:id)"
                     ((project_issues++)) || true
-                    ROLLOUT_UNBOUND="${ROLLOUT_UNBOUND}${project_name}/${ws_name} → invalid format '${thread_id}'
+                    ROLLOUT_UNBOUND="${ROLLOUT_UNBOUND}${WS_DISPLAY}${project_name}/${ws_name} → invalid format '${thread_id}'
 "
                     ((ROLLOUT_UNBOUND_COUNT++)) || true
                 fi
@@ -495,7 +537,7 @@ for project_dir in "$PROJECTS_DIR"/*/; do
                 missing_identity="${missing_identity} created"
             fi
             if [[ -n "$missing_identity" ]]; then
-                ROLLOUT_INCOMPLETE="${ROLLOUT_INCOMPLETE}${project_name}/${ws_name} → missing:${missing_identity}
+                ROLLOUT_INCOMPLETE="${ROLLOUT_INCOMPLETE}${WS_DISPLAY}${project_name}/${ws_name} → missing:${missing_identity}
 "
                 ((ROLLOUT_INCOMPLETE_COUNT++)) || true
             fi
@@ -533,7 +575,7 @@ for project_dir in "$PROJECTS_DIR"/*/; do
             else
                 warn "No task tagged '$ws_name' in TICK.md"
                 ((project_issues++)) || true
-                ROLLOUT_MISSING_TAGS="${ROLLOUT_MISSING_TAGS}${project_name}/${ws_name} → no task tagged '${ws_name}' in TICK.md
+                ROLLOUT_MISSING_TAGS="${ROLLOUT_MISSING_TAGS}${WS_DISPLAY}${project_name}/${ws_name} → no task tagged '${ws_name}' in TICK.md
 "
                 ((ROLLOUT_MISSING_TAGS_COUNT++)) || true
             fi
@@ -542,13 +584,18 @@ for project_dir in "$PROJECTS_DIR"/*/; do
 
     echo ""
     echo "  $project_name: $project_ws workstream(s), $project_issues issue(s)"
+  done
 done
 
 # --- Summary -----------------------------------------------------------------
 
 echo ""
 echo "========================================"
-echo "Summary: $TOTAL_PROJECTS project(s), $TOTAL_WORKSTREAMS workstream(s), $TOTAL_ISSUES issue(s), $TOTAL_NOTES note(s)"
+if $IS_CONTAINER; then
+    echo "Summary: ${#WORKSPACES[@]} workspace(s), $TOTAL_PROJECTS project(s), $TOTAL_WORKSTREAMS workstream(s), $TOTAL_ISSUES issue(s), $TOTAL_NOTES note(s)"
+else
+    echo "Summary: $TOTAL_PROJECTS project(s), $TOTAL_WORKSTREAMS workstream(s), $TOTAL_ISSUES issue(s), $TOTAL_NOTES note(s)"
+fi
 
 if $ROLLOUT_MODE; then
     echo ""

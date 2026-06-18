@@ -1,7 +1,7 @@
 ---
 name: intern-os
 description: internOS Workstreams framework. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
-version: 0.5.0-alpha.1
+version: 0.5.0-alpha.2
 repo: https://github.com/fruteroclub/intern-os
 prerequisites:
   commands: [tick]
@@ -13,9 +13,9 @@ metadata:
     related_skills: []
     config:
       - key: internos.workspace_path
-        description: Path to the internOS workspace where projects/ lives
+        description: Path to a single internOS workspace (contains projects/) OR a workspaces container whose children are workspaces (canonically named "workspaces")
         default: "~/.hermes/workspace"
-        prompt: internOS workspace directory
+        prompt: internOS workspace or workspaces-container directory
 ---
 
 # internOS — Workstreams
@@ -111,6 +111,23 @@ Resolution must be exact, deterministic, and non-heuristic.
 4. Never resolve by fuzzy matching, keyword similarity, or path proximity
 
 `BRIEF.md` is the source of truth for thread-to-workstream binding. The derived registry at `projects/REGISTRY.md` provides operational lookup but is never authoritative — regenerate with `generate-registry.sh`.
+
+#### Single workspace vs. workspaces container
+
+`internos.workspace_path` (Hermes) / `INTERNOS_WORKSPACE` (Claude Code) may point at **either**:
+
+- a **single workspace** — a directory that directly contains `projects/`; or
+- a **workspaces container** — a directory whose immediate children are each workspaces (every child has its own `projects/`). Canonically named `workspaces` (e.g. `~/.hermes/workspaces`, `~/workspaces`). One gateway can then serve several independent workspaces.
+
+**Detection is structural, not name-based:**
+- If `<path>/projects/` exists → `<path>` is a single workspace.
+- Else if any immediate child `<path>/*/projects/` exists → `<path>` is a container, and each such child is a workspace.
+
+**Resolution in a container.** Resolve by exact `thread_id` across every workspace in the container — scan `<container>/*/projects/*/workstreams/*/BRIEF.md`. `thread_id` is globally unique (one thread → one workstream), so a single match is authoritative regardless of which workspace it lives in; the owning workspace is whichever child the match resolves under. A container only **widens the search set** — the exact / deterministic / non-heuristic matching rule is unchanged.
+
+**Isolation still holds.** A container groups independent workspaces; it does not merge them. Don't read across workspaces (or projects) except to resolve the one workstream bound to the active thread. Cross-workspace synthesis must be explicit and human-requested.
+
+**Creating things in a container.** New projects and workstreams are always created **inside a specific workspace** (`<container>/<workspace>/projects/...`), never at the container root (which has no `projects/`). When the target workspace is ambiguous, ask which one before scaffolding.
 
 ### Runtime layer
 
@@ -208,6 +225,8 @@ mkdir -p [workspace]/projects/$PROJECT/workstreams/$WS/docs
 touch [workspace]/projects/$PROJECT/workstreams/$WS/{BRIEF.md,STATUS.md,MEMORY.md,DECISIONS.md,STAKEHOLDERS.md,RESOURCES.md}
 ```
 
+> In a workspaces container, `[workspace]` is the chosen child workspace (`<container>/<workspace>`), never the container root. Ask which workspace if it's ambiguous.
+
 Add the thread ID to BRIEF.md (mandatory):
 ```
 thread_id: [platform]:[thread ID]
@@ -270,8 +289,8 @@ Schema: `schemas/handoff-v1.yaml`. Verifier: `scripts/verify-handoff.sh`.
 The resolution, runtime, recovery, and isolation rules above are **doctrine for agents to follow** — they depend on agents reading and respecting these instructions. They are not mechanically enforced by tooling.
 
 What **is** validated by shipped tooling:
-- `sync-check.sh` — validates file presence, `thread_id` format and uniqueness, BRIEF.md identity fields, STATUS.md / MEMORY.md size limits. Use `--rollout` for a prioritized action list.
-- `generate-registry.sh` — generates derived workstream registry at `projects/REGISTRY.md`
+- `sync-check.sh` — validates file presence, `thread_id` format and uniqueness, BRIEF.md identity fields, STATUS.md / MEMORY.md size limits. Accepts a single workspace **or** a workspaces container (iterates every child workspace and enforces `thread_id` uniqueness across the whole container). Use `--rollout` for a prioritized action list.
+- `generate-registry.sh` — generates derived workstream registry at `projects/REGISTRY.md`. Given a container, writes one registry per child workspace plus a container-level index.
 - `checkpoint-reminder.sh` — detects stale STATUS.md files
 - `verify-handoff.sh` — verifies a handoff manifest against the four named binding checks (workstream_path, BRIEF.md, thread_id match, required load paths)
 - `tick.md` — enforces task claim/release coordination

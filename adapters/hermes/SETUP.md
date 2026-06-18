@@ -1,6 +1,6 @@
 # SETUP — Hermes Agent Adapter
 
-*internOS v0.3.3 | 2026-05-07*
+*internOS v0.5.0 | 2026-06-18*
 
 Hermes Agent-specific setup for the internOS Workstreams framework.
 
@@ -44,9 +44,26 @@ Tracked upstream at [nousresearch/hermes-agent](https://github.com/nousresearch/
 
 Run `hermes setup` (or edit `~/.hermes/config.yaml`) and set:
 
-- `internos.workspace_path` — path to the internOS workspace where `projects/` lives. Default: `~/.hermes/workspace`.
+- `internos.workspace_path` — path to **either** a single internOS workspace (a directory that directly contains `projects/`) **or** a workspaces container (a directory whose immediate children are each workspaces). Default: `~/.hermes/workspace`.
 
 Hermes injects this value into the skill payload at activation as a `[Skill config: ...]` block, so the agent always has the resolved absolute path. No need to hardcode the workspace location anywhere.
+
+> **Note (Hermes config layout):** the value Hermes injects is read from `skills.config.internos.workspace_path`. A bare top-level `internos.workspace_path` key is **not** read by Hermes — keep the value under `skills.config`.
+
+### Workspaces container (serve multiple workspaces from one gateway)
+
+Point `internos.workspace_path` at a **workspaces container** — canonically a directory named `workspaces` (e.g. `~/.hermes/workspaces`, `~/workspaces`) — to let one Hermes gateway operate across several independent workspaces:
+
+```text
+~/.hermes/workspaces/          ← container (internos.workspace_path)
+├── agencia/   └── projects/…  ← workspace
+├── frutero/   └── projects/…  ← workspace
+└── poktalabs/ └── projects/…  ← workspace
+```
+
+Detection is **structural**: if the configured path has its own `projects/` it is a single workspace; otherwise, if its immediate children each contain `projects/`, it is a container. The agent resolves a thread by exact `thread_id` across `<container>/*/projects/*/workstreams/*/BRIEF.md` — `thread_id` is globally unique, so the match is authoritative regardless of which workspace it lives in. Isolation still holds: a container groups independent workspaces, it does not merge them. New projects/workstreams are always created **inside a chosen child workspace**, never at the container root.
+
+`sync-check.sh` and `generate-registry.sh` both accept a container path (see their `--help`/header docs).
 
 ---
 
@@ -147,9 +164,10 @@ hermes:
 
 - [ ] `hermes skills list | grep intern-os` shows the skill
 - [ ] `which tick` returns a path
-- [ ] Configured workspace exists with `projects/` directory
+- [ ] Configured path is either a workspace with `projects/`, or a container whose children have `projects/`
 - [ ] At least one project initialized with `tick init`
 - [ ] `/intern-os` activates in a session and the payload includes `[Skill config: internos.workspace_path = ...]`
+- [ ] (container) `bash intern-os/scripts/sync-check.sh <container-path>` lists every child workspace
 
 ---
 

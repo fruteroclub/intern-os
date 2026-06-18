@@ -16,15 +16,21 @@
 #   resolve-thread.sh <pwd> [<workspace>]   # explicit args (testing)
 #
 # Env:
-#   INTERNOS_WORKSPACE  One or more workspace roots, each containing a `projects/`
-#                       subdirectory (REQUIRED — no default). PATH-style:
-#                       colon-separated list. Resolution iterates the list in order
-#                       and picks the first workspace that is an ancestor of $PWD.
+#   INTERNOS_WORKSPACE  One or more roots (REQUIRED — no default). PATH-style:
+#                       colon-separated list. Each root is EITHER a single
+#                       workspace (directly contains `projects/`) OR a
+#                       workspaces container (its immediate children each
+#                       contain `projects/`, canonically named "workspaces").
+#                       Containers are expanded to their child workspaces;
+#                       resolution then picks the first workspace that is an
+#                       ancestor of $PWD.
 #
 #                       Single workspace:
 #                           export INTERNOS_WORKSPACE="$HOME/workspaces/frutero"
-#                       Multiple workspaces (one per org, for example):
+#                       Several workspaces, explicit:
 #                           export INTERNOS_WORKSPACE="$HOME/workspaces/frutero:$HOME/workspaces/poktalabs"
+#                       Workspaces container (resolves across every child):
+#                           export INTERNOS_WORKSPACE="$HOME/workspaces"
 #
 # Output (stdout, on success): absolute path to the active workstream directory
 # Exit codes:
@@ -63,21 +69,43 @@ if [[ ! -d "$START_DIR" ]]; then
 fi
 START_DIR="$(cd "$START_DIR" && pwd -P)"
 
-# Find the first configured workspace that is an ancestor of START_DIR.
-# Missing workspaces on disk are skipped silently — the skill stays quiet in
-# unrelated sessions and only barks when the human actually tries to operate.
+# Expand each configured root into concrete workspace roots, then find the
+# first that is an ancestor of START_DIR. Missing roots on disk are skipped
+# silently — the skill stays quiet in unrelated sessions and only barks when
+# the human actually tries to operate.
+#
+# Each entry may be EITHER a single workspace (directly contains projects/) OR
+# a workspaces container (its immediate children each contain projects/, e.g.
+# `~/workspaces`). Detection is structural, identical to sync-check.sh and
+# generate-registry.sh: a container expands to its child workspaces. The
+# canonical thread_id stays relative to the matched workspace, never the
+# container, so all downstream matching is unchanged.
 WORKSPACE=""
 IFS=':' read -r -a _ws_candidates <<< "$WORKSPACE_LIST"
+
+_expanded=()
 for _ws in "${_ws_candidates[@]}"; do
     [[ -z "$_ws" ]] && continue
     [[ -d "$_ws" ]] || continue
     _ws_abs="$(cd "$_ws" && pwd -P)"
-    case "$START_DIR/" in
-        "$_ws_abs"/*)
-            WORKSPACE="$_ws_abs"
-            break ;;
-    esac
+    if [[ -d "$_ws_abs/projects" ]]; then
+        _expanded+=("$_ws_abs")                       # single workspace
+    else
+        for _child in "$_ws_abs"/*/; do               # workspaces container
+            [[ -d "${_child}projects" ]] && _expanded+=("${_child%/}")
+        done
+    fi
 done
+
+if [[ ${#_expanded[@]} -gt 0 ]]; then
+    for _ws_abs in "${_expanded[@]}"; do
+        case "$START_DIR/" in
+            "$_ws_abs"/*)
+                WORKSPACE="$_ws_abs"
+                break ;;
+        esac
+    done
+fi
 
 if [[ -z "$WORKSPACE" ]]; then
     # Not under any configured workspace — no thread to resolve.

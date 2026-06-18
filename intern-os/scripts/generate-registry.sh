@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# generate-registry.sh — internOS workstream registry generator (v0.3.1)
+# generate-registry.sh — internOS workstream registry generator (v0.5.0)
 #
 # Scans all projects and workstreams in an internOS workspace, reads BRIEF.md
 # and STATUS.md (canonical sources), and generates a derived registry at
@@ -8,6 +8,11 @@
 #
 # The registry is derived, never authoritative. BRIEF.md is the source of truth
 # for thread-to-workstream binding. Re-run this script to refresh.
+#
+# The <workspace-path> may be a single workspace (contains projects/) OR a
+# workspaces container (children are workspaces, canonically named
+# "workspaces"). Given a container, a registry is generated per child
+# workspace and a container-level index is written at <container>/REGISTRY.md.
 #
 # Usage: bash generate-registry.sh <workspace-path>
 # Exit:  0 on success, 2 on usage error
@@ -23,11 +28,51 @@ if [[ $# -lt 1 ]]; then
 fi
 
 WORKSPACE="$1"
+
+# --- Container mode ---------------------------------------------------------
+#
+# Structural detection (matches sync-check.sh): a path with no projects/ of its
+# own, but whose immediate children each contain projects/, is a workspaces
+# container. Generate one registry per child workspace + a container index.
+
+if [[ ! -d "$WORKSPACE/projects" ]]; then
+    CONTAINER_WORKSPACES=()
+    for child in "$WORKSPACE"/*/; do
+        [[ -d "${child}projects" ]] && CONTAINER_WORKSPACES+=("${child%/}")
+    done
+
+    if [[ ${#CONTAINER_WORKSPACES[@]} -gt 0 ]]; then
+        INDEX_FILE="$WORKSPACE/REGISTRY.md"
+        TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+        {
+            echo "# Workspaces Container Registry"
+            echo ""
+            echo "> **Derived index — do not edit manually.** One row per workspace."
+            echo "> Regenerate: \`bash intern-os/scripts/generate-registry.sh <container-path>\`"
+            echo "> Generated: $TIMESTAMP"
+            echo ""
+            echo "| Workspace | Workstreams | Registry |"
+            echo "|-----------|-------------|----------|"
+        } > "$INDEX_FILE"
+
+        for ws_root in "${CONTAINER_WORKSPACES[@]}"; do
+            bash "$0" "$ws_root"
+            ws_name=$(basename "$ws_root")
+            ws_count=$(find "$ws_root/projects" -mindepth 3 -maxdepth 3 -type d -path '*/workstreams/*' 2>/dev/null \
+                | grep -v '/archived' | wc -l | xargs)
+            echo "| $ws_name | $ws_count | \`$ws_name/projects/REGISTRY.md\` |" >> "$INDEX_FILE"
+        done
+
+        echo "Container index generated: $INDEX_FILE (${#CONTAINER_WORKSPACES[@]} workspaces)"
+        exit 0
+    fi
+fi
+
 PROJECTS_DIR="$WORKSPACE/projects"
 REGISTRY_FILE="$PROJECTS_DIR/REGISTRY.md"
 
 if [[ ! -d "$PROJECTS_DIR" ]]; then
-    echo "Error: $PROJECTS_DIR does not exist"
+    echo "Error: $PROJECTS_DIR does not exist (and no immediate child contains projects/)"
     exit 2
 fi
 
