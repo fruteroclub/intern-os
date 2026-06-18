@@ -4,11 +4,13 @@
 
 ## v0.5.0-alpha.2 — 2026-06-18
 
-Alpha point release within the `0.5.0` line. Brings the **workspaces-container** model to the Hermes adapter — the gateway-side analogue of the Claude Code PATH-style multi-workspace resolver shipped in v0.5.0-alpha.0. One Hermes gateway can now operate across several independent workspaces by pointing `internos.workspace_path` at a top-level container (canonically `<any-path>/workspaces`). Backward-compatible: a path that directly contains `projects/` is still a single workspace and behaves exactly as before.
+Alpha point release within the `0.5.0` line. Brings the **workspaces-container** model to **both** the Hermes and Claude Code adapters, unifying their multi-workspace handling on one structural definition. Point `internos.workspace_path` (Hermes) or `INTERNOS_WORKSPACE` (Claude Code) at a top-level container (canonically `<any-path>/workspaces`) and the adapter resolves across every child workspace. Backward-compatible: a path that directly contains `projects/` is still a single workspace and behaves exactly as before.
 
 ### New features
 
-- **Workspaces container support (Hermes-side, framework-wide).** `internos.workspace_path` (Hermes) / `INTERNOS_WORKSPACE` (Claude Code) may now point at a **workspaces container** — a directory whose immediate children are each workspaces (each with its own `projects/`) — in addition to a single workspace. Detection is **structural, not name-based**: `<path>/projects/` present → single workspace; absent but `<path>/*/projects/` present → container. Resolution in container mode scans `<container>/*/projects/*/workstreams/*/BRIEF.md` by exact `thread_id` (globally unique, so the match is authoritative across workspaces); the matching rule is unchanged, only the search set widens. The isolation doctrine applies across workspaces just as across projects, and new projects/workstreams are always created inside a chosen child workspace, never at the container root.
+- **Workspaces container support — framework-wide, both adapters.** `internos.workspace_path` (Hermes) / `INTERNOS_WORKSPACE` (Claude Code) may now point at a **workspaces container** — a directory whose immediate children are each workspaces (each with its own `projects/`) — in addition to a single workspace. Detection is **structural, not name-based**: `<path>/projects/` present → single workspace; absent but `<path>/*/projects/` present → container. Resolution in container mode scans `<container>/*/projects/*/workstreams/*/BRIEF.md` by exact `thread_id` (globally unique, so the match is authoritative across workspaces); the matching rule is unchanged, only the search set widens. The isolation doctrine applies across workspaces just as across projects, and new projects/workstreams are always created inside a chosen child workspace, never at the container root.
+
+- **Unified resolver model across adapters.** The Claude Code resolver (`resolve-thread.sh`) previously only accepted single-workspace roots in its PATH-style `INTERNOS_WORKSPACE` list; it now expands any container entry into its child workspaces before ancestor-matching `$PWD`. Containers and single workspaces may be mixed in the same colon-separated list. This is the same `<any-path>/workspaces` model and the same structural detection the Hermes adapter uses — so both adapters now describe multi-workspace setups identically. The canonical `thread_id` stays relative to the matched workspace, never the container.
 
 ### Updated files
 
@@ -16,6 +18,8 @@ Alpha point release within the `0.5.0` line. Brings the **workspaces-container**
 - `intern-os/scripts/sync-check.sh` — v0.5.0; accepts a container path (iterates every child workspace) and enforces `thread_id` uniqueness **across** the whole container; per-workspace headers; container-aware summary; single-workspace + `--workstream` modes unchanged
 - `intern-os/scripts/generate-registry.sh` — v0.5.0; container mode generates one `projects/REGISTRY.md` per child workspace plus a container-level index at `<container>/REGISTRY.md`
 - `adapters/hermes/SETUP.md` — documents the container option (with structure diagram), the `skills.config.internos.workspace_path` injection note, and a container verification step
+- `adapters/claude-code/scripts/resolve-thread.sh` — expands container entries in `INTERNOS_WORKSPACE` into child workspaces before ancestor-matching `$PWD`; bash-3.2-safe empty-array guard; updated Env docs
+- `adapters/claude-code/{SKILL.md, SETUP.md, CLAUDE.md}` — document the workspaces-container option alongside the existing PATH-style list
 - `intern-os/references/{en,es}/FRAMEWORK.md` — resolution-layer subsection on single workspace vs. container (EN + ES parity); version header bump
 - `intern-os/VERSION` — 0.5.0-alpha.1 → 0.5.0-alpha.2
 - `CHANGELOG.md` — this entry

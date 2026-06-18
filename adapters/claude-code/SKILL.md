@@ -41,13 +41,21 @@ The script:
 2. Reads BRIEF.md and verifies `thread_id` exactly equals `claude-code:projects/<project>/workstreams/<name>`.
 3. Prints the workstream path on success, or fails loudly on mismatch.
 
-`<workspace>` is set via the `INTERNOS_WORKSPACE` environment variable — required, no implicit default. Point it at the directory that contains your `projects/` directory.
+`<workspace>` is set via the `INTERNOS_WORKSPACE` environment variable — required, no implicit default. Point it at a single workspace (a directory that directly contains `projects/`) or at a workspaces container (see below).
 
 **Multiple workspaces.** `INTERNOS_WORKSPACE` is PATH-style: colon-separate multiple workspace roots when each represents a distinct org / operating-system surface. Resolution walks the list in order and picks the first workspace that is an ancestor of `$PWD`. Example:
 
 ```
 export INTERNOS_WORKSPACE="$HOME/workspaces/frutero:$HOME/workspaces/poktalabs"
 ```
+
+**Workspaces container.** Any entry may instead be a **container** — a directory whose immediate children are each workspaces (canonically named `workspaces`, e.g. `~/workspaces`, `~/.hermes/workspaces`). Detection is structural, not name-based: an entry that directly contains `projects/` is a single workspace; one whose children each contain `projects/` is a container and expands to those children. So a whole multi-workspace setup can be one entry:
+
+```
+export INTERNOS_WORKSPACE="$HOME/workspaces"   # resolves across every child workspace
+```
+
+This is the Claude Code analogue of the Hermes adapter's container support — the same `<any-path>/workspaces` model, the same structural detection. Mixed lists work too (`"$HOME/workspaces:$HOME/other/single-ws"`). The canonical `thread_id` stays relative to the matched workspace, never the container.
 
 Each workspace is independent: its own `projects/` tree, its own project-level `AGENTS.md`, its own workstream directories. There is no cross-workspace resolution — `$PWD` belongs to exactly one workspace at a time, and the isolation doctrine applies across workspaces just as it does across projects. The `thread_id` is canonical relative to its workspace, so a workstream at `<frutero>/projects/foo/workstreams/bar` and one at `<poktalabs>/projects/foo/workstreams/bar` are different threads despite identical canonical thread_ids — resolution is anchored to `$PWD`, not the thread_id alone.
 
