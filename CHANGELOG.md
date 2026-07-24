@@ -1,6 +1,32 @@
 # Changelog
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
+>
+> **v1.0.0 note:** this release reuses version numbers (`v1.0.0`) that already exist as tags from before the `0.x` alpha reset. That's deliberate — those old `v1.x` tags predate the alpha-status decision and were never battle-tested; this `v1.0.0` is the first release built directly from ~2 months of live daily-driver usage across multiple real workspaces and is treated as the actual first stable release.
+
+## v1.0.0 — 2026-07-24
+
+First stable release. Formalizes the **nested child project** pattern that has been running in production for ~2 months (e.g. `projects/club/club-app/workstreams/...`, `projects/devrel/nebius/workstreams/...`, `projects/godinez-ai/zeta-godin/workstreams/...`) but was never upstreamed — the Claude Code adapter only supported single-segment project names (`projects/<project>/workstreams/<name>`) until now. Also fixes two latent bugs in `generate-registry.sh` found while porting this support.
+
+### New features
+
+- **Nested child projects — Claude Code adapter.** `resolve-thread.sh` now matches `projects/<path-to-project>/workstreams/<name>` where `<path-to-project>` may be a single top-level project (`foo`) or a nested child project under a container (`club/club-app`, `devrel/nebius`). Previously only single-segment project names resolved; nested projects — already in real use — would fail resolution entirely under the shipped script.
+- **`generate-registry.sh` scans nested projects.** The main scan previously assumed every project was exactly one path segment below `projects/` and silently skipped any project nested deeper (a container directory like `club/` has no `workstreams/` of its own, so its child projects were never reached). It now locates project directories by walking to wherever a `workstreams/` directory actually is, at any depth.
+
+### Bug fixes
+
+- **`generate-registry.sh` thread_id validation rejected valid IDs.** The health-check regex (`^[a-z]+:.+`) didn't allow hyphens, so every `claude-code:`-prefixed thread_id (and any other hyphenated platform prefix) was flagged `invalid thread_id format` and the workstream marked `unbound` even when correctly bound. Fixed to `^[a-z-]+:.+`, matching the already-correct regex in `sync-check.sh`.
+- **`generate-registry.sh` container mode workstream count** used a fixed `-mindepth 3 -maxdepth 3` `find`, undercounting workspaces containing nested projects. Now walks to each `workstreams/` directory directly, same fix as the main scan.
+
+### Updated files
+
+- `adapters/claude-code/scripts/resolve-thread.sh` — nested-project regex + doc-string updates
+- `adapters/claude-code/scripts/session-start.sh` — doc-string updated to `<path-to-project>`
+- `adapters/claude-code/SKILL.md` — documents the nested child-project thread_id form; resolver description updated
+- `adapters/claude-code/CLAUDE.md` — same `<path-to-project>` wording fix
+- `adapters/claude-code/SETUP.md` — first `INTERNOS_WORKSPACE` example changed from `$HOME/workspace` (singular, inconsistent with the canonical `~/workspaces` container convention documented two paragraphs later) to `$HOME/workspaces/my-org`
+- `intern-os/scripts/generate-registry.sh` — nested-project scan + thread_id regex + container ws_count fixes
+- `intern-os/SKILL.md` — `version:` 0.5.0-alpha.2 → 1.0.0
 
 ## v0.5.0-alpha.2 — 2026-06-18
 

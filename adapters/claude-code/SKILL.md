@@ -23,6 +23,12 @@ The `thread_id` in BRIEF.md uses the canonical form:
 thread_id: claude-code:projects/<project>/workstreams/<name>
 ```
 
+For nested child projects under a container, include the full project path:
+
+```
+thread_id: claude-code:projects/<container>/<child-project>/workstreams/<name>
+```
+
 This is the working-directory-relative path under the configured workspace. It's the cheapest, most deterministic binding Claude Code can offer: no inference, no fuzzy matching.
 
 ## Resolution: pwd → workstream
@@ -37,8 +43,8 @@ Claude Code thread resolution is fully delegated to a small script. Always use i
 ```
 
 The script:
-1. Walks up from `$PWD` looking for `<workspace>/projects/<project>/workstreams/<name>`.
-2. Reads BRIEF.md and verifies `thread_id` exactly equals `claude-code:projects/<project>/workstreams/<name>`.
+1. Walks up from `$PWD` looking for `<workspace>/projects/<path-to-project>/workstreams/<name>`.
+2. Reads BRIEF.md and verifies `thread_id` exactly equals `claude-code:projects/<path-to-project>/workstreams/<name>`.
 3. Prints the workstream path on success, or fails loudly on mismatch.
 
 `<workspace>` is set via the `INTERNOS_WORKSPACE` environment variable — required, no implicit default. Point it at a single workspace (a directory that directly contains `projects/`) or at a workspaces container (see below).
@@ -151,8 +157,8 @@ These come from the framework-agnostic `intern-os/SKILL.md`. They apply unchange
 
 When the human says "discover project: X" or "activate workstream: X in project Y", follow the discovery / activation flows in `intern-os/SKILL.md`. The Claude Code specifics:
 
-- The new workstream directory must live at `<workspace>/projects/<project>/workstreams/<name>/`.
-- BRIEF.md `thread_id` must be `claude-code:projects/<project>/workstreams/<name>` — anything else will fail resolution.
+- The new workstream directory must live at `<workspace>/projects/<path-to-project>/workstreams/<name>/`.
+- BRIEF.md `thread_id` must be `claude-code:projects/<path-to-project>/workstreams/<name>` — anything else will fail resolution.
 - After scaffolding, verify by `cd`ing into the workstream and running `resolve-thread.sh` — it should print the path on the first try. If not, the binding is wrong; fix it before claiming any task.
 
 ## When NOT to load this skill

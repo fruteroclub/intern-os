@@ -3,9 +3,10 @@
 # resolve-thread.sh — Resolve the active workstream thread from pwd (Claude Code).
 #
 # Walks up from $PWD looking for an internOS workstream directory of the form
-# <workspace>/projects/<project>/workstreams/<workstream>/. If found, verifies
-# that BRIEF.md exists and its thread_id matches the expected canonical form
-# `claude-code:projects/<project>/workstreams/<workstream>`.
+# <workspace>/projects/<project-or-container/...>/<project>/workstreams/<workstream>/.
+# If found, verifies that BRIEF.md exists and its thread_id matches the
+# expected canonical form
+# `claude-code:projects/<path-to-project>/workstreams/<workstream>`.
 #
 # This is the Claude Code analogue of the Discord/Slack thread_id binding:
 # the working directory IS the thread. Resolution is exact and deterministic —
@@ -114,17 +115,21 @@ fi
 
 # --- Walk up from $START_DIR, looking for a workstream dir ------------------
 #
-# A workstream dir is exactly: <WORKSPACE>/projects/<project>/workstreams/<name>
-# We walk up until we find a directory whose path matches that shape, OR we
-# leave the workspace subtree.
+# A workstream dir is exactly:
+#   <WORKSPACE>/projects/<path-to-project>/workstreams/<name>
+#
+# <path-to-project> may be a simple top-level project (`foo`) or a nested child
+# project under a container (`club/club-app`, `devrel/nebius`). The canonical
+# thread_id is still relative to the workspace root. We walk up until we find
+# a directory whose path matches that shape, OR we leave the workspace subtree.
 
 current="$START_DIR"
 workstream_dir=""
 
 while [[ "$current" == "$WORKSPACE"/* ]]; do
-    # Match: <WORKSPACE>/projects/<project>/workstreams/<name>
+    # Match: <WORKSPACE>/projects/<path-to-project>/workstreams/<name>
     rel="${current#$WORKSPACE/}"
-    if [[ "$rel" =~ ^projects/[^/]+/workstreams/[^/]+$ ]]; then
+    if [[ "$rel" =~ ^projects/.+/workstreams/[^/]+$ ]]; then
         workstream_dir="$current"
         break
     fi

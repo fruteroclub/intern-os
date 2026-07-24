@@ -61,7 +61,7 @@ cp -R "$REPO/intern-os/references" "$DEST/references"
 `INTERNOS_WORKSPACE` is required — there is no implicit default. Point it at the directory that contains your `projects/` directory:
 
 ```bash
-echo 'export INTERNOS_WORKSPACE="$HOME/workspace"' >> ~/.zshrc
+echo 'export INTERNOS_WORKSPACE="$HOME/workspaces/my-org"' >> ~/.zshrc
 ```
 
 (Substitute whatever directory holds your `projects/` subdir.) Both the skill instructions and the resolver script read this variable.

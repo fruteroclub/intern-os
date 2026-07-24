@@ -58,7 +58,11 @@ if [[ ! -d "$WORKSPACE/projects" ]]; then
         for ws_root in "${CONTAINER_WORKSPACES[@]}"; do
             bash "$0" "$ws_root"
             ws_name=$(basename "$ws_root")
-            ws_count=$(find "$ws_root/projects" -mindepth 3 -maxdepth 3 -type d -path '*/workstreams/*' 2>/dev/null \
+            # variable-depth: a project may be nested under a container
+            # (projects/<container>/<child>/workstreams/<name>), not just
+            # top-level (projects/<project>/workstreams/<name>)
+            ws_count=$(find "$ws_root/projects" -type d -name workstreams 2>/dev/null \
+                | while IFS= read -r wd; do find "$wd" -mindepth 1 -maxdepth 1 -type d; done \
                 | grep -v '/archived' | wc -l | xargs)
             echo "| $ws_name | $ws_count | \`$ws_name/projects/REGISTRY.md\` |" >> "$INDEX_FILE"
         done
@@ -111,16 +115,18 @@ declare -a ROW_ISSUES=()
 
 # --- Main scan ---------------------------------------------------------------
 
-for project_dir in "$PROJECTS_DIR"/*/; do
-    [[ -d "$project_dir" ]] || continue
+# A project's workstreams live directly under a `workstreams/` dir at any
+# depth — `projects/<project>/workstreams/` (top-level) or
+# `projects/<container>/<child-project>/workstreams/` (nested child project).
+# `find -name workstreams` locates the project dir regardless of nesting depth;
+# `project_name` is then everything between PROJECTS_DIR and that dir, so a
+# nested project reads as `club/club-app` rather than just `club-app`.
+while IFS= read -r -d '' ws_dir; do
+    project_dir="$(dirname "$ws_dir")"
+    project_name="${project_dir#$PROJECTS_DIR/}"
 
-    project_name=$(basename "$project_dir")
-
-    # Skip archived projects and the REGISTRY.md file itself
-    [[ "$project_name" == "archived" ]] && continue
-
-    ws_dir="$project_dir/workstreams"
-    [[ -d "$ws_dir" ]] || continue
+    # Skip archived projects
+    [[ "$(basename "$project_dir")" == "archived" ]] && continue
 
     ((TOTAL_PROJECTS++)) || true
 
@@ -154,7 +160,7 @@ for project_dir in "$PROJECTS_DIR"/*/; do
 
             if [[ -z "$thread_id" ]]; then
                 issues+=("missing thread_id")
-            elif [[ ! "$thread_id" =~ ^[a-z]+:.+ ]]; then
+            elif [[ ! "$thread_id" =~ ^[a-z-]+:.+ ]]; then
                 issues+=("invalid thread_id format")
             fi
 
@@ -191,7 +197,7 @@ for project_dir in "$PROJECTS_DIR"/*/; do
         # --- Determine health ---
 
         health="healthy"
-        if [[ -z "$thread_id" || ! "$thread_id" =~ ^[a-z]+:.+ ]]; then
+        if [[ -z "$thread_id" || ! "$thread_id" =~ ^[a-z-]+:.+ ]]; then
             health="unbound"
             ((TOTAL_UNBOUND++)) || true
         elif [[ ${#issues[@]} -gt 0 ]]; then
@@ -217,7 +223,7 @@ for project_dir in "$PROJECTS_DIR"/*/; do
             ROW_ISSUES[$idx]=""
         fi
     done
-done
+done < <(find "$PROJECTS_DIR" -type d -name workstreams -print0)
 
 # --- Generate REGISTRY.md ---------------------------------------------------
 

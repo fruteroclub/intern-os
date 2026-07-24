@@ -1,7 +1,9 @@
 # internOS — Workstreams (Claude Code)
 
 This project uses internOS. Workstreams live under
-`$INTERNOS_WORKSPACE/projects/<project>/workstreams/<name>/`. Set
+`$INTERNOS_WORKSPACE/projects/<path-to-project>/workstreams/<name>/`, where
+`<path-to-project>` may be a top-level project (`foo`) or a nested child
+project under a container (`club/club-app`). Set
 `INTERNOS_WORKSPACE` to the directory that contains your `projects/`
 directory — there is no implicit default. It may be a single workspace, a
 colon-separated PATH-style list, or a workspaces container (a directory whose
@@ -32,8 +34,8 @@ If the hook is NOT installed, or you need to re-resolve mid-session, run:
   workstream subtree. Do nothing — don't search for one, don't load anything.
 - **Exit 2** → a workstream directory was found but `BRIEF.md` is missing or
   its `thread_id` doesn't match the canonical
-  `claude-code:projects/<project>/workstreams/<name>` form. Stop and ask the
-  human. Do not silently fix the file.
+  `claude-code:projects/<path-to-project>/workstreams/<name>` form. Stop and
+  ask the human. Do not silently fix the file.
 
 Resolution is exact and deterministic. Never resolve a workstream by fuzzy
 matching path fragments, similar names, or directory listings — if the

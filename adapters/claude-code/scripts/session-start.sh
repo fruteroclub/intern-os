@@ -54,7 +54,7 @@ emit_context() {
 if [[ $resolve_exit -eq 2 ]]; then
     emit_context "internOS: workstream binding is broken in the current working directory.
 
-\`resolve-thread.sh\` exited 2 — typically BRIEF.md is missing or its thread_id does not match the canonical \`claude-code:projects/<project>/workstreams/<name>\` form.
+\`resolve-thread.sh\` exited 2 — typically BRIEF.md is missing or its thread_id does not match the canonical \`claude-code:projects/<path-to-project>/workstreams/<name>\` form.
 
 Stop and ask the human what happened. Do not silently fix the file or start operating on a similarly-named workstream."
     exit 0
