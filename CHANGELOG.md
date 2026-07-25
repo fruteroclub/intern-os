@@ -1,12 +1,12 @@
 # Changelog
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
->
-> **v1.0.0 note:** this release reuses version numbers (`v1.0.0`) that already exist as tags from before the `0.x` alpha reset. That's deliberate — those old `v1.x` tags predate the alpha-status decision and were never battle-tested; this `v1.0.0` is the first release built directly from ~2 months of live daily-driver usage across multiple real workspaces and is treated as the actual first stable release.
 
 ## v1.0.0 — 2026-07-24
 
-First stable release. Formalizes the **nested child project** pattern that has been running in production for ~2 months (e.g. `projects/club/club-app/workstreams/...`, `projects/devrel/nebius/workstreams/...`, `projects/godinez-ai/zeta-godin/workstreams/...`) but was never upstreamed — the Claude Code adapter only supported single-segment project names (`projects/<project>/workstreams/<name>`) until now. Also fixes two latent bugs in `generate-registry.sh` found while porting this support.
+**⚠️ Supersedes an old `v1.0.0` tag.** This repo has a `v1.0.0` tag from 2026-03-27 (predating the `0.x` alpha-status reset above) that was never published as a GitHub Release and was never battle-tested — it was rushed. That old tag has been replaced; `v1.0.0` now points here. If you have anything (a clone, a cached tag SHA, a pinned dependency) referencing the old `v1.0.0` from before 2026-07-24, re-fetch — it pointed at different, untested code.
+
+First stable release, and the real one. Formalizes the **nested child project** pattern that has been running in production for ~2 months (e.g. `projects/club/club-app/workstreams/...`, `projects/devrel/nebius/workstreams/...`, `projects/godinez-ai/zeta-godin/workstreams/...`) but was never upstreamed — the Claude Code adapter only supported single-segment project names (`projects/<project>/workstreams/<name>`) until now. Also fixes two latent bugs in `generate-registry.sh` found while porting this support.
 
 ### New features
 
