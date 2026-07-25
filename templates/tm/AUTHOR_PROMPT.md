@@ -5,9 +5,8 @@ OpenClaw, Hermes, …) to author a Transfer Module (TM) Skill for a specific
 task/service — without needing the full `intern-os` skill installed on the
 authoring side.
 
-The prompt points the model at this repository's `v0.5.0-alpha.0` tag so the
-protocol it reads is frozen, even though the stable `v0.5.0` release has not
-landed yet.
+The prompt points the model at this repository's `v1.0.0` tag so the
+protocol it reads is frozen at the stable release.
 
 ---
 
@@ -38,18 +37,18 @@ task/service.
 - SOURCE_PATH on disk: <absolute path to the project/workstream/engagement folder>
 - AUTHOR: <name / email / handle>
 
-# Step 1 — Read the protocol (pinned to v0.5.0-alpha.0)
+# Step 1 — Read the protocol (pinned to v1.0.0)
 Fetch and read these files in order. Do NOT skip; they define the contract.
 
 1. Spec — rules, boundaries, frontmatter, manifest, lifecycle:
-   https://raw.githubusercontent.com/fruteroclub/intern-os/v0.5.0-alpha.0/docs/specs/transfer-modules.md
+   https://raw.githubusercontent.com/fruteroclub/intern-os/v1.0.0/docs/specs/transfer-modules.md
 2. Shared-docs + export rules (what may travel, redaction requirements,
    §6a heavy-asset RESOURCES convention):
-   https://raw.githubusercontent.com/fruteroclub/intern-os/v0.5.0-alpha.0/docs/specs/shared-docs-and-tm-export.md
+   https://raw.githubusercontent.com/fruteroclub/intern-os/v1.0.0/docs/specs/shared-docs-and-tm-export.md
 3. Base template (SKILL.md frontmatter + section conventions):
-   https://raw.githubusercontent.com/fruteroclub/intern-os/v0.5.0-alpha.0/templates/tm/SKILL.md
+   https://raw.githubusercontent.com/fruteroclub/intern-os/v1.0.0/templates/tm/SKILL.md
 4. Base template README (receiver-facing intro):
-   https://raw.githubusercontent.com/fruteroclub/intern-os/v0.5.0-alpha.0/templates/tm/README.md
+   https://raw.githubusercontent.com/fruteroclub/intern-os/v1.0.0/templates/tm/README.md
 5. References used by every TM:
    - TM.yml manifest:        .../templates/tm/references/TM.yml
    - IMPORT.md:              .../templates/tm/references/IMPORT.md
@@ -59,7 +58,7 @@ Fetch and read these files in order. Do NOT skip; they define the contract.
    - verify_tm.sh:           .../templates/tm/scripts/verify_tm.sh
 6. If TM_TYPE = internOS.engagement-delivery, ALSO read the engagement-delivery
    overlay (adds APPLY.md + apply_to_target.sh, replaces RETURN.md semantics):
-   https://raw.githubusercontent.com/fruteroclub/intern-os/v0.5.0-alpha.0/templates/tm/engagement-delivery/SKILL.md
+   https://raw.githubusercontent.com/fruteroclub/intern-os/v1.0.0/templates/tm/engagement-delivery/SKILL.md
    plus the sibling references/ and scripts/ under that directory.
 
 # Step 2 — Plan before writing
@@ -119,8 +118,8 @@ After generation:
    weren't sure whether to include).
 
 # Constraints
-- Pin all reads to tag v0.5.0-alpha.0 — do NOT follow the alpha/v0.5.0
-  branch, which may shift.
+- Pin all reads to tag v1.0.0 — do NOT follow the main branch, which may
+  shift.
 - The full intern-os skill is NOT installed on the receiver. Everything
   the receiver needs to act must live inside the TM directory itself.
 - If the spec and this prompt disagree, the spec wins — quote the section
@@ -135,6 +134,6 @@ After generation:
   `method-lab-engine-delivery-tm`): make sure the model picks up the
   `templates/tm/engagement-delivery/` overlay. Its `APPLY.md` +
   `apply_to_target.sh` replace the base `RETURN.md` flow.
-- **Pin to the tag, not the branch.** `alpha/v0.5.0` is mutable;
-  `v0.5.0-alpha.0` is frozen. When the stable `v0.5.0` ships, update the
-  pinned URLs here in a single sweep.
+- **Pin to the tag, not the branch.** `main` is mutable; `v1.0.0` is frozen.
+  When the next stable release ships, update the pinned URLs here in a
+  single sweep.

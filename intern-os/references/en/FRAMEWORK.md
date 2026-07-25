@@ -1,6 +1,6 @@
 # internOS — Workstreams Framework
 
-*Version: 0.5.0-alpha.2 | Date: 2026-06-18 | Status: alpha — adds workspaces-container support (one gateway, many workspaces)*
+*Version: 1.0.0 | Date: 2026-07-24 | Status: stable — adds nested child project support (projects/<container>/<child>/workstreams/<name>)*
 
 ---
 
