@@ -9,7 +9,11 @@
 #
 # What gets pre-loaded:
 #   - BRIEF.md identity header (thread_id, project, owner, etc.)
-#   - STATUS.md in full (≤10 lines by design — the heartbeat)
+#   - STATUS.md in full (≤10 lines by design — the heartbeat), CAPPED: above
+#     STATUS_LOAD_CAP lines only the head is loaded, plus an oversized-file
+#     flag telling Claude to trim it (context-hygiene-audit-2026-08-06.md —
+#     one workstream's STATUS.md reached 1,050 lines / 143 KB before this cap
+#     existed, and got read in full on every single session start).
 #   - Last 3 lines of SESSIONS.md (continuity from prior sessions)
 #   - Open tick.md tasks tagged with this workstream
 #   - Warnings written by the previous SessionEnd, if any
@@ -81,9 +85,22 @@ if [[ -f "$workstream_dir/BRIEF.md" ]]; then
     brief_header=$(head -12 "$workstream_dir/BRIEF.md")
 fi
 
+STATUS_LOAD_CAP=40   # lines; above this, load only the head + a flag instead of the whole file
+
 status=""
 if [[ -f "$workstream_dir/STATUS.md" ]]; then
-    status=$(cat "$workstream_dir/STATUS.md")
+    status_line_count=$(wc -l < "$workstream_dir/STATUS.md" | tr -d ' ')
+    if [[ "$status_line_count" -gt "$STATUS_LOAD_CAP" ]]; then
+        status=$(head -15 "$workstream_dir/STATUS.md")
+        status="${status}
+
+(STATUS.md is ${status_line_count} lines — over the ${STATUS_LOAD_CAP}-line load cap, so only the
+first 15 lines were loaded here. This file should be ≤10 lines by design; it likely has dated
+history that belongs in JOURNAL.md/SESSIONS.md. Run /session-wrap or /checkpoint to split it
+before it grows further — do not just keep appending.)"
+    else
+        status=$(cat "$workstream_dir/STATUS.md")
+    fi
 fi
 
 sessions_tail=""

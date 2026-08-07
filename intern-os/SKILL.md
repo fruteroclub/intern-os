@@ -160,12 +160,12 @@ When in a communication thread that has a workstream context:
 2. Load `AGENTS.md` from the project directory (if it exists)
 3. Read the workstream's files:
    - `BRIEF.md` — read in full (includes thread_id, project, identity)
-   - `STATUS.md` — read in full (must be ≤10 lines by design)
+   - `STATUS.md` — read in full (must be ≤10 lines by design; see **STATUS.md hygiene** below)
 4. Escalate to `MEMORY.md` (last 80 lines only), `DECISIONS.md`, `STAKEHOLDERS.md`, or `RESOURCES.md` only when the task requires it
 5. Check tasks: `tick list --tag [workstream-name]`
 6. Claim the task: `tick claim TASK-X @agent-name`
 7. Do the work
-8. Update STATUS.md at the end of the session
+8. Update STATUS.md at the end of the session — **replace the current-state fields in place, never append a dated section** (see **STATUS.md hygiene** below)
 9. If MEMORY.md exceeds 80 lines, consolidate — summary, not log. Target ≤50 lines.
 10. Complete or release the task: `tick done TASK-X @agent-name`
 
@@ -192,6 +192,15 @@ When in a communication thread that has a workstream context:
 - Detailed chronology goes in `docs/` notes, not MEMORY.md
 - If size grows beyond threshold: consolidate before ending the session, not after
 - `sync-check.sh` validates line count; agents are expected to self-enforce during sessions
+
+### STATUS.md hygiene
+
+STATUS.md is read in full by default every session (Tier 1) — its size is a recurring tax on every future session, not a one-time cost. Doctrine that isn't enforced drifts: one production workstream reached 1,050 lines / 143 KB before anyone noticed.
+
+- **Never append a dated `## YYYY-MM-DD` section.** Per-session narrative → `SESSIONS.md` (append-only, one line per session), where the adapter has one. Content-worthy narrative → the workstream's `journals/` layer, if the adapter has one.
+- **Always replace the current-state fields in place** — editing, not accumulating.
+- **Overflow archive:** `JOURNAL.md` in the workstream directory holds old STATUS narrative verbatim, on-demand only — never auto-loaded.
+- Adapters that pre-load STATUS.md at session start should cap that load (e.g. full file only under ~40 lines, else head + an oversized-file flag) so a bloated file costs a fixed amount, not an unbounded one — see the Claude Code adapter's `session-start.sh` for a reference implementation.
 
 ### Recovery doctrine
 
@@ -253,6 +262,7 @@ projects/[project]/workstreams/[name]/
 ├── DECISIONS.md     ← Key decisions log with date + rationale
 ├── STAKEHOLDERS.md  ← Relevant people and their role
 ├── RESOURCES.md     ← Artifact registry and where they live
+├── JOURNAL.md       ← Overflow archive of old STATUS narrative (on-demand, never auto-loaded)
 └── docs/            ← Working artifacts
 ```
 

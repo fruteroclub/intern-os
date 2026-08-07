@@ -83,7 +83,7 @@ The resolver accepts either field — whichever matches the canonical form for t
 When `resolve-thread.sh` returns a workstream path, follow the same protocol as any other internOS adapter:
 
 1. Read `BRIEF.md` in full (workstream identity + thread_id).
-2. Read `STATUS.md` in full (operational heartbeat, ≤10 lines by design).
+2. Read `STATUS.md` in full (operational heartbeat, ≤10 lines by design — see **STATUS.md hygiene** below; `session-start.sh` caps this load automatically if the file has bloated).
 3. Read project-level `AGENTS.md` from `<workspace>/projects/<project>/AGENTS.md` if it exists.
 4. Escalate to the on-demand files only when the task actually needs them:
    - `MEMORY.md` — last 80 lines (search on demand for older context).
@@ -96,7 +96,7 @@ When `resolve-thread.sh` returns a workstream path, follow the same protocol as 
 Before ending the session:
 
 1. Complete or release the task: `tick done TASK-X @claude-code` or `tick release TASK-X @claude-code`.
-2. Update `STATUS.md` (what was done, current phase, blockers). A blank STATUS.md makes the workstream invisible to the next session.
+2. Update `STATUS.md` **in place** — replace the current-state/next fields, never append a dated `## YYYY-MM-DD` section (see **STATUS.md hygiene** below). A blank STATUS.md makes the workstream invisible to the next session; a growing one makes every future session more expensive.
 3. If `MEMORY.md` exceeds 80 lines, consolidate — summary, not log. Target ≤50 lines.
 4. Append a one-line summary entry to `SESSIONS.md` (see below).
 
@@ -115,6 +115,23 @@ Entries are written automatically when the lifecycle hooks are installed (see be
 
 If the user `/resume`s a session and continues work, no new entry is needed unless meaningful new work happened — judgment call. Don't pad SESSIONS.md with empty resume markers.
 
+## STATUS.md hygiene (hard rule)
+
+STATUS.md is read in full on every session start by default — its size is a direct, recurring tax on every future session in this workstream, not a one-time cost. This has burned real budget: one workstream reached 1,050 lines / 143 KB before anyone noticed (see `context-hygiene-audit-2026-08-06.md`).
+
+- **Never append a dated `## YYYY-MM-DD` section to STATUS.md.** Per-session narrative belongs in `SESSIONS.md` (one line) or, for content-worthy sessions, the workstream's `journals/` layer — not STATUS.
+- **Always REPLACE the current-state / next fields in place.** Editing, not accumulating, is the only supported pattern.
+- **If STATUS.md is already over ~40 lines when you open it**, that's inherited bloat — move the dated/narrative content to `JOURNAL.md` (verbatim, in the workstream directory) before writing your update. Don't compound someone else's drift.
+- `session-start.sh` enforces a load-time backstop: above ~40 lines it loads only the first 15 lines plus an oversized-file flag, instead of the whole file. `sync-check.sh` separately warns at >15 content lines (the target signal) — that warning surfaces at the *next* SessionStart via `.internos-warnings`, so it can't prevent the read that already happened; the load cap is what actually bounds the cost.
+
+Canonical homes for history, so it stops leaking back into STATUS:
+- `STATUS.md` — current state only, target ≤10 lines, default-loaded every session.
+- `SESSIONS.md` — append-only, one line per session.
+- `docs/checkpoints/` — periodic dated cold-start maps (`/session-wrap`).
+- `JOURNAL.md` — overflow archive of old STATUS narrative, verbatim, on-demand only (never auto-loaded).
+- `DECISIONS.md` — load-bearing decisions, escalate on demand — watch its size too.
+- gbrain timeline — dated session summaries for semantic recall.
+
 ## Lifecycle hooks (strongly recommended)
 
 The adapter ships two hooks that do work the doctrine previously relied on Claude remembering. Install them once and the workstream is kept honest automatically.
@@ -124,7 +141,7 @@ The adapter ships two hooks that do work the doctrine previously relied on Claud
 When a session starts inside a workstream, `session-start.sh` injects a system reminder containing:
 
 - BRIEF.md identity header (thread_id, project, owner, created, last_updated)
-- STATUS.md in full
+- STATUS.md in full — capped: above ~40 lines it loads only the first 15 lines plus an oversized-file flag (see **STATUS.md hygiene** above)
 - The last 3 SESSIONS.md entries
 - Open tick.md tasks tagged with this workstream
 - Any `.internos-warnings` written by the previous SessionEnd

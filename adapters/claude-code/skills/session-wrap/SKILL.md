@@ -50,7 +50,11 @@ Don't pad. A session with one real decision gets one line. This synthesis feeds 
 ## Step 2 — internOS files (source of truth, on disk)
 
 For the active workstream:
-- **STATUS.md** — update "current state" + "next". Keep it short; it's a status, not a log.
+- **STATUS.md** — REPLACE the "current state" + "next" fields in place. **Never append a dated
+  `## YYYY-MM-DD` section** — STATUS is a heartbeat, not a log; per-session narrative belongs in
+  `SESSIONS.md` (one line) or `journals/` below. If STATUS.md is already over ~40 lines when you
+  open it, move the dated/narrative content to `JOURNAL.md` (verbatim, in the workstream
+  directory) before writing your update — don't compound inherited bloat.
 - **DECISIONS.md** — append load-bearing decisions (date, decision, why). Create if absent.
 - **journals/** — if the workstream has build-in-public / content value, invoke the
   **`content-machine/journaling`** skill to capture this session's signal (changes, learnings,
