@@ -100,8 +100,18 @@ TOTAL_WORKSTREAMS=0
 TOTAL_HEALTHY=0
 TOTAL_INCOMPLETE=0
 TOTAL_UNBOUND=0
+TOTAL_WORKTREES=0
 
 EXPECTED_FILES=(BRIEF.md STATUS.md MEMORY.md DECISIONS.md STAKEHOLDERS.md RESOURCES.md)
+
+# worktree.sh ships alongside this script; used to count worktrees per project.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+WORKTREE_SH="$SCRIPT_DIR/worktree.sh"
+
+# Projects that have a code/ container (for per-project worktree counts).
+declare -a WT_PROJECT_DIR=()
+declare -a WT_PROJECT_NAME=()
+declare -a WT_PROJECT_COUNT=()
 
 # Row data arrays
 declare -a ROW_PROJECT=()
@@ -129,6 +139,20 @@ while IFS= read -r -d '' ws_dir; do
     [[ "$(basename "$project_dir")" == "archived" ]] && continue
 
     ((TOTAL_PROJECTS++)) || true
+
+    # Count worktrees for this project (defensive: skip if no code/ container,
+    # no worktree.sh, or git unavailable — count stays 0, never errors out).
+    if [[ -d "$project_dir/code" && -x "$WORKTREE_SH" ]]; then
+        wt_count="$(bash "$WORKTREE_SH" list --count --project "$project_dir" 2>/dev/null || echo 0)"
+        [[ "$wt_count" =~ ^[0-9]+$ ]] || wt_count=0
+        if [[ "$wt_count" -gt 0 ]]; then
+            idx=${#WT_PROJECT_DIR[@]}
+            WT_PROJECT_DIR[$idx]="$project_dir"
+            WT_PROJECT_NAME[$idx]="$project_name"
+            WT_PROJECT_COUNT[$idx]="$wt_count"
+            TOTAL_WORKTREES=$((TOTAL_WORKTREES + wt_count))
+        fi
+    fi
 
     for ws_path in "$ws_dir"/*/; do
         [[ -d "$ws_path" ]] || continue
@@ -248,6 +272,7 @@ TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
 | Healthy | $TOTAL_HEALTHY |
 | Incomplete | $TOTAL_INCOMPLETE |
 | Unbound | $TOTAL_UNBOUND |
+| Worktrees | $TOTAL_WORKTREES |
 
 ---
 
@@ -260,6 +285,27 @@ HEADER
     for i in "${!ROW_PROJECT[@]}"; do
         echo "| ${ROW_PROJECT[$i]} | ${ROW_WORKSTREAM[$i]} | \`${ROW_THREAD_ID[$i]}\` | ${ROW_PHASE[$i]} | ${ROW_OWNER[$i]} | ${ROW_HEALTH[$i]} | \`${ROW_PATH[$i]}\` |"
     done
+
+    # --- Worktrees section ---
+
+    if [[ ${#WT_PROJECT_DIR[@]} -gt 0 ]]; then
+        cat <<'WT_HEADER'
+
+---
+
+## Worktrees
+
+Git worktrees for parallel/agent code work, by project. Full per-project detail
+(repo, branch, state, declaring workstream) lives in each `code/WORKTREES.md`.
+
+| Project | Worktrees | Ledger |
+|---------|-----------|--------|
+WT_HEADER
+
+        for i in "${!WT_PROJECT_DIR[@]}"; do
+            echo "| ${WT_PROJECT_NAME[$i]} | ${WT_PROJECT_COUNT[$i]} | \`projects/${WT_PROJECT_NAME[$i]}/code/WORKTREES.md\` |"
+        done
+    fi
 
     # --- Unbound section ---
 

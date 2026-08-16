@@ -1,6 +1,6 @@
 # internOS — Workstreams Framework
 
-*Version: 1.0.0 | Date: 2026-07-24 | Status: stable — adds nested child project support (projects/<container>/<child>/workstreams/<name>)*
+*Version: 1.1.0 | Date: 2026-08-16 | Status: stable — adds git-worktree support for code work (code/.worktrees/)*
 
 ---
 
@@ -94,7 +94,12 @@ projects/
 │   │   │   └── docs/
 │   │   └── bug-fix-y/
 │   │       └── ...
-│   └── docs/                ← project-level artifacts
+│   ├── docs/                ← project-level artifacts
+│   └── code/                ← code repos + worktrees (gitignored; optional)
+│       ├── README.md        ← declares the code repo layout
+│       ├── WORKTREES.md     ← derived worktree ledger (generated)
+│       ├── engine/          ← an independent code repo (own .git + remote)
+│       └── .worktrees/      ← git worktrees: code/.worktrees/<name>/
 └── project-beta/
     ├── PROJECT.md
     ├── AGENTS.md
@@ -605,7 +610,16 @@ These are reported as informational (INFO), not failures:
 
 | Output | Description |
 |--------|-------------|
-| `projects/REGISTRY.md` | Derived workstream registry with thread bindings and health status (all non-archived) |
+| `projects/REGISTRY.md` | Derived workstream registry with thread bindings and health status (all non-archived), plus a per-project worktree count |
+
+### Managed by `worktree.sh`
+
+| Output / action | Description |
+|--------|-------------|
+| `code/.worktrees/<name>/` | Git worktrees for parallel/agent code work — one linked worktree of a code repo per thread/lane. Created, listed, and pruned by the helper. |
+| `code/WORKTREES.md` | Derived per-project worktree ledger (repo, branch, state, declaring workstream). See `docs/specs/git-tracking.md`. |
+
+Prune is conservative: it never removes a worktree with a dirty tree or unpushed commits.
 
 ### Validated by `checkpoint-reminder.sh`
 

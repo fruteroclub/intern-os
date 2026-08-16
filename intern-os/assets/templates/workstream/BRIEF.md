@@ -7,6 +7,15 @@ owner:
 created:
 last_updated:
 
+<!-- Optional: git worktrees this workstream drives for code work. Each is a
+     linked worktree of a code repo, parked at code/.worktrees/<name>/. See
+     docs/specs/git-tracking.md. Create with intern-os/scripts/worktree.sh.
+worktrees:
+  - repo: <code-repo>            # e.g. app-monorepo
+    dir: code/.worktrees/<name>  # project-relative linked-worktree path
+    branch: <type>/<name>        # e.g. feat/<name>
+-->
+
 ## Objective
 
 <!-- What specific work is this? (verb + object) -->

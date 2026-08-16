@@ -8,6 +8,12 @@
 # expected canonical form
 # `claude-code:projects/<path-to-project>/workstreams/<workstream>`.
 #
+# It also resolves from inside a CODE WORKTREE: when $PWD is under
+# <workspace>/projects/<path-to-project>/code/.worktrees/<name>/, it resolves to
+# the workstream whose BRIEF.md `worktrees:` block declares that worktree
+# (exact match on the project-relative dir path). One declarer → that
+# workstream; more than one → exit 2 (ambiguous); none → exit 1.
+#
 # This is the Claude Code analogue of the Discord/Slack thread_id binding:
 # the working directory IS the thread. Resolution is exact and deterministic —
 # no fuzzy matching, no fallback, no guessing.
@@ -135,6 +141,39 @@ while [[ "$current" == "$WORKSPACE"/* ]]; do
     fi
     current="$(dirname "$current")"
 done
+
+# If not directly inside a workstream dir, check whether cwd is inside a code
+# worktree — projects/<path-to-project>/code/.worktrees/<name>/... — and resolve
+# to the workstream that DECLARES that worktree in its BRIEF.md `worktrees:`
+# block. Exact match on the declared project-relative dir path; deterministic,
+# no fuzzy matching. Zero declarers → no thread (exit 1); more than one →
+# ambiguous, stop and ask (exit 2).
+if [[ -z "$workstream_dir" ]]; then
+    rel="${START_DIR#$WORKSPACE/}"
+    if [[ "$rel" == projects/*/code/.worktrees/* ]]; then
+        project_rel="${rel%%/code/.worktrees*}"        # projects/<path-to-project>
+        wt_tail="${rel#*/code/.worktrees/}"
+        wt_name="${wt_tail%%/*}"                        # <name>
+        if [[ -n "$wt_name" ]]; then
+            wt_dir_rel="code/.worktrees/$wt_name"
+            project_dir="$WORKSPACE/$project_rel"
+            declarers=()
+            for _b in "$project_dir"/workstreams/*/BRIEF.md; do
+                [[ -f "$_b" ]] || continue
+                if grep -Eq "^[[:space:]]*(-[[:space:]]*)?dir:[[:space:]]*${wt_dir_rel}[[:space:]]*$" "$_b" 2>/dev/null; then
+                    declarers+=("$(dirname "$_b")")
+                fi
+            done
+            if [[ ${#declarers[@]} -eq 1 ]]; then
+                workstream_dir="${declarers[0]}"
+            elif [[ ${#declarers[@]} -gt 1 ]]; then
+                echo "resolve-thread: worktree $wt_dir_rel is declared by ${#declarers[@]} workstreams — ambiguous." >&2
+                echo "  Fix the duplicate 'worktrees:' declaration; a worktree belongs to one workstream." >&2
+                exit 2
+            fi
+        fi
+    fi
+fi
 
 if [[ -z "$workstream_dir" ]]; then
     exit 1

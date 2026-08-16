@@ -47,6 +47,8 @@ The script:
 2. Reads BRIEF.md and verifies `thread_id` exactly equals `claude-code:projects/<path-to-project>/workstreams/<name>`.
 3. Prints the workstream path on success, or fails loudly on mismatch.
 
+It also resolves **from inside a code worktree**: when `$PWD` is under `projects/<path-to-project>/code/.worktrees/<name>/`, it resolves to the workstream whose BRIEF.md `worktrees:` block declares that worktree (exact match on the project-relative dir path). Exactly one declarer → that workstream; more than one → exit 2 (ambiguous — fix the duplicate declaration); none → exit 1.
+
 `<workspace>` is set via the `INTERNOS_WORKSPACE` environment variable — required, no implicit default. Point it at a single workspace (a directory that directly contains `projects/`) or at a workspaces container (see below).
 
 **Multiple workspaces.** `INTERNOS_WORKSPACE` is PATH-style: colon-separate multiple workspace roots when each represents a distinct org / operating-system surface. Resolution walks the list in order and picks the first workspace that is an ancestor of `$PWD`. Example:
@@ -101,6 +103,17 @@ Before ending the session:
 4. Append a one-line summary entry to `SESSIONS.md` (see below).
 
 This is required even if nothing changed. STATUS.md and SESSIONS.md being current is what makes `/resume` actually useful.
+
+## Worktrees (code work)
+
+When a workstream does real code work, operate in a **git worktree**, not the code repo's primary checkout. internOS worktrees live at `projects/<project>/code/.worktrees/<name>/` — a linked worktree of a code repo, parked in one shared directory beside the repos and already ignored by the project repo's `code/*` rule.
+
+- **Create with the helper, not the native flag.** `~/.claude/skills/intern-os/scripts/worktree.sh create <name> --repo <code-repo>` makes the worktree in the right code repo. Claude Code's native `--worktree` / `EnterWorktree` fork the *project* repo — where `code/*` is gitignored — so they yield a worktree with no code in it. If you want `--worktree` to Just Work, install the `WorktreeCreate` hook (below): it redirects native creation into `code/.worktrees/` of the intended code repo (set `INTERNOS_WORKTREE_REPO` when the project has more than one code repo).
+- **Declare it in BRIEF.md.** Add a `worktrees:` block (repo, dir, branch) to the workstream's BRIEF.md. This is the authoritative link and is what lets `resolve-thread.sh` bind a worktree cwd back to its workstream.
+- **List / prune.** `worktree.sh list` shows every worktree with its owning repo, branch, state, and declaring workstream; `worktree.sh ledger` refreshes `code/WORKTREES.md`; `worktree.sh prune --dry-run` shows what's safe to remove. Prune never removes a worktree with a dirty tree or unpushed commits — merging and removal stay a human call.
+- **Fresh checkout.** A new worktree has tracked files only. Install deps in it, and add a `.worktreeinclude` file (`.gitignore` syntax) at the code repo root to auto-copy gitignored config (`.env.local`, secrets) into each new worktree.
+
+Full spec: `docs/specs/git-tracking.md`.
 
 ## Sessions vs. threads (SESSIONS.md)
 
