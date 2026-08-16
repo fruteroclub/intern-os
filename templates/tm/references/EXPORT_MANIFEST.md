@@ -15,4 +15,4 @@ The payload preserves internOS project/workstream structure while excluding nest
 
 ## Reproducing this export
 
-This TM was produced manually. A future `intern-os tm export` command will automate the process from the source workspace; until then, follow `docs/specs/transfer-modules.md` § Lifecycle in the `fruteroclub/intern-os` repo.
+This TM was produced manually. A future `intern-os tm export` command will automate the process from the source workspace; until then, follow `docs/specs/transfer-modules.md` § Lifecycle in the `poktalabs/intern-os` repo.

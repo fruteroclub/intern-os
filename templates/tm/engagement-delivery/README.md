@@ -42,4 +42,4 @@ See `payload/runtime/USAGE.md` for full usage notes.
 
 ## Spec
 
-This TM targets internOS Transfer Modules spec **v1.1**. See `docs/specs/transfer-modules.md` in `fruteroclub/intern-os`.
+This TM targets internOS Transfer Modules spec **v1.1**. See `docs/specs/transfer-modules.md` in `poktalabs/intern-os`.

@@ -25,8 +25,8 @@ Agents loaded with this framework know how to:
 
 | Framework | Command |
 |-----------|---------|
-| **Hermes Agent** | `hermes skills install fruteroclub/intern-os/intern-os` |
-| **OpenClaw** | `openclaw skills install https://github.com/fruteroclub/intern-os` |
+| **Hermes Agent** | `hermes skills install poktalabs/intern-os/intern-os` |
+| **OpenClaw** | `openclaw skills install https://github.com/poktalabs/intern-os` |
 | **Claude Code** | Copy `adapters/claude-code/CLAUDE.md` to your project root |
 | **Other** | See `adapters/generic/SETUP.md` |
 
@@ -53,7 +53,7 @@ Spanish versions available in `intern-os/references/es/`.
 
 ## Versioning
 
-internOS is stable on the `1.x` line. The latest release is published at [GitHub Releases](https://github.com/fruteroclub/intern-os/releases) and `gh api /repos/fruteroclub/intern-os/releases/latest` returns the correct version (currently `v1.1.0`).
+internOS is stable on the `1.x` line. The latest release is published at [GitHub Releases](https://github.com/poktalabs/intern-os/releases) and `gh api /repos/poktalabs/intern-os/releases/latest` returns the correct version (currently `v1.1.0`).
 
 The release line is `v1.0.0` (2026-07-24) → `v1.1.0` (2026-08-16), each with a corresponding GitHub Release. Earlier `v1.0.0`/`v1.0.1`/`v1.1.0` tags from a premature pre-`0.x`-reset versioning attempt have been superseded: `v1.0.0` and `v1.1.0` were re-pointed at the real released commits, and the stray `v1.0.1` was removed (the line has no `v1.0.1`). If anything pinned to the old pre-reset tags, re-fetch.
 

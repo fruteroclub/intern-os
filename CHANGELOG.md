@@ -164,7 +164,7 @@ Validated against this machine's live workspaces before the alpha tag:
 
 ## v0.4.1 — 2026-05-13
 
-DX patch. Addresses [#21](https://github.com/fruteroclub/intern-os/issues/21). Installed skill now carries forward version/source metadata so agents and humans can tell what's running and where it came from. No breaking changes.
+DX patch. Addresses [#21](https://github.com/poktalabs/intern-os/issues/21). Installed skill now carries forward version/source metadata so agents and humans can tell what's running and where it came from. No breaking changes.
 
 ### Fixed
 
@@ -173,7 +173,7 @@ DX patch. Addresses [#21](https://github.com/fruteroclub/intern-os/issues/21). I
 
 ### Documentation
 
-- **Versioning note added to README.** Records that `v1.0.0` / `v1.0.1` / `v1.1.0` tags on the remote are premature rollbacks; the active line is `0.x`. Closes [#23](https://github.com/fruteroclub/intern-os/issues/23).
+- **Versioning note added to README.** Records that `v1.0.0` / `v1.0.1` / `v1.1.0` tags on the remote are premature rollbacks; the active line is `0.x`. Closes [#23](https://github.com/poktalabs/intern-os/issues/23).
 
 ### Compatibility
 
@@ -183,7 +183,7 @@ DX patch. Addresses [#21](https://github.com/fruteroclub/intern-os/issues/21). I
 
 ## v0.4.0 — 2026-05-11
 
-Multi-agent feature release. Bundles three issues: [#16](https://github.com/fruteroclub/intern-os/pull/16) (Claude Code lifecycle adapter), [#10](https://github.com/fruteroclub/intern-os/issues/10) (isolated-session handoff doctrine + manifest), [#11](https://github.com/fruteroclub/intern-os/issues/11) (shared-thread inbox projects). Each landed through dogfood-tested PRs (#19 ran 3 dogfood rounds with 23 findings addressed; #20 ran 2 rounds with 13 findings addressed). No breaking changes.
+Multi-agent feature release. Bundles three issues: [#16](https://github.com/poktalabs/intern-os/pull/16) (Claude Code lifecycle adapter), [#10](https://github.com/poktalabs/intern-os/issues/10) (isolated-session handoff doctrine + manifest), [#11](https://github.com/poktalabs/intern-os/issues/11) (shared-thread inbox projects). Each landed through dogfood-tested PRs (#19 ran 3 dogfood rounds with 23 findings addressed; #20 ran 2 rounds with 13 findings addressed). No breaking changes.
 
 ### New features
 
@@ -230,7 +230,7 @@ The handoff doctrine itself was dogfooded through 5 specialist-spawning cycles a
 
 ## v0.3.3 — 2026-05-07
 
-Security scan cleanup. Addresses [#17](https://github.com/fruteroclub/intern-os/issues/17). Patch release — no behavior changes, no breaking changes. Reduces Hermes installer's security-scan finding count from 63 to 58 (eliminates 4 actionable findings; remaining 58 are `agent_config_mod` false positives in framework documentation that cannot be removed without gutting the AGENTS.md project-context convention).
+Security scan cleanup. Addresses [#17](https://github.com/poktalabs/intern-os/issues/17). Patch release — no behavior changes, no breaking changes. Reduces Hermes installer's security-scan finding count from 63 to 58 (eliminates 4 actionable findings; remaining 58 are `agent_config_mod` false positives in framework documentation that cannot be removed without gutting the AGENTS.md project-context convention).
 
 ### Fixed
 
@@ -258,7 +258,7 @@ No behavior changes. No breaking changes. The `git rev-parse` change in `extract
 
 ## v0.3.2 — 2026-05-07
 
-Hermes Agent native-plumbing release. Addresses [#12](https://github.com/fruteroclub/intern-os/issues/12). Adopts three Hermes mechanisms to reduce manual setup surface area while preserving OpenClaw and Claude Code compatibility. No breaking changes.
+Hermes Agent native-plumbing release. Addresses [#12](https://github.com/poktalabs/intern-os/issues/12). Adopts three Hermes mechanisms to reduce manual setup surface area while preserving OpenClaw and Claude Code compatibility. No breaking changes.
 
 ### New features
 
@@ -287,7 +287,7 @@ Full design: [`docs/specs/v0.3.2-hermes-compat.md`](docs/specs/v0.3.2-hermes-com
 
 ## v0.3.1 — 2026-04-12
 
-Operational visibility and rollout tooling. Addresses [#7](https://github.com/fruteroclub/intern-os/issues/7): workstream registry and rollout protocol for production internOS.
+Operational visibility and rollout tooling. Addresses [#7](https://github.com/poktalabs/intern-os/issues/7): workstream registry and rollout protocol for production internOS.
 
 ### New features
 
@@ -316,7 +316,7 @@ Operational visibility and rollout tooling. Addresses [#7](https://github.com/fr
 
 Simplification and hardening release. Removes Pod as a concept. Re-centers internOS around Project + Workstream with a three-layer architecture (storage, resolution, runtime).
 
-Addresses [#4](https://github.com/fruteroclub/intern-os/issues/4): project-level `AGENTS.md` for agent context on messaging platforms.
+Addresses [#4](https://github.com/poktalabs/intern-os/issues/4): project-level `AGENTS.md` for agent context on messaging platforms.
 
 ### Breaking changes
 
@@ -332,7 +332,7 @@ Addresses [#4](https://github.com/fruteroclub/intern-os/issues/4): project-level
 ### New features
 
 - **Three-layer architecture** (storage, resolution, runtime) is now explicitly documented across SKILL.md, FRAMEWORK.md, and WORKSTREAMS.md.
-- **Project-level AGENTS.md** ([#4](https://github.com/fruteroclub/intern-os/issues/4)): New template at `assets/templates/project/AGENTS.md`. Contains project-level context (stack, conventions, key people, integrations, architectural constraints). Loaded before workstream files. Works on all platforms (no cwd dependency).
+- **Project-level AGENTS.md** ([#4](https://github.com/poktalabs/intern-os/issues/4)): New template at `assets/templates/project/AGENTS.md`. Contains project-level context (stack, conventions, key people, integrations, architectural constraints). Loaded before workstream files. Works on all platforms (no cwd dependency).
 - **Resolution doctrine:** Exact `thread_id` matching is now the canonical and only resolution method. Fuzzy matching, keyword similarity, and path proximity are explicitly forbidden.
 - **Recovery doctrine:** Agents must reconstruct from workstream files when sessions degrade. BRIEF.md + STATUS.md must be sufficient to restart any workstream.
 - **Isolation doctrine:** Cross-workstream reads are forbidden by default. Cross-workstream synthesis must be explicitly requested.
@@ -375,7 +375,7 @@ Addresses [#4](https://github.com/fruteroclub/intern-os/issues/4): project-level
 
 ## v0.2.2 — 2026-04-06
 
-Addresses [#2](https://github.com/fruteroclub/intern-os/issues/2): Discord timeout-safe startup while preserving per-workstream context.
+Addresses [#2](https://github.com/poktalabs/intern-os/issues/2): Discord timeout-safe startup while preserving per-workstream context.
 
 ### Changes
 
@@ -419,8 +419,8 @@ Addresses [#2](https://github.com/fruteroclub/intern-os/issues/2): Discord timeo
 
 | Framework | Command |
 |-----------|---------|
-| Hermes Agent | `hermes skills install fruteroclub/intern-os/intern-os` |
-| OpenClaw | `openclaw skills install https://github.com/fruteroclub/intern-os` |
+| Hermes Agent | `hermes skills install poktalabs/intern-os/intern-os` |
+| OpenClaw | `openclaw skills install https://github.com/poktalabs/intern-os` |
 
 ## v2.0.0 — 2026-03-30
 

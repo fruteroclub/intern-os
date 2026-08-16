@@ -1,6 +1,6 @@
 ---
 name: export-sessions
-repo: https://github.com/fruteroclub/intern-os
+repo: https://github.com/poktalabs/intern-os
 metadata:
   version: 0.1.0
 description: >-

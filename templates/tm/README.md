@@ -43,4 +43,4 @@ Expected output: `TM verification OK`.
 
 ## Spec
 
-This TM targets internOS Transfer Modules spec version 1.0. See `docs/specs/transfer-modules.md` in the `fruteroclub/intern-os` repo.
+This TM targets internOS Transfer Modules spec version 1.0. See `docs/specs/transfer-modules.md` in the `poktalabs/intern-os` repo.

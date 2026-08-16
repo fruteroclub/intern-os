@@ -1,5 +1,5 @@
 # internOS Transfer Module manifest — machine-readable scope, permissions, return protocol.
-# Spec: docs/specs/transfer-modules.md (fruteroclub/intern-os)
+# Spec: docs/specs/transfer-modules.md (poktalabs/intern-os)
 # Authors: replace placeholders, prune unused entries, add type-specific includes.
 
 tm_version: 1.0

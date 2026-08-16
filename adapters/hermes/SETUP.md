@@ -17,7 +17,7 @@ Hermes Agent-specific setup for the internOS Workstreams framework.
 ## Install
 
 ```bash
-hermes skills install fruteroclub/intern-os/intern-os
+hermes skills install poktalabs/intern-os/intern-os
 ```
 
 For development, symlink instead:
@@ -33,7 +33,7 @@ Hermes' installer runs a security scan that flags intern-os as **DANGEROUS** wit
 Use `--force` to override:
 
 ```bash
-hermes skills install fruteroclub/intern-os/intern-os --force
+hermes skills install poktalabs/intern-os/intern-os --force
 ```
 
 Tracked upstream at [nousresearch/hermes-agent](https://github.com/nousresearch/hermes-agent) — once the scanner regex tightens to flag write/append patterns instead of any literal mention, `--force` will no longer be required.

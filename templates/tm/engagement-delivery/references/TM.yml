@@ -1,5 +1,5 @@
 # internOS Transfer Module manifest — engagement-delivery type
-# Spec: docs/specs/transfer-modules.md (fruteroclub/intern-os), v1.1
+# Spec: docs/specs/transfer-modules.md (poktalabs/intern-os), v1.1
 # Authors: replace placeholders, prune unused entries.
 
 tm_version: 1.1

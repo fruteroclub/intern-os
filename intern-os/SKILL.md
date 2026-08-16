@@ -2,7 +2,7 @@
 name: intern-os
 description: internOS Workstreams framework. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
 version: 1.1.0
-repo: https://github.com/fruteroclub/intern-os
+repo: https://github.com/poktalabs/intern-os
 prerequisites:
   commands: [tick]
 setup:
@@ -26,8 +26,8 @@ internOS is a framework for humans and agents to collaborate on workstreams with
 
 | Framework | Command |
 |-----------|---------|
-| **Hermes Agent** | `hermes skills install fruteroclub/intern-os/intern-os` |
-| **OpenClaw** | `openclaw skills install https://github.com/fruteroclub/intern-os` |
+| **Hermes Agent** | `hermes skills install poktalabs/intern-os/intern-os` |
+| **OpenClaw** | `openclaw skills install https://github.com/poktalabs/intern-os` |
 | **Claude Code** | Copy `adapters/claude-code/CLAUDE.md` to your project root |
 | **Other** | See `adapters/generic/SETUP.md` |
 

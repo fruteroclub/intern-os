@@ -16,7 +16,7 @@ OpenClaw-specific setup for the internOS Workstreams framework.
 ## Install the skill
 
 ```
-openclaw skills install https://github.com/fruteroclub/intern-os
+openclaw skills install https://github.com/poktalabs/intern-os
 ```
 
 ---

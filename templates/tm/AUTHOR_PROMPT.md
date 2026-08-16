@@ -41,14 +41,14 @@ task/service.
 Fetch and read these files in order. Do NOT skip; they define the contract.
 
 1. Spec — rules, boundaries, frontmatter, manifest, lifecycle:
-   https://raw.githubusercontent.com/fruteroclub/intern-os/v1.0.0/docs/specs/transfer-modules.md
+   https://raw.githubusercontent.com/poktalabs/intern-os/v1.0.0/docs/specs/transfer-modules.md
 2. Shared-docs + export rules (what may travel, redaction requirements,
    §6a heavy-asset RESOURCES convention):
-   https://raw.githubusercontent.com/fruteroclub/intern-os/v1.0.0/docs/specs/shared-docs-and-tm-export.md
+   https://raw.githubusercontent.com/poktalabs/intern-os/v1.0.0/docs/specs/shared-docs-and-tm-export.md
 3. Base template (SKILL.md frontmatter + section conventions):
-   https://raw.githubusercontent.com/fruteroclub/intern-os/v1.0.0/templates/tm/SKILL.md
+   https://raw.githubusercontent.com/poktalabs/intern-os/v1.0.0/templates/tm/SKILL.md
 4. Base template README (receiver-facing intro):
-   https://raw.githubusercontent.com/fruteroclub/intern-os/v1.0.0/templates/tm/README.md
+   https://raw.githubusercontent.com/poktalabs/intern-os/v1.0.0/templates/tm/README.md
 5. References used by every TM:
    - TM.yml manifest:        .../templates/tm/references/TM.yml
    - IMPORT.md:              .../templates/tm/references/IMPORT.md
@@ -58,7 +58,7 @@ Fetch and read these files in order. Do NOT skip; they define the contract.
    - verify_tm.sh:           .../templates/tm/scripts/verify_tm.sh
 6. If TM_TYPE = internOS.engagement-delivery, ALSO read the engagement-delivery
    overlay (adds APPLY.md + apply_to_target.sh, replaces RETURN.md semantics):
-   https://raw.githubusercontent.com/fruteroclub/intern-os/v1.0.0/templates/tm/engagement-delivery/SKILL.md
+   https://raw.githubusercontent.com/poktalabs/intern-os/v1.0.0/templates/tm/engagement-delivery/SKILL.md
    plus the sibling references/ and scripts/ under that directory.
 
 # Step 2 — Plan before writing

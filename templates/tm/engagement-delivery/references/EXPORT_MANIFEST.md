@@ -27,4 +27,4 @@ Created: <ISO8601>
 
 ## Reproducing this export
 
-This TM was produced manually. A future `intern-os tm export-delivery <source>/<target>` command will automate the process from declarative inputs; until then, follow `docs/specs/transfer-modules.md` § "Type: internOS.engagement-delivery" in the `fruteroclub/intern-os` repo.
+This TM was produced manually. A future `intern-os tm export-delivery <source>/<target>` command will automate the process from declarative inputs; until then, follow `docs/specs/transfer-modules.md` § "Type: internOS.engagement-delivery" in the `poktalabs/intern-os` repo.
