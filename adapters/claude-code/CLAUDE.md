@@ -41,6 +41,11 @@ Resolution is exact and deterministic. Never resolve a workstream by fuzzy
 matching path fragments, similar names, or directory listings — if the
 resolver doesn't return one, there isn't one.
 
+The resolver also binds from inside a **code worktree**
+(`projects/<path-to-project>/code/.worktrees/<name>/`) to the workstream whose
+BRIEF.md `worktrees:` block declares it. Exit 2 there means two workstreams
+declare the same worktree — stop and ask, don't guess.
+
 ## Operating protocol
 
 Once resolved, follow the standard workstream protocol from the `intern-os`
@@ -51,6 +56,17 @@ end, consolidate `MEMORY.md` if it crosses 80 lines, append a session line to
 The full doctrine — resolution, runtime, recovery, isolation — lives in the
 `intern-os` skill (`~/.claude/skills/intern-os/SKILL.md`). Load it when
 operating on a workstream; don't duplicate it here.
+
+## Worktrees (code work)
+
+For code work, operate in a git worktree under
+`projects/<project>/code/.worktrees/<name>/` — not the code repo's primary
+checkout. Create them with `~/.claude/skills/intern-os/scripts/worktree.sh
+create <name> --repo <code-repo>`, not Claude Code's native `--worktree` (which
+forks the project repo, where `code/*` is gitignored). Declare each worktree in
+the workstream's BRIEF.md `worktrees:` block. Full doctrine and the optional
+`WorktreeCreate` hook are in the `intern-os` skill's SKILL.md and
+`docs/specs/git-tracking.md`.
 
 ## Cross-workstream lookups
 

@@ -2,6 +2,39 @@
 
 > **Version scheme:** internOS moved to `0.x.x` versioning starting with this release to reflect alpha status. Prior releases are kept as historical record.
 
+## v1.1.0 — 2026-08-16
+
+**⚠️ Supersedes an old `v1.1.0` tag.** Like the `v1.0.0` reset below, this repo carried stale pre-alpha-reset tags — `v1.0.1` (2026-03-27) and `v1.1.0` (2026-03-30) — from the abandoned pre-`0.x` lineage. Neither was ever published as a GitHub Release or battle-tested. The old `v1.1.0` tag has been deleted and re-pointed here; the stale `v1.0.1` tag has been removed entirely (no `v1.0.1` release exists — the line goes `v1.0.0` → `v1.1.0`). If you have anything referencing the old `v1.0.1` or `v1.1.0` from before 2026-08-16, re-fetch — they pointed at different, untested code.
+
+Adds first-class **git-worktree support** for code work. internOS projects keep real code in nested, gitignored repos under `projects/<project>/code/<repo>/`; parallel and agent-driven work now has a documented, tooled, and tracked way to run in isolated checkouts. The convention (`code/.worktrees/<name>/`, one shared parking dir beside the code repos) was already running in production on pokta-care by hand — this release upstreams it as doctrine + tooling. Cross-tool compatibility (Claude Code, Hermes, OpenClaw, Codex, and the desktop ADEs) was researched before locking the layout.
+
+### New features
+
+- **`worktree.sh` — the worktree helper.** New `intern-os/scripts/worktree.sh` with `create` / `list` / `prune` / `ledger`. Creates `code/.worktrees/<name>/` as a linked worktree of a chosen code repo, copies gitignored files listed in the code repo's optional `.worktreeinclude`, and writes the derived per-project ledger `code/WORKTREES.md`. Prune is conservative — it never removes a worktree with a dirty tree or unpushed commits. bash 3.2-compatible.
+- **BRIEF.md `worktrees:` binding.** The workstream template gains an optional `worktrees:` block (repo, dir, branch) — the authoritative link from a workstream to the worktree(s) it drives. The derived ledger and registry count reconcile against live `git worktree list`.
+- **Registry worktree awareness.** `generate-registry.sh` now emits a per-project worktree count in the Summary and a **Worktrees** section pointing at each `code/WORKTREES.md`. Defensive — no `code/` container means no change.
+- **Worktree-cwd resolution (Claude Code).** `resolve-thread.sh` now binds from inside a code worktree (`projects/<project>/code/.worktrees/<name>/`) to the workstream whose BRIEF.md declares it — exact match, deterministic; ambiguous declarations exit 2.
+- **`WorktreeCreate` hook (Claude Code, optional).** New `worktree-create.sh` + a `WorktreeCreate` block in the adapter `settings.json` redirect Claude Code's native worktree creation (which would fork the *project* repo, where `code/*` is gitignored) into `code/.worktrees/` of the intended code repo. Repo chosen via `INTERNOS_WORKTREE_REPO` or the sole code repo.
+
+### Spec & doctrine
+
+- **`docs/specs/git-tracking.md`** — new "Git worktrees" section (layout, naming, harness/IDE compatibility table, `.worktreeinclude` bootstrap, Turbo-cache caveat, cleanup doctrine); the prior worktree open question is resolved; the "Multiple `.git` directories" tradeoff now covers the worktree gitlink files.
+- **`intern-os/SKILL.md`** and **`references/{en,es}/FRAMEWORK.md`** — storage-layer trees and project structure now show `code/`, `code/.worktrees/`, and `code/WORKTREES.md`; a "Worktrees (code work)" doctrine subsection; `worktree.sh` added to the tooling breakdown.
+- **`templates/git/project.gitignore`** — documents that `code/.worktrees/` stays ignored by the existing `code/*` rule and re-includes the derived `code/WORKTREES.md`.
+- **Adapter docs** (`adapters/claude-code/SKILL.md`, `CLAUDE.md`) — worktree operating protocol, the helper-over-native-flag rule, and the new resolution behavior.
+
+### Updated files
+
+- `intern-os/scripts/worktree.sh` (new), `adapters/claude-code/scripts/worktree-create.sh` (new)
+- `adapters/claude-code/hooks/settings.json` — `WorktreeCreate` hook block
+- `adapters/claude-code/scripts/resolve-thread.sh` — worktree-cwd resolution
+- `intern-os/scripts/generate-registry.sh` — per-project worktree count + Worktrees section
+- `intern-os/assets/templates/workstream/BRIEF.md` — `worktrees:` block
+- `templates/git/project.gitignore` — worktree docs + `code/WORKTREES.md` re-include
+- `docs/specs/git-tracking.md`, `intern-os/SKILL.md`, `intern-os/references/{en,es}/FRAMEWORK.md`
+- `adapters/claude-code/SKILL.md`, `adapters/claude-code/CLAUDE.md`
+- `intern-os/VERSION` 1.0.0 → 1.1.0; `intern-os/SKILL.md` `version:` 1.0.0 → 1.1.0
+
 ## v1.0.0 — 2026-07-24
 
 **⚠️ Supersedes an old `v1.0.0` tag.** This repo has a `v1.0.0` tag from 2026-03-27 (predating the `0.x` alpha-status reset above) that was never published as a GitHub Release and was never battle-tested — it was rushed. That old tag has been replaced; `v1.0.0` now points here. If you have anything (a clone, a cached tag SHA, a pinned dependency) referencing the old `v1.0.0` from before 2026-07-24, re-fetch — it pointed at different, untested code.

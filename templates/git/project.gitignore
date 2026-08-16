@@ -45,8 +45,13 @@ workstreams/*/*
 !workstreams/*/README.md
 !workstreams/*/docs/
 
-# Inside code/, track the container's README only. Each subdirectory is an
-# independent git repo with its own remote and must remain opaque to this one.
+# Inside code/, track the container's README and the derived worktree ledger.
+# Each subdirectory is an independent git repo with its own remote and must
+# remain opaque to this one. Git worktrees for parallel/agent code work live at
+# code/.worktrees/<name>/ (linked worktrees of a code repo) and stay ignored by
+# the `code/*` rule below — no extra line needed. WORKTREES.md is the derived
+# ledger written by worktree.sh (like REGISTRY.md); track it.
 code/*
 !code/README.md
+!code/WORKTREES.md
 !code/.gitkeep

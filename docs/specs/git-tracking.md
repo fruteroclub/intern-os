@@ -100,11 +100,78 @@ For a project whose repo already exists (like `pyme-companion`) and has code sub
 
 The code subdirectories are unaffected — their `.git/` and remote bindings remain. The project repo simply cannot see them.
 
+## Git worktrees
+
+Parallel and agent-driven code work needs isolated checkouts — one branch per thread, per lane, or per subagent — so edits in one never touch another. internOS uses git worktrees for this, with one canonical location:
+
+```
+projects/<project>/code/.worktrees/<name>/
+```
+
+Each worktree is a **linked worktree of exactly one code repo** (`code/<repo>`), sharing that repo's single `.git`. They are all parked in one shared `code/.worktrees/` directory that sits *beside* the code repos, not inside any of them.
+
+### Why here
+
+- **Already ignored.** `code/.worktrees/` is matched by the existing `code/*` denial in the project `.gitignore` (below), so worktrees are invisible to the project repo with no extra rule.
+- **Beside, not inside.** Because the parking dir is a sibling of the code repos rather than a subdirectory of one, no code repo's `git status` ever shows the worktree checkouts, and no code repo needs a `.worktrees/` line in *its* `.gitignore`. (A linked worktree never appears in its own parent repo's status regardless — placing them beside the repos also keeps IDE indexers and file-watchers from re-scanning nested checkouts.)
+- **Self-contained.** Worktrees live inside the project tree, so a project directory remains a complete, portable unit.
+
+### Naming
+
+- **Worktree dir:** `code/.worktrees/<name>/` — `<name>` is kebab-case and unique within the project (git enforces path uniqueness).
+- **Branch:** `<type>/<name>` — `feat/<name>` (features), `study/<name>` (study internals), `fix/<name>`, etc. The default is `feat/<name>`; override per worktree. Harness-native branch names (`hermes/…`, `worktree-…`) are accepted; the ledger records whatever branch a worktree is actually on.
+- **Owning repo:** the shared dir does not encode which code repo a worktree belongs to. Ownership is recorded (a) in the workstream's `BRIEF.md` `worktrees:` block and (b) discovered at runtime via `git worktree list` per code repo. The tooling reconciles both.
+
+### Compatibility with agent harnesses and IDEs
+
+This location is a deliberate internOS convention, not where any single tool writes by default, so tools map onto it as follows:
+
+| Tool | Native worktree location | How it uses `code/.worktrees/` |
+| --- | --- | --- |
+| internOS `worktree.sh` | — | Creates/lists/prunes here directly (primary path). |
+| Claude Code | `<repo>/.claude/worktrees/` | Native `--worktree` forks the *project* repo (no code). Use the shipped `WorktreeCreate` hook to redirect creation here, or just `cd` into a worktree `worktree.sh` made. |
+| Hermes / OpenClaw | `<repo>/.worktrees/` | Point their config at a `code/<repo>` and they write to `code/<repo>/.worktrees/`, not the shared dir — so prefer `worktree.sh` for the shared-dir convention, or accept the per-repo location. |
+| Codex / Aider / Cline / Amp | none (operate in cwd) | `cd` into the worktree and run. **Codex caveat:** its sandbox can remount the gitdir read-only inside a linked worktree, breaking `git commit`; run Codex with `workspace-write` + a writable `.git`, or commit from the primary checkout. |
+
+The tradeoff internOS accepts: worktrees are created by the `worktree.sh` helper (or the Claude Code hook) rather than by a harness's native flag. In exchange, every worktree lands in one predictable, already-ignored, self-contained place regardless of which tool is driving.
+
+### Tooling
+
+`intern-os/scripts/worktree.sh` is the single home for worktree logic:
+
+```bash
+# Create code/.worktrees/checkout-flow as a linked worktree of code/app-monorepo
+worktree.sh create checkout-flow --repo app-monorepo --branch feat/checkout-flow
+
+worktree.sh list            # all worktrees + owning repo, branch, state, workstream
+worktree.sh ledger          # (re)write the derived code/WORKTREES.md
+worktree.sh prune --dry-run # show worktrees safe to remove; --yes to remove
+```
+
+`generate-registry.sh` adds a per-project worktree count to `projects/REGISTRY.md`; the full per-project detail lives in the derived `code/WORKTREES.md` ledger.
+
+### Fresh-worktree bootstrap
+
+A new worktree is a fresh checkout that carries **tracked files only** — no `node_modules`, no gitignored env files. Two steps make it runnable:
+
+1. **Install dependencies** in the worktree (`pnpm install`, etc.).
+2. **Copy gitignored config** it needs (`.env.local`, secrets). Add a `.worktreeinclude` file (`.gitignore` syntax, one path/glob per line) at the code repo root listing the gitignored files to copy; `worktree.sh create` copies them into each new worktree automatically. This matches the Hermes / Claude Code `.worktreeinclude` convention. A missing env file is a common silent failure — e.g. an app that mounts a provider unconditionally will crash the whole route tree if its key is absent.
+
+**Caches can lie across worktrees.** Build caches keyed on content (e.g. Turbo) may report a hit from another worktree; force a real run (`turbo run <task> --force`) when a number has to be trustworthy.
+
+### Cleanup
+
+Removal is gated on merge and is conservative by design:
+
+- **Never remove a worktree with a dirty tree or unpushed commits.** `worktree.sh prune` keeps any worktree it cannot prove is clean *and* fully pushed (no upstream tracking counts as unprovable → kept).
+- Prune only after the branch is merged and the work is reported. `worktree.sh prune --dry-run` classifies; `--yes` removes the safe set.
+- When in doubt, leave it — an idle worktree costs disk, a wrongly-removed one costs work.
+
 ## Tradeoffs
 
 **Maintenance cost.** Every new internOS file shape (e.g. if v0.5 adds `RISKS.md`) must be added to the allowlist, or it won't be tracked. The templates here are the single source of truth — update them when the framework evolves, then projects sync.
 
-**Multiple `.git` directories on disk.** Several `.git` dirs per project tree (optionally workspace, definitely project, plus one per code repo). `find` / globbing tools see them all. Some IDEs (notably JetBrains) get confused; VS Code and Cursor handle nested repos gracefully when the outer repo never touches the inner working trees, which the `code/*/` denial guarantees.
+**Multiple `.git` directories on disk.** Several `.git` dirs per project tree (optionally workspace, definitely project, plus one per code repo), plus a `.git` *file* (a gitlink, not a dir) in each worktree under `code/.worktrees/`. `find` / globbing tools see them all. Some IDEs (notably JetBrains) get confused; VS Code and Cursor handle nested repos gracefully when the outer repo never touches the inner working trees, which the `code/*` denial guarantees (and it covers `code/.worktrees/` too).
 
 **Project repo carries non-code concerns.** PROJECT.md, TICK.md, and `workstreams/` mean the project repo's history is dominated by internOS state changes rather than code commits (code lives in the nested repos). That's the right tradeoff — the project repo's *job* is to coordinate the project, not to ship code — but a reader expecting a traditional product repo will find it surprising. Document this in the project's `README.md`.
 
@@ -116,3 +183,7 @@ The code subdirectories are unaffected — their `.git/` and remote bindings rem
 - **`tmp/`, `node_modules/`, transient artifacts** in the templates as belt-and-suspenders. Allowlist style makes this unnecessary (anything not explicitly re-included is ignored), but explicit `node_modules/` lines reduce confusion for newcomers reading the file.
 - **Does `sync-check.sh` need to learn about git tracking?** A workstream whose BRIEF.md isn't committed is implicitly different from one that is. INFO-level note when the project repo has uncommitted internOS files seems right but is scope creep against the current sync-check mandate.
 - **A bootstrap script** that reads `code/README.md` (or a structured `code/repos.yml`) and clones each declared code repo into its slot. Solves the fresh-clone friction.
+
+## Resolved
+
+- **Worktrees (resolved).** Git worktrees for parallel/agent code work live at `code/.worktrees/<name>/` as linked worktrees of a code repo — see [Git worktrees](#git-worktrees) above. Managed by `intern-os/scripts/worktree.sh`; declared per workstream in `BRIEF.md`; tracked in the derived `code/WORKTREES.md` ledger and counted in `projects/REGISTRY.md`.

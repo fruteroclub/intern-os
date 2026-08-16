@@ -1,5 +1,5 @@
 {
-  "_comment": "internOS — Claude Code lifecycle hooks. Merge these blocks into ~/.claude/settings.json (user-global) or your project's .claude/settings.json. Both hooks no-op silently when pwd is not inside an internOS workstream. SessionStart pre-loads BRIEF identity / STATUS / SESSIONS tail / open tick tasks / warnings into a system reminder before Claude's first response token. SessionEnd stamps BRIEF.md last_updated, appends a SESSIONS.md entry, runs sync-check on the workstream, and writes findings to .internos-warnings for the next SessionStart to surface. Note: do NOT use the `Stop` event for SESSIONS.md logging — `Stop` fires per agent turn, not at session end.",
+  "_comment": "internOS — Claude Code lifecycle hooks. Merge these blocks into ~/.claude/settings.json (user-global) or your project's .claude/settings.json. SessionStart / SessionEnd no-op silently when pwd is not inside an internOS workstream. SessionStart pre-loads BRIEF identity / STATUS / SESSIONS tail / open tick tasks / warnings into a system reminder before Claude's first response token. SessionEnd stamps BRIEF.md last_updated, appends a SESSIONS.md entry, runs sync-check on the workstream, and writes findings to .internos-warnings for the next SessionStart to surface. WorktreeCreate redirects Claude Code's native worktree creation (which would fork the PROJECT repo, where code/* is gitignored) into the internOS canonical location code/.worktrees/<name>/ as a linked worktree of a CODE repo. It is OPTIONAL — omit it to keep Claude Code's default .claude/worktrees/ behavior; the internOS worktree.sh helper works either way. Note: do NOT use the `Stop` event for SESSIONS.md logging — `Stop` fires per agent turn, not at session end.",
   "hooks": {
     "SessionStart": [
       {
@@ -19,6 +19,16 @@
           {
             "type": "command",
             "command": "~/.claude/skills/intern-os/scripts/session-end.sh"
+          }
+        ]
+      }
+    ],
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/skills/intern-os/scripts/worktree-create.sh"
           }
         ]
       }

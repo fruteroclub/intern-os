@@ -1,7 +1,7 @@
 ---
 name: intern-os
 description: internOS Workstreams framework. Coordinates work across projects, tick.md tasks, communication threads, and filesystem workstreams. Load this skill when operating in a workstream thread or when setting up internOS.
-version: 1.0.0
+version: 1.1.0
 repo: https://github.com/fruteroclub/intern-os
 prerequisites:
   commands: [tick]
@@ -99,7 +99,15 @@ projects/
         STAKEHOLDERS.md
         RESOURCES.md
         docs/
+    code/                  ← Container for the project's code repos (gitignored)
+      README.md            ← Declares the code repo layout
+      WORKTREES.md         ← Derived worktree ledger (generated, not hand-edited)
+      [repo]/              ← Independent code repo (its own .git + remote)
+      .worktrees/          ← Git worktrees for parallel/agent code work
+        [name]/            ← Linked worktree of a code repo (branch per thread)
 ```
+
+The `code/` container and worktrees are documented in `docs/specs/git-tracking.md`.
 
 ### Resolution layer
 
@@ -218,6 +226,17 @@ By default:
 
 Cross-workstream synthesis must be explicit and requested by the human.
 
+### Worktrees (code work)
+
+When a workstream does real code work, operate in a **git worktree**, not the code repo's primary checkout:
+
+- Worktrees live at `projects/[project]/code/.worktrees/<name>/` — one linked worktree of a code repo per hot thread or lane. Never build two threads in one checkout.
+- Create/list/prune them with `intern-os/scripts/worktree.sh` (e.g. `worktree.sh create <name> --repo <code-repo>`). Do not rely on a harness's native `--worktree`, which forks the *project* repo (where `code/*` is gitignored) and yields an empty checkout.
+- Declare a workstream's worktree(s) in its `BRIEF.md` `worktrees:` block (repo, dir, branch). This is the authoritative link; the derived `code/WORKTREES.md` ledger and the `projects/REGISTRY.md` count reconcile it against live git state.
+- Cleanup is conservative and gated on merge: never remove a worktree with a dirty tree or unpushed commits.
+
+Full mechanics — layout, naming, `.worktreeinclude` env-copy, harness/IDE compatibility — are in `docs/specs/git-tracking.md`.
+
 ## Activating a new workstream
 
 Any team member can activate a workstream from any thread:
@@ -275,8 +294,15 @@ projects/[project]/
 ├── TICK.md          ← Task management (tick.md)
 ├── .tick/
 │   └── config.yml   ← tick.md configuration
-└── workstreams/
+├── workstreams/
+└── code/            ← Container for code repos + worktrees (gitignored; optional)
+    ├── README.md    ← Declares the code repo layout
+    ├── WORKTREES.md ← Derived worktree ledger (generated)
+    ├── [repo]/      ← Independent code repo (own .git + remote)
+    └── .worktrees/  ← Git worktrees: code/.worktrees/<name>/ (one branch per thread)
 ```
+
+The `code/` container, its `.gitignore` rules, and the worktree convention are specified in `docs/specs/git-tracking.md`.
 
 ## Isolated-session handoff (multi-agent)
 
@@ -300,7 +326,8 @@ The resolution, runtime, recovery, and isolation rules above are **doctrine for 
 
 What **is** validated by shipped tooling:
 - `sync-check.sh` — validates file presence, `thread_id` format and uniqueness, BRIEF.md identity fields, STATUS.md / MEMORY.md size limits. Accepts a single workspace **or** a workspaces container (iterates every child workspace and enforces `thread_id` uniqueness across the whole container). Use `--rollout` for a prioritized action list.
-- `generate-registry.sh` — generates derived workstream registry at `projects/REGISTRY.md`. Given a container, writes one registry per child workspace plus a container-level index.
+- `generate-registry.sh` — generates derived workstream registry at `projects/REGISTRY.md`, including a per-project worktree count. Given a container, writes one registry per child workspace plus a container-level index.
+- `worktree.sh` — creates/lists/prunes git worktrees under `code/.worktrees/` and writes the derived `code/WORKTREES.md` ledger. Prune never removes a worktree with a dirty tree or unpushed commits.
 - `checkpoint-reminder.sh` — detects stale STATUS.md files
 - `verify-handoff.sh` — verifies a handoff manifest against the four named binding checks (workstream_path, BRIEF.md, thread_id match, required load paths)
 - `tick.md` — enforces task claim/release coordination
