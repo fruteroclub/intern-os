@@ -2,7 +2,7 @@
 name: session-wrap
 repo: https://github.com/poktalabs/intern-os
 metadata:
-  version: 0.2.0
+  version: 0.3.0
 description: >-
   Curated end-of-session wrap for internOS work. Use this whenever the user is closing out a
   working session or about to reset context — "wrap up", "end session", "save context", "let's
@@ -126,9 +126,67 @@ session that auto-loads STATUS surfaces the checkpoint immediately.
 
 Keep it skimmable — headings + tight bullets, not prose. It is a map, not a memoir.
 
-## Step 6 — Continue or clear
+## Step 6 — Log + continue or clear
 
-End with one AskUserQuestion:
+### 6a. Verify the handoff against the file — do this BEFORE writing the closing message
+
+The closing message is written from what's salient in your head. The checkpoint was written
+from the same reasoning, often an hour earlier. **Those two things drift, and the drift always
+runs one way: you restate what's already in the file and present it as new.**
+
+Before writing the wrap-up message, grep the artifact you just wrote for the specific facts
+you're about to surface:
+
+```bash
+grep -n "<term1>\|<term2>\|<term3>" <checkpoint-path>
+```
+
+Then apply the rule:
+
+- **Already in the file** → do not repeat it in the closing message. Point at the file instead.
+- **Not in the file but matters to the next session** → it belongs in the FILE, not the message.
+  Go back to Step 5 and add it, then continue.
+- **Neither** → it's session-local colour. Say it or don't; it changes nothing.
+
+Never close with "here are a few things the next session will need." If they're needed, they go
+in the checkpoint. **Chat does not survive a `/clear`; files do.** A handoff fact delivered in
+the one channel that gets discarded is worse than useless — it also implies the checkpoint has
+gaps it doesn't have, which undermines trust in the artifact this whole skill exists to produce.
+
+This is the same failure mode as designing against a stale clone: **trusting working memory over
+reading the source.** It applies to your own output too, not just to repos and project files.
+
+### 6b. Log — this line is what the next session sees
+
+Append one line to `~/.claude/checkpoint-log.jsonl` (shared with `/checkpoint`, so `tail
+~/.claude/checkpoint-log.jsonl` traces every save across both skills).
+
+**This is not just a log.** The `SessionStart` hook
+`~/.claude/hooks/latest-checkpoint-pointer.sh` reads the newest entry carrying a
+`checkpoint_path` and renders a pointer at the start of every future session. The hook is
+deliberately dumb — it hardcodes no project, path, or date, and derives everything from these
+fields. **If you want a future session to notice something, put it here; do not edit the hook.**
+
+```bash
+printf '%s\n' "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"type\":\"session-wrap\",\"cwd\":\"$PWD\",\"project\":\"<project-or-null>\",\"workstream\":\"<workstream-or-null>\",\"checkpoint_path\":\"<absolute path written in Step 5>\",\"scope\":\"<what this checkpoint covers>\",\"summary\":\"<one line>\"}" >> ~/.claude/checkpoint-log.jsonl
+```
+
+Field notes:
+- **`checkpoint_path`** — absolute path to the Step-5 file. **Required**, or the hook stays
+  silent and the checkpoint is undiscoverable. Verify it exists before logging.
+- **`scope`** — human-readable coverage, written for someone with no context. For a
+  single-workstream session, name the workstream. For a session spanning several projects,
+  name them: `"frutero/devrel (ai-for-healthcare, nebius, forward-deployed-series) + poktalabs/regen"`.
+  This is what tells a fresh session whether the checkpoint is relevant to what they are
+  about to do.
+- **`summary`** — one line, and assume it is read cold.
+
+The hook suppresses pointers older than 30 days and skips entries whose file has moved or been
+deleted, so stale or broken paths cost nothing.
+
+### 6c. Ask
+
+Then end with one AskUserQuestion:
 - **Continue (compact)** — keep working; context compacts but the thread continues.
 - **Clear (fresh start)** — reset context. On the next session the **SessionStart hook +
   intern-os skill auto-load** the pwd's project/workstream, and `/session-wrap`'s breadcrumb +
