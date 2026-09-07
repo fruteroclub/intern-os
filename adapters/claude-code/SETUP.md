@@ -135,6 +135,25 @@ Invoke with `/export-sessions` to migrate a project to another internOS-native h
 gpg-AES-256 encrypted by default — carry the passphrase separately from the archive. Skip if you
 don't use gbrain/gstack.
 
+### 7. Install the `checkpoint` companion skill (optional)
+
+internOS also bundles **`checkpoint`** — a fast, lightweight progress save before `/compact` or
+`/clear`, for the many session boundaries that aren't a real session-end. Unlike `session-wrap` it
+skips gbrain sync and journaling: it just replaces STATUS.md's current-state/next fields in place
+(and DECISIONS.md/TICK.md only if something concrete changed), or writes a `CHECKPOINT.md`
+snapshot outside any workstream. Explicit-invocation only — it does not fire on session-boundary
+phrases the way `session-wrap` does. Install it as its own skill:
+
+```bash
+REPO=$(pwd)   # or wherever you've cloned intern-os
+cp -R "$REPO/adapters/claude-code/skills/checkpoint" ~/.claude/skills/checkpoint
+```
+
+Invoke with `/checkpoint`. Both `checkpoint` and `session-wrap` log to the shared
+`~/.claude/checkpoint-log.jsonl`, so `tail` it to see every save across both skills. No
+Claude-Code-specific dependency beyond that log file — no gbrain, no gstack — so this one has no
+reason to skip.
+
 ---
 
 ## Isolated-session handoff
