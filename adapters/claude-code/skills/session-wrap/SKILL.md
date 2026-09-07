@@ -2,7 +2,7 @@
 name: session-wrap
 repo: https://github.com/poktalabs/intern-os
 metadata:
-  version: 0.3.0
+  version: 0.4.0
 description: >-
   Curated end-of-session wrap for internOS work. Use this whenever the user is closing out a
   working session or about to reset context — "wrap up", "end session", "save context", "let's
@@ -171,6 +171,23 @@ fields. **If you want a future session to notice something, put it here; do not 
 printf '%s\n' "{\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"type\":\"session-wrap\",\"cwd\":\"$PWD\",\"project\":\"<project-or-null>\",\"workstream\":\"<workstream-or-null>\",\"checkpoint_path\":\"<absolute path written in Step 5>\",\"scope\":\"<what this checkpoint covers>\",\"summary\":\"<one line>\"}" >> ~/.claude/checkpoint-log.jsonl
 ```
 
+If the optional cost tracker is installed (see Notes), record this wrap's own token cost. The
+`PreToolUse` hook stamped the span start when this skill was invoked; close it (session id +
+transcript are in the breadcrumb). This is a no-op if the tracker isn't installed:
+
+```bash
+CLOSE=~/.claude/skills/session-wrap/scripts/skill-span-close.sh
+if [ -x "$CLOSE" ]; then
+  SESSION_ID="$(tail -1 ~/.claude/gbrain-session-queue.jsonl | jq -r .session_id)"
+  "$CLOSE" session-wrap "$SESSION_ID"
+fi
+```
+
+It appends a costed record to `~/.claude/cost-log.jsonl` and prints a one-line
+`session-wrap: $X.XX (in/out/cache tokens)` summary. Quote that real figure in the closing
+message instead of estimating. (Dollar amounts depend on
+`~/.claude/skills/session-wrap/scripts/cost-pricing.json`; token counts are exact regardless.)
+
 Field notes:
 - **`checkpoint_path`** — absolute path to the Step-5 file. **Required**, or the hook stays
   silent and the checkpoint is undiscoverable. Verify it exists before logging.
@@ -201,3 +218,13 @@ Recommend **clear** if the work reached a natural boundary and Steps 1-5 capture
 - This skill composes existing pieces — it doesn't replace the hooks, the `tick-notion-sync`
   skill, or `/context-save`; it's the human-judgment orchestration layer over them.
 - Everything it writes is on disk / in gbrain / in memory — all durable across the clear.
+- **Cost tracking (optional).** `scripts/` ships a per-execution token/cost tracker for this
+  skill's own runs: `skill-span-start.sh` (bracket start), `tally-span-cost.sh` (diffs transcript
+  usage against `scripts/cost-pricing.json`), `skill-span-close.sh` (tallies + appends to
+  `~/.claude/cost-log.jsonl`, called from Step 6b). To enable it, add a `PreToolUse` hook with
+  matcher `"Skill"` pointing at
+  `~/.claude/skills/session-wrap/scripts/skill-span-start.sh` in `~/.claude/settings.json`
+  (alongside the `SessionStart`/`SessionEnd` blocks from `hooks/settings.json`). Without the
+  hook, Step 6b's cost-close call silently no-ops. Rates in `cost-pricing.json` are published
+  tiers, not fetched live — verify before trusting dollar figures; token counts are exact
+  regardless.

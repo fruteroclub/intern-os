@@ -1,0 +1,10 @@
+{
+  "_note": "USD per 1M tokens. VERIFY these against current published rates before trusting the numbers; they are standard published tiers, not fetched live. cache_write_5m / cache_write_1h map to usage.cache_creation.ephemeral_5m_input_tokens / ephemeral_1h_input_tokens. cache_read maps to cache_read_input_tokens. output includes thinking tokens.",
+  "models": {
+    "claude-opus-4-8":        { "input": 15.0, "output": 75.0, "cache_read": 1.50, "cache_write_5m": 18.75, "cache_write_1h": 30.0 },
+    "claude-opus-5":          { "input": 15.0, "output": 75.0, "cache_read": 1.50, "cache_write_5m": 18.75, "cache_write_1h": 30.0 },
+    "claude-sonnet-5":        { "input": 3.0,  "output": 15.0, "cache_read": 0.30, "cache_write_5m": 3.75,  "cache_write_1h": 6.0 },
+    "claude-haiku-4-5-20251001": { "input": 1.0, "output": 5.0, "cache_read": 0.10, "cache_write_5m": 1.25, "cache_write_1h": 2.0 }
+  },
+  "fallback": { "input": 15.0, "output": 75.0, "cache_read": 1.50, "cache_write_5m": 18.75, "cache_write_1h": 30.0 }
+}
